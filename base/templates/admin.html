@@ -1,0 +1,61 @@
+[header]
+
+<section id="login">
+  <h2>Login accounts:</h2>
+  {{ ifpresent [usererror] }}
+    <p class="error">[usererror]</p>
+  {{ endif }}
+  {{ ifpresent [usersucces] }}
+    <p class="info">[usersucces]</p>
+  {{ endif }}
+
+  {{ if [users] }}
+    <form action="/admin#login" method="post">
+      <input type="hidden" id="xsrf" name="xsrf" value="[xsrf]">
+      <table>
+        <thead>
+          <tr>
+            <td>ID</td>
+            <td>Email</td>
+            <td>Password</td>
+            <td>Password Confirm</td>
+            <td>Active</td>
+            <td>Delete</td>
+          </tr>
+        </thead>
+        <tbody>
+      {{ for account in [users] }}
+          <tr>
+            <td>[account:ID]</td>
+            <td><input type="email" value="[account:email]" name="useremail[[account:ID]]" required minlength="4" maxlength="255"></td>
+            <td><input name="userpassword[[account:ID]]" type="password" minlength="8"></td>
+            <td><input name="userpassword_confirm[[account:ID]]" type="password" minlength="8"></td>
+            {{ if [account:ID] != 1 }}
+            <td><input type="checkbox" name="useractive[[account:ID]]" value="[account:ID]" {{ if [account:active] == 'true'}} checked{{ endif }}></td>
+            <td><input type="checkbox" name="userdelete[[account:ID]]" value="[account:ID]"></td>
+            {{ else }}<td colspan="2">Cannot delete or deactive Admin.</td>{{ endif }}
+          </tr>
+      {{ endfor }}
+        </tbody>
+      </table>
+      <p>
+        Both passwords need to be the same when making changes, leave empty for no change.<br>
+        Make sure to have at least 8 characters in your password.
+      </p>
+
+      <div><input type="submit" value="Update"></div>
+    </form>
+  {{ else }}
+    <p class="warning">No users registered just yet, create one using the form below.</p>
+  {{ endif }}
+  <h3>Create new user:</h3>
+  <form action="/admin#login" method="post">
+    <input type="hidden" id="xsrf" name="xsrf" value="[xsrf]">
+    <div><label for="useremail_new">Email address</label><input type="email" id="useremail_new" name="useremail[new]" required minlength="4" maxlength="255"></div>
+    <div><label for="userpassword_new">Password</label><input name="userpassword[new]" id="userpassword_new" type="password" required minlength="8" autocomplete="new-password"></div>
+    <div><label for="useractive_new">Active</label><input type="checkbox" id="useractive_new" name="useractive[new]" value="true" checked></div>
+    <div><input type="submit" value="Create user login"></div>
+  </form>
+</section>
+
+[footer]

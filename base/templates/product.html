@@ -1,0 +1,215 @@
+[header]
+<script src="/js/forms.js"></script>
+<section>
+<h2>Product: [product:name]</h2>
+</section>
+
+<section>
+  {{ if [stock] }}
+    <table class="stock">
+        <thead>
+          <tr><th>Date</th><th>Amount</th><th>Reference</th><th>Lot number</th></tr>
+        </thead>
+        <tbody>
+        {{ for stockchange in [stock] }}
+          <tr>
+            <td title="[stockchange:dateCreated]">[stockchange:dateCreated|DateOnly]</td>
+            <td class="number {{ if [stockchange:amount] > 0}}success{{ else }}error{{ endif }}">[stockchange:amount]</td>
+            <td>[stockchange:reference|NullString]</td>
+            <td>[stockchange:lot|NullString]</td>
+          </tr>
+        {{ endfor }}
+        </tbody>
+    </table>
+    {{ if [stockrows] and len([stock]) < [stockrows] }}<p><a href="?unlimitedstock=true">See all [stockrows] stock mutations.</a></p>{{ endif }}
+    <p class="info">Current stock: [product:currentstock] units</p>
+        {{ if [product:possiblestock:available] }}
+    <p class="info">Possible stock by using up available parts: [product:possiblestock:available] units, limited by <a href="/product/[product:possiblestock:limitedby:part:name]">[product:possiblestock:limitedby:part:name]</a></p>{{elif [parts] }}
+    <p class="warning">No new stock can be created, not anough parts available.</p>
+    {{ endif }}
+  {{ endif }}
+  <h2>Change the current stock:</h2>
+  <form action="/product/[product:name]/stock" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    <div><label for="amount">Amount</label><input type="number" id="amount" name="amount" {{ if [parts] }}value="-1"{{ else }}value="1"{{ endif }} required></div>
+    <p>How many where {{ if not [parts] }}added or {{ endif }}removed from the stock.</p>
+    <div><label for="reference">Reference</label><input type="text" id="reference" name="reference" placeholder="Invoice XYZ" maxlength="45"></div>
+    <p>The invoice ID {{ if not [parts] }}from the supplier, or {{ endif }}to the customer.</p>
+    <div><label for="lot">Lot number</label><input type="text" id="lot" name="lot" maxlength="45"></div>
+    <p>The Lot number of this shipment.</p>
+     {{ if [parts] }}{{ if [product:possiblestock:available] }} <p class="info">This product is made up of <a href="#parts">parts</a>, use the <a href="#assembly">assembly form</a> to <strong>add</strong> stock.</p>{{ else }}<p class="warning">No new stock can be created, not enough <a href="#parts">parts</a> available. <br>Stock can be added only by adding complete products from a supplier.</p>{{ endif }}{{ endif }}
+    <div><input type="submit" value="Add stock change" class="primary"></div>
+  </form>
+  {{ if [product:possiblestock:available] and [product:parts] }}
+  <h2 id="assembly">Assemble new stock from parts:</h2>
+  <form action="/product/[product:name]/stock" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    <div><label for="assemble_amount">Amount</label><input type="number" id="assemble_amount" name="assemble" value="1" required min="1" max="[product:possiblestock:available]"></div>
+    <p>How many where assembled.</p>
+    <div><label for="assemble_reference">Reference</label><input type="text" id="assemble_reference" name="reference" placeholder="Assembled [product:name]" maxlength="45"></div>
+    <p>Optional reference for this assembly.</p>
+    <div><label for="assemble_lot">Lot number</label><input type="text" id="assemble_lot" name="lot" maxlength="45"></div>
+    <p>The Lot number for these newly assembled products.</p>
+    <div><input type="submit" value="Add stock change" class="secundary"></div>
+  </form>
+  {{ endif }}
+  {{ if [product:currentstock] and [product:parts] }}
+  <h2>Disassemble stock into parts:</h2>
+  <form action="/product/[product:name]/stock" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    <div><label for="disassemble_amount">Amount</label><input type="number" id="disassemble_amount" name="disassemble" value="1" required min="1" max="[product:currentstock]"></div>
+    <p>How many where disassembled.</p>
+    <div><label for="disassemble_reference">Reference</label><input type="text" id="disassemble_reference" name="reference" placeholder="Disassembled [product:name]" maxlength="45"></div>
+    <p>The invoice ID from the supplier, or to the customer.</p>
+    <div><label for="disassemble_lot">Lot number</label><input type="text" id="disassemble_lot" name="lot" maxlength="45"></div>
+    <p>The Lot number of the disassembled products.</p>
+    <div><input type="submit" value="Add stock change" class="secundary"></div>
+  </form>
+  {{ endif }}
+</section>
+
+<section>
+  <h2>Edit Product:</h2>
+  <form action="/product/[product:name]" method="post" class="product">
+    <input type="hidden" name="xsrf" value="[xsrf]" />
+    <div><label for="name">Name</label><input type="text" id="name" name="name" value="[product:name]" maxlength="255" required></div>
+    <p>The name for each product in your warehouse must be unique.</p>
+
+    <div><label for="ean">Ean</label><input type="text" id="ean" name="ean" value="[product:ean|NullString]" maxlength="13"></div>
+    <p>The ean barcode for each product in your warehouse must be unique.</p>
+
+    <div><label for="gs1">GS1</label><input type="text" id="gs1" name="gs1" value="[product:gs1|NullString]" maxlength="255"></div>
+    <p>The gs1 for each product in your warehouse must be unique.</p>
+
+    <div><label for="cost">Buying cost</label><p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="cost" name="cost" value="[product:cost|NullString]"></div>
+    <p>The price paid to source this product.</p>
+
+    <div><label for="assemblycosts">Assembly cost</label><p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts" value="[product:assemblycosts|NullString]"></div>
+    <p>What does it cost to use this part in a product? A sticker needs to be applied, a jar needs to be filled.</p>
+
+    <div><label for="vat">Vat percentage</label><input type="number" step="0.01" min="0" id="vat" placeholder="21" name="vat" value="[product:vat]"><p>%</p></div>
+    <p>The vat percentage paid over the buying costs.</p>
+
+    <div><label for="supplier">Supplier</label>
+      <select name="supplier" id="supplier" >
+          <option value=""></option>
+          {{ for supplier in [suppliers] }}
+          <option value="[supplier:ID]" {{if [supplier:ID] ==  [product:supplier:ID]}} selected{{ endif }}>[supplier:name]</option>
+          {{ endfor }}
+        </select>
+    </div>
+
+    <div><label for="sku">SKU</label><input type="text" id="sku" name="sku" value="[product:sku|NullString]" maxlength="255"></div>
+    <p>The name for each sku in your warehouse must be unique, only products that can be ordered by end customers should have an easily recognizable sku.</p>
+
+    <div><label for="description">Description</label><textarea type="text" id="description" name="description" rows="[product:description|NullString|TextareaRowCount]">[product:description|NullString]</textarea></div>
+
+    <div><input type="submit" value="Save changes" class="primary"></div>
+  </form>
+</section>
+
+{{ if [product:parts] }}
+<section id="parts">
+  <h2>This product is a combination of other parts:</h2>
+  <form action="/product/[product:name]/assembly" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    <table class="parts">
+      <thead>
+        <tr><th>Name</th><th>Supplier</th><th>Cost price</th><th>Amount used</th><th>Assembly costs</th><th>Subtotal</th><th>Created</th><th>Delete</th></tr>
+      </thead>
+      <tbody>
+      {{ for part in [product:parts] }}
+        <tr>
+          <td><a href="/product/[part:part:name]">[part:part:name]</a></td>
+          <td><a href="/supplier/[part:part:supplier:name]">[part:part:supplier:name]</a></td>
+          <td class="number">&euro; [part:part:cost|currency]</td>
+          <td><input type="number" step="1" min="0" id="amount" name="amount[[part:ID]]" value="[part:amount]"></td>
+          <td><p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts[[part:ID]]" value="[part:assemblycosts]"></td>
+          <td class="number" title="([part:amount] * &euro; [part:part:cost|currency]) + &euro; [part:assemblycosts|currency]">&euro; [part:subtotal|currency]</td>
+          <td title="[part:part:dateCreated]">[part:part:dateCreated|DateOnly]</td>
+          <td>
+            <input type="checkbox" value="true" name="delete[[part:ID]]">
+          </td>
+        </tr>
+      {{ endfor }}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td class="number">&euro; [partsprice:assembledtotal]</td>
+          <td>Subtotal</td>
+          <td class="number">[partsprice:partcount]</td>
+          <td class="number">&euro; [partsprice:assembly|currency]</td>
+          <td class="number">&euro; [partsprice:partstotal|currency]</td>
+          <td></td>
+          <td>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+    <div><input type="submit" value="Save changes to this assembly"></div>
+  </form>
+</section>
+{{ endif }}
+
+<section>
+  <h2>Assemble product from parts:</h2>
+  <form action="/product/[product:name]/assemble" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+
+    <div><label for="part">Part</label>
+      <select name="part" id="part" >
+          {{ for part in [products] }}
+          <option value="[part:name]">[part:name]{{ if [part:assemblycosts] }} - [part:assemblycosts]{{ endif }}</option>
+          {{ endfor }}
+        </select>
+    </div>
+
+    <div><label for="amount">Amount use</label><input type="number" step="1" min="1" id="amount" name="amount" value="1"></div>
+    <p>How many of the selected product are used as parts in the current product?</p>
+
+    <div><label for="assemblycosts">Assembly cost</label><p>&euro;&nbsp;</p><input type="number" step="0.01" min="0" id="assemblycosts" name="assemblycosts" value="[product:assemblycosts|NullString]"></div>
+    <p>What does it cost to use the selected product as a part in the current product? A sticker needs to be applied, a jar needs to be filled.</p>
+
+    <div><input type="submit" value="Add this part to this assembly"></div>
+  </form>
+</section>
+
+{{ if [product:products] }}
+<section>
+  <h2>This product is used as a part in these other products:</h2>
+  <form action="/product/[product:name]/assembly" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    <table class="parts">
+      <thead>
+        <tr><th>Name</th><th>Cost price</th><th>Amount used</th><th>Assembly costs</th><th>Subtotal</th><th>Created</th><th>Delete</th></tr>
+      </thead>
+      <tbody>
+      {{ for part in [product:products] }}
+        <tr>
+          <td><a href="/product/[part:product:name]">[part:product:name]</a></td>
+          <td class="number">&euro; [part:part:cost|currency]</td>
+          <td><input type="number" step="1" min="0" id="amount" name="amount[[part:ID]]" value="[part:amount]"></td>
+          <td><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts[[part:ID]]" value="[part:assemblycosts]"></td>
+          <td class="number" title="([part:amount] * &euro; [part:part:cost|currency]) + &euro; [part:assemblycosts|currency]">&euro; [part:subtotal|currency]</td>
+          <td title="[part:product:dateCreated]">[part:product:dateCreated|DateOnly]</td>
+          <td>
+            <input type="checkbox" value="true" name="delete[[part:ID]]">
+          </td>
+        </tr>
+      {{ endfor }}
+      </tbody>
+    </table>
+    <div><input type="submit" value="Update these assemblies"></div>
+  </form>
+</section>
+{{ endif }}
+
+<section>
+  <h2>Delete Product:</h2>
+  <form action="/product/[product:name]/remove" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    <input type="submit" value="Delete product" onclick="return confirm('Are you sure you want to delete this product?');">
+  </form>
+</section>
+[footer]

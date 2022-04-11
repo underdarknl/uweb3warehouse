@@ -1,0 +1,17 @@
+{{ if [table:items:pages] > 2 or [table:items:current] > 1 }}
+  <nav class="pagination">
+    <ol>
+      {{ if [table:items:current] > 1 }}<li><a href="[table:linkbase]?page=1{{ ifpresent [table:linkarguments] }}[table:linkarguments]{{ endif }}" title="Go to page 1">First</a></li>
+      <li><a href="[table:linkbase]?page=[table:items:prev]{{ ifpresent [table:linkarguments] }}[table:linkarguments]{{ endif }}" title="Go to page [table:items:prev]">Previous</a></li>{{ endif }}
+      {{ for page in [table:items:pagenumbers] }}
+        {{ if [page] == [table:items:current] }}
+          <li class="active">[table:items:current]</li>
+        {{ else }}
+          <li><a href="[table:linkbase]?page=[page]{{ ifpresent [table:linkarguments] }}[table:linkarguments]{{ endif }}" title="Go to page [page]">[page]</a></li>
+        {{ endif }}
+      {{ endfor }}
+      {{ if [table:items:next] }}<li><a href="[table:linkbase]?page=[table:items:next]{{ ifpresent [table:linkarguments] }}[table:linkarguments]{{ endif }}" title="Go to page [table:items:next]">Next</a></li>
+      <li><a href="[table:linkbase]?page=[table:items:last]{{ ifpresent [table:linkarguments] }}[table:linkarguments]{{ endif }}" title="Go to page [table:items:last]">Last</a></li>{{ endif }}
+    </ol>
+  </nav>
+{{ endif }}

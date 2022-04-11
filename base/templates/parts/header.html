@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Warehouse</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://css.underdark.nl/stable/base.css" rel="stylesheet">
+    <link href="https://css.underdark.nl/stable/layout.css" rel="stylesheet">
+    <link href="https://css.underdark.nl/stable/module.css" rel="stylesheet">
+    <link href="https://css.underdark.nl/stable/theme.css" rel="stylesheet">
+    <link href="/styles/admin.css" rel="stylesheet">
+  </head>
+  <body>
+      <header>
+        <div>
+          <div class="logo">
+            <a href="/" title="Warehouse system">Warehouse</a>
+            <p>Manage your storage, easily online. </p>
+          </div>
+          <nav>
+            {{ if [user] }}<ul>
+              <li><a href="/">Products</a></li>
+              <li><a href="/#products_new">+</a></li>
+              <li><a href="/gs1">GS1 list</a></li>
+              <li><a href="/ean">EAN list</a></li>
+              <li><a href="/suppliers">Suppliers</a></li>
+              <li><a href="/apisettings">Api access</a></li>
+              <li><a href="/usersettings">Your account</a></li>
+              {{ if [user:ID] == 1}}<li><a href="/admin">Admin</a></li>{{ endif }}
+              <li>
+                <form method="post" action="/logout" onsubmit="return confirm('Are you sure you want to logout.')">
+                  <input type="hidden" id="xsrf" name="xsrf" value="[xsrf]">
+                  <input type="hidden" id="logout" name="action" value="logout">
+                  <input type="submit" value="Log out">
+                </form>
+              </li>
+            </ul>
+            {{ else }}
+            <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/login">Login</a></li>
+            </ul>
+            {{ endif }}
+          </nav>
+        </div>
+      </header>
+      <main>
