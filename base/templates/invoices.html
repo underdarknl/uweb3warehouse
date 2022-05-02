@@ -23,7 +23,7 @@
           {{ for invoice in [invoices] }}
           <tr class="[invoice:overdue]">
             <td><a href="/invoice/[invoice:sequenceNumber]">[invoice:sequenceNumber]</a></td>
-            <td><a href="/client/[invoice:client:ID]">[invoice:client:name]</a></td>
+            <td><a href="/client/[invoice:client:clientNumber]">[invoice:client:name]</a></td>
             <td><a href="/invoice/[invoice:sequenceNumber]">[invoice:title]</a></td>
             <td><a href="/pdfinvoice/[invoice:sequenceNumber]">PDF</a></td>
             <td><a href="/ublinvoice/[invoice:sequenceNumber]">UBL</a></td>
