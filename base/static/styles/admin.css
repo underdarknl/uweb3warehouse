@@ -50,3 +50,18 @@ body > header nav > ul:not(.external) > li input[type=submit] {
   background-image: -o-linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
   background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
 }
+
+/* products table in form */
+form table.products .number {
+  width: 7.25rem;
+}
+form table.products .number input[type="number"] {
+  width: 6rem;
+  padding-right: .5em;
+}
+form table.products .number input[name$="_prices"] {
+  margin-left: .25rem;
+}
+form table.products .number input[name$="_vat"] {
+  margin-right: .25rem;
+}
