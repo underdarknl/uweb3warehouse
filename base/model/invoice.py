@@ -33,11 +33,11 @@ class Companydetails(modelcache.Record):
     Specifying a client will limit the totals to that client.
     """
     conditions = [
-        "invoice.client=client.ID", "product.invoice = invoice.ID",
+        "invoice.client=client.clientNumber", "product.invoice = invoice.ID",
         "invoice.status='%s'" % state
     ]
     if client:
-      conditions.append('client.ID = %d' % (client['ID']))
+      conditions.append('client.clientNumber = %d' % (client['clientNumber']))
 
     with self.connection as cursor:
       total = cursor.Select(
@@ -70,8 +70,7 @@ class Invoice(RichModel):
       'contract': None,
       'client': {
           'class': Client,
-          'loader': 'FromPrimary',
-          'LookupKey': 'ID'
+          'loader': 'FromClientNumber',
       }
   }
 
