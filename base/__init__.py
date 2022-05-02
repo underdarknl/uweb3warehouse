@@ -4,7 +4,7 @@ import os
 import uweb3
 
 # Application
-from . import pages
+from . import basepages
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
   - The execution path, internally used to find templates etc.
   """
   return uweb3.uWeb(
-      pages.PageMaker,
+      basepages.PageMaker,
       [
           ('/', 'RequestProductNew', 'POST'),
           ('/', 'RequestIndex'),
@@ -46,7 +46,8 @@ def main():
           ('/product/([^/]*)/assemble', 'RequestProductAssemble', 'POST'),
           ('/product/([^/]*)/assembly', 'RequestProductAssemblySave', 'POST'),
           ('/product/([^/]*)/stock', 'RequestProductStock', 'POST'),
-          ('/invoices', 'RequestInvoices'),
+          ('/invoices', 'RequestInvoices', 'GET'),
+          ('/invoices', 'RequestNewInvoice', 'POST'),
           ('/clients', 'RequestClients', 'GET'),
           ('/clients', 'RequestNewClient', 'POST'),
           ('/clients/save', 'RequestSaveClient', 'POST'),
