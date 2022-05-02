@@ -308,11 +308,18 @@ class Client(RichVersionedRecord):
   MAX_NAME_LENGTH = 100
 
   @classmethod
+  def IsFirstClient(cls, connection):
+    with connection as cursor:
+      return cursor.Execute(
+          """SELECT EXISTS(SELECT * FROM client) as client_exists;"""
+      )[0]['client_exists'] == 0
+
+  @classmethod
   def FromClientNumber(cls, connection, clientnumber):
     """Returns the client belonging to the given clientnumber."""
     client = list(
         Client.List(connection,
-                    conditions='ID = %d' % int(clientnumber),
+                    conditions='clientNumber = %d' % int(clientnumber),
                     order=[('ID', True)],
                     limit=1))
     if not client:
