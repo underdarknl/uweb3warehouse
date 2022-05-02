@@ -4,9 +4,8 @@ import os
 import re
 from setuptools import setup, find_packages
 
-REQUIREMENTS = [
-  'passlib'
-]
+REQUIREMENTS = ['passlib']
+
 
 def description():
   """Returns the contents of the README.md file as description information."""
@@ -21,27 +20,25 @@ def version():
     return re.match(".*__version__ = '(.*?)'", v_file.read(), re.S).group(1)
 
 
-setup(
-    name='uWeb3 warehouse',
-    version=version(),
-    description='uWeb, python3, uswgi compatible warehousing app',
-    long_description_file='README.md',
-    long_description_content_type='text/markdown',
-    license='ISC',
-    classifiers=[
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: ISC License (ISCL)',
-        'Operating System :: POSIX :: Linux',
-    ],
-    author='Jan Klopper',
-    author_email='jan@underdark.nl',
-    url='https://github.com/underdark.nl/warehouse',
-    keywords='hwarehouseing software based on uWeb3',
-    packages=find_packages(),
-    include_package_data=True,
-    zip_safe=False,
-    install_requires=REQUIREMENTS)
+setup(name='uWeb3 warehouse',
+      version=version(),
+      description='uWeb, python3, uswgi compatible warehousing app',
+      long_description_file='README.md',
+      long_description_content_type='text/markdown',
+      license='ISC',
+      classifiers=[
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 3',
+          'Development Status :: 3 - Alpha',
+          'Intended Audience :: Developers',
+          'License :: OSI Approved :: ISC License (ISCL)',
+          'Operating System :: POSIX :: Linux',
+      ],
+      author='Jan Klopper',
+      author_email='jan@underdark.nl',
+      url='https://github.com/underdark.nl/warehouse',
+      keywords='hwarehouseing software based on uWeb3',
+      packages=find_packages(),
+      include_package_data=True,
+      zip_safe=False,
+      install_requires=REQUIREMENTS)

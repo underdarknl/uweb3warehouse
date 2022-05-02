@@ -138,7 +138,8 @@ class Invoice(RichModel):
           'total_price_without_vat': 10,
           'total_price': 20
       }  #TODO: Calc price
-      invoice['dateDue'] = pandas.to_datetime(invoice['dateDue'], errors='coerce')
+      invoice['dateDue'] = pandas.to_datetime(invoice['dateDue'],
+                                              errors='coerce')
       if today > invoice['dateDue'] and invoice['status'] != 'paid':
         invoice['overdue'] = 'overdue'
       else:

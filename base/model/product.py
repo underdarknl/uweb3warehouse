@@ -13,6 +13,7 @@ import math
 from uweb3 import model
 from base.model.model import NOTDELETED, AssemblyError, InvalidNameError
 
+
 class Product(model.Record):
   """Provides a model abstraction for the Product table"""
   _possiblestock = None

@@ -15,6 +15,7 @@ from uweb3 import model
 from uweb3 import model
 from base.model.model import NOTDELETED, InvalidNameError
 
+
 class Supplier(model.Record):
   """Provides a model abstraction for the Supplier table"""
 

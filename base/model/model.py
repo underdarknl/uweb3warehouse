@@ -17,15 +17,19 @@ import secrets
 NOTDELETEDDATE = '1000-01-01 00:00:00'
 NOTDELETED = 'dateDeleted = "%s"' % NOTDELETEDDATE
 
+
 class InvalidNameError(Exception):
   """Invalid name value."""
+
 
 class WarehouseException(Exception):
   """A general Catch all error for the warehouse software"""
 
+
 class AssemblyError(WarehouseException):
   """The requested operation cannot continue because we could not assemble a
   product as requested."""
+
 
 class RichModel(modelcache.Record):
   """Provides a richer uweb Record class."""
@@ -157,6 +161,7 @@ class RichModel(modelcache.Record):
                                                  -4]  #TODO use ' or '.join on search conditions instead
       conditions.append(searchcondition)
     return tables, conditions
+
 
 class RichVersionedRecord(model.VersionedRecord):
   """Provides a richer uweb VersionedRecord class."""
@@ -315,6 +320,7 @@ class Client(RichVersionedRecord):
                               clientnumber)
     return cls(connection, client[0])
 
+
 class User(model.Record):
   """Provides interaction to the user table"""
 
@@ -338,26 +344,30 @@ class User(model.Record):
     if not conditions:
       conditions = []
     with connection as cursor:
-      user = cursor.Select(table=cls.TableName(),
-          conditions=['email=%s' % connection.EscapeValues(email),
-                      'active = "true"'] + conditions)
+      user = cursor.Select(
+          table=cls.TableName(),
+          conditions=[
+              'email=%s' % connection.EscapeValues(email), 'active = "true"'
+          ] + conditions)
     if not user:
-      raise cls.NotExistError(
-          'There is no user with the email address: %r' % email)
+      raise cls.NotExistError('There is no user with the email address: %r' %
+                              email)
     return cls(connection, user[0])
 
   @classmethod
   def FromLogin(cls, connection, email, password):
     """Returns the user with the given login details."""
-    user = list(cls.List(connection,
-        conditions=('email = %s' % connection.EscapeValues(email),
-                    'active = "true"')))
+    user = list(
+        cls.List(connection,
+                 conditions=('email = %s' % connection.EscapeValues(email),
+                             'active = "true"')))
     if not user:
       # fake a login attempt, and slow down, even though we know its never going
       # to end in a valid login, we dont want to let anyone know the account
       # does or does not exist.
       if connection.debug:
-        print('password for non existant user would have been: ', pbkdf2_sha256.hash(password))
+        print('password for non existant user would have been: ',
+              pbkdf2_sha256.hash(password))
       raise cls.NotExistError('Invalid login, or inactive account.')
     if pbkdf2_sha256.verify(password, user[0]['password']):
       return user[0]
@@ -382,9 +392,9 @@ class User(model.Record):
 
   def PasswordResetHash(self):
     """Returns a hash based on the user's ID, name and password."""
-    return pbkdf2_sha256.hash('%d%s%s' % (
-         self['ID'], self['email'], self['password']),
-         salt=bytes(self['ID']))
+    return pbkdf2_sha256.hash('%d%s%s' %
+                              (self['ID'], self['email'], self['password']),
+                              salt=bytes(self['ID']))
 
 
 class Session(model.SecureCookie):
@@ -399,12 +409,12 @@ class Apiuser(model.Record):
   def _PreCreate(self, cursor):
     super()._PreCreate(cursor)
 
-    self['key'] = secrets.token_hex(int(self.KEYLENGTH/2))
+    self['key'] = secrets.token_hex(int(self.KEYLENGTH / 2))
     if 'active' not in self:
       self['active'] = 'true'
     self['active'] = 'true' if self['active'] == 'true' else 'false'
     self['name'] = re.search('([\w\-_\.,]+)',
-        self['name'].replace(' ', '_')).groups()[0][:45]
+                             self['name'].replace(' ', '_')).groups()[0][:45]
     if not self['name']:
       raise InvalidNameError('Provide a valid name')
 
@@ -412,7 +422,7 @@ class Apiuser(model.Record):
     super()._PreSave(cursor)
 
     self['name'] = re.search('([\w\-_\.,]+)',
-        self['name'].replace(' ', '_')).groups()[0][:45]
+                             self['name'].replace(' ', '_')).groups()[0][:45]
     self['active'] = 'true' if self['active'] == 'true' else 'false'
     if not self['name']:
       raise InvalidNameError('Provide a valid name')
@@ -422,9 +432,10 @@ class Apiuser(model.Record):
     """Returns a user object by API key."""
     if not key:
       raise cls.NotExistError('No API key given.')
-    user = list(cls.List(connection,
-        conditions=('`key` = %s' % connection.EscapeValues(key),
-                    '`active` = "true"')))
+    user = list(
+        cls.List(connection,
+                 conditions=('`key` = %s' % connection.EscapeValues(key),
+                             '`active` = "true"')))
     if not user:
       raise cls.NotExistError('Invalid key, or inactive key.')
     return user[0]
@@ -433,4 +444,5 @@ class Apiuser(model.Record):
 from base.model.product import Product, Stock, Productpart
 from base.model.invoice import Invoice
 from base.model.supplier import Supplier
+
 NotExistError = model.NotExistError

@@ -6,6 +6,7 @@ Just execute `./serve.py` or `python3 serve.py`
 # Application
 import base
 
+
 def main():
   app = base.main()
   app.serve()
