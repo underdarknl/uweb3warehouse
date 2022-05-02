@@ -5,6 +5,7 @@
 import time
 import locale
 import urllib.parse
+from base.decorators import NotExistsErrorCatcher
 
 # uweb modules
 import uweb3
@@ -13,6 +14,7 @@ from uweb3.libs import mail
 # project modules
 from .model import model
 from .helpers import PagedResult
+from base.pages import clients, invoices
 
 
 def apiuser(f):
@@ -39,25 +41,14 @@ def apiuser(f):
   return wrapper
 
 
-def NotExistsErrorCatcher(f):
-  """Decorator to return a 404 if a NotExistError exception was returned."""
-
-  def wrapper(*args, **kwargs):
-    try:
-      return f(*args, **kwargs)
-    except model.NotExistError as error:
-      return args[0].RequestInvalidcommand(error=error)
-
-  return wrapper
-
-
 def CentRound(monies):
   """Rounds the given float to two decimals."""
   if monies:
     return '%.2f' % monies
 
 
-class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin):
+class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, clients.PageMaker,
+                invoices.PageMaker):
   """Holds all the request handlers for the application"""
 
   DEFAULTPAGESIZE = 10
@@ -69,6 +60,7 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin):
   def _PostInit(self):
     """Sets up all the default vars"""
     self.connection.modelcache = model.modelcache.ClearCache()
+    self.parser.RegisterTag('scripts', None)
     self.parser.RegisterTag('year', time.strftime('%Y'))
     self.parser.RegisterFunction('CentRound', CentRound)
     self.parser.RegisterFunction('ToID', lambda x: x.replace(' ', ''))
@@ -839,70 +831,6 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin):
     except self.connection.IntegrityError:
       return self.Error('That name was already taken, go back, try again!', 200)
     return self.req.Redirect('/supplier/%s' % supplier['name'], httpcode=301)
-
-  @uweb3.decorators.loggedin
-  @uweb3.decorators.checkxsrf
-  @uweb3.decorators.TemplateParser('invoices.html')
-  def RequestInvoices(self):
-    return {'invoices': model.Invoice.List(self.connection)}
-
-  @uweb3.decorators.loggedin
-  @uweb3.decorators.checkxsrf
-  @uweb3.decorators.TemplateParser('clients/clients.html')
-  def RequestClients(self):
-    return {
-        'title': 'Clients',
-        'page_id': 'clients',
-        'clients': list(model.Client.List(self.connection)),
-    }
-
-  @uweb3.decorators.loggedin
-  @uweb3.decorators.checkxsrf
-  def RequestNewClient(self):
-    """Creates a new client, or displays an error."""
-    model.Client.Create(
-        self.connection, {
-            'name': self.post.getfirst('name'),
-            'telephone': self.post.getfirst('telephone', ''),
-            'email': self.post.getfirst('email', ''),
-            'address': self.post.getfirst('address', ''),
-            'postalCode': self.post.getfirst('postalCode', ''),
-            'city': self.post.getfirst('city', ''),
-        })
-    return self.req.Redirect('/clients', httpcode=303)
-
-  @uweb3.decorators.loggedin
-  @uweb3.decorators.checkxsrf
-  @NotExistsErrorCatcher
-  @uweb3.decorators.TemplateParser('clients/client.html')
-  def RequestClient(self, client=None):
-    """Returns the client details.
-
-    Takes:
-      client: int
-    """
-    client = model.Client.FromClientNumber(self.connection, int(client))
-    return {'title': 'Client', 'page_id': 'client', 'client': client}
-
-  @uweb3.decorators.loggedin
-  @uweb3.decorators.checkxsrf
-  @NotExistsErrorCatcher
-  def RequestSaveClient(self):
-    """Returns the client details.
-
-    Takes:
-      client: int
-    """
-    client = model.Client.FromClientNumber(self.connection,
-                                           int(self.post.getfirst('client')))
-    client['name'] = self.post.getfirst('name')
-    client['telephone'] = self.post.getfirst('telephone', '')
-    client['email'] = self.post.getfirst('email', '')
-    client['address'] = self.post.getfirst('address', '')
-    client['postalCode'] = self.post.getfirst('postalCode', '')
-    client['city'] = self.post.getfirst('city', '')
-    client.Save()
-    return self.req.Redirect(f'/client/{client["clientNumber"]}')
 
   @uweb3.decorators.loggedin
   @NotExistsErrorCatcher
