@@ -56,6 +56,7 @@ def main():
               'RequestClient',
           ),
           ('/api/v1/product/([^/]*)', 'JsonProduct', 'GET'),
+          ('/api/v1/search_product/([^/]*)', 'JsonProductSearch', 'GET'),
           ('/api/v1/product/([^/]*)/stock', 'JsonProductStock', 'POST'),
 
           # Helper files
