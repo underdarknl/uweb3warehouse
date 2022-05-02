@@ -26,7 +26,9 @@
               <li><a href="/suppliers">Suppliers</a></li>
               <li><a href="/apisettings">Api access</a></li>
               <li><a href="/usersettings">Your account</a></li>
+
               {{ if [user:ID] == 1}}<li><a href="/admin">Admin</a></li>{{ endif }}
+              <li><a href="/invoices">Invoices</a></li>
               <li>
                 <form method="post" action="/logout" onsubmit="return confirm('Are you sure you want to logout.')">
                   <input type="hidden" id="xsrf" name="xsrf" value="[xsrf]">
