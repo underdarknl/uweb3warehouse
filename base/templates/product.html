@@ -24,8 +24,8 @@
     {{ if [stockrows] and len([stock]) < [stockrows] }}<p><a href="?unlimitedstock=true">See all [stockrows] stock mutations.</a></p>{{ endif }}
     <p class="info">Current stock: [product:currentstock] units</p>
         {{ if [product:possiblestock:available] }}
-    <p class="info">Possible stock by using up available parts: [product:possiblestock:available] units, limited by <a href="/product/[product:possiblestock:limitedby:part:name]">[product:possiblestock:limitedby:part:name]</a></p>{{elif [parts] }}
-    <p class="warning">No new stock can be created, not anough parts available.</p>
+    <p class="info">Possible addition to stock by using up available parts: [product:possiblestock:available] units, limited by <a href="/product/[product:possiblestock:limitedby:part:name]">[product:possiblestock:limitedby:part:name]</a></p>{{elif [parts] }}
+    <p class="warning">No new stock can be created, not enough parts available.</p>
     {{ endif }}
   {{ endif }}
   <h2>Change the current stock:</h2>
@@ -156,11 +156,10 @@
   <h2>Assemble product from parts:</h2>
   <form action="/product/[product:name]/assemble" method="post">
     <input type="hidden" name="xsrf" value="[xsrf]">
-
     <div><label for="part">Part</label>
       <select name="part" id="part" >
-          {{ for part in [products] }}
-          <option value="[part:name]">[part:name]{{ if [part:assemblycosts] }} - [part:assemblycosts]{{ endif }}</option>
+          {{ for part in [parts] }}
+          <option value="[part:part:name]">[part:part:name]{{ if [part:assemblycosts] }} - [part:assemblycosts]{{ endif }}</option>
           {{ endfor }}
         </select>
     </div>
