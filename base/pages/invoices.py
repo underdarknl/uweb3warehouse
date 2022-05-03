@@ -26,6 +26,18 @@ class PageMaker:
   @uweb3.decorators.loggedin
   @uweb3.decorators.checkxsrf
   @decorators.NotExistsErrorCatcher
+  @uweb3.decorators.TemplateParser('invoices/invoice.html')
+  def RequestInvoiceDetails(self, sequence_number):
+    invoice = model.Invoice.FromSequenceNumber(self.connection, sequence_number)
+    return {
+        'invoice': invoice,
+        'products': invoice.Products(),
+        'totals': invoice.Totals()
+    }
+
+  @uweb3.decorators.loggedin
+  @uweb3.decorators.checkxsrf
+  @decorators.NotExistsErrorCatcher
   def RequestNewInvoice(self):
     client = model.Client.FromClientNumber(self.connection,
                                            int(self.post.getfirst('client')))

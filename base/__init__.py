@@ -47,6 +47,7 @@ def main():
           ('/product/([^/]*)/assembly', 'RequestProductAssemblySave', 'POST'),
           ('/product/([^/]*)/stock', 'RequestProductStock', 'POST'),
           ('/invoices', 'RequestInvoices', 'GET'),
+          ('/invoice/(.*)', 'RequestInvoiceDetails', 'GET'),
           ('/invoices', 'RequestNewInvoice', 'POST'),
           ('/clients', 'RequestClients', 'GET'),
           ('/clients', 'RequestNewClient', 'POST'),

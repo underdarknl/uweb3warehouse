@@ -67,6 +67,11 @@ class Companydetails(modelcache.Record):
 class InvoiceProduct(RichModel):
   """Abstraction class for Products that are linked to an invoice"""
 
+  def Totals(self):
+    """Read the price from the database and create the vat amount."""
+    self['vat_amount'] = (self['price'] * self['quantity'] /
+                          100) * self['vat_percentage']
+
 
 class Invoice(RichModel):
   """Abstraction class for Invoices stored in the database."""
@@ -186,11 +191,13 @@ class Invoice(RichModel):
 
   def Products(self):
     """Returns all products that are part of this invoice."""
-    products = Product.List(self.connection, conditions='invoice=%d' % self)
+    products = InvoiceProduct.List(
+        self.connection,
+        conditions=['invoice=%d' % self])  # TODO (Stef) filter on not deleted
     index = 1
     for product in products:
       product['invoice'] = self
-      product = Product(self.connection, product)
+      product = InvoiceProduct(self.connection, product)
       product.Totals()
       product['index'] = index
       index = index + 1  # TODO implement loop indices in the template parser
@@ -199,13 +206,17 @@ class Invoice(RichModel):
   def AddProduct(self, id, price, vat_percent, quantity):
     """Adds a product to the current invoice."""
     product = Product.FromName(self.connection, id)
-    if product.currentstock + product.possiblestock['available'] < quantity:
-      product.AssemblyPossible(
-          quantity)  # this raises the exception as of why this is not possible.
+    if product.currentstock < quantity:
+      additional_needed = quantity - product.currentstock
+      # Attempt to assemble the additional products from parts. If not possible this raises an exception.
+      product.Assemble(additional_needed)
+
     Stock.Create(
-        self.connection, {
+        self.connection,
+        {
             'product': product,
-            'amount': -abs(int(quantity)),
+            'amount': -abs(
+                int(quantity)),  # TODO (Stef) only allow positive numbers.
             'reference': f'Invoice: {self.key}',
             'lot': None
         })
