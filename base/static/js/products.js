@@ -76,7 +76,7 @@
                 }
                 ioEls[4].value = "€ " + vatAmount.toFixed(2);
                 ioEls[5].value = "€ " + subtotal.toFixed(2);
-                this.totalEx += price;
+                this.totalEx += price * quantity;
                 this.totalInc += subtotal;
               } else {
                 ioEls[4].value = "";

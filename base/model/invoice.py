@@ -9,8 +9,9 @@ import pytz
 # Custom modules
 from base.model.model import RichModel, Client
 from base.libs import modelcache
-from base.model.product import Product
-import pandas
+from base.model.product import Product, Stock
+
+PAYMENT_PERIOD = datetime.timedelta(14)
 
 
 class Companydetails(modelcache.Record):
@@ -63,6 +64,10 @@ class Companydetails(modelcache.Record):
       return returnvalues
 
 
+class InvoiceProduct(RichModel):
+  """Abstraction class for Products that are linked to an invoice"""
+
+
 class Invoice(RichModel):
   """Abstraction class for Invoices stored in the database."""
 
@@ -70,7 +75,8 @@ class Invoice(RichModel):
       'contract': None,
       'client': {
           'class': Client,
-          'loader': 'FromClientNumber',
+          'loader': 'FromPrimary',
+          'LookupKey': 'ID'
       }
   }
 
@@ -107,8 +113,8 @@ class Invoice(RichModel):
       Invoice: the newly created invoice.
     """
     record.setdefault('sequenceNumber', cls.NextNumber(connection))
-    record.setdefault('companyDetails',
-                      Companydetails.HighestNumber(connection))
+    # record.setdefault('companyDetails',
+    #                   Companydetails.HighestNumber(connection))
     record.setdefault('dateDue', datetime.date.today() + PAYMENT_PERIOD)
     return super(Invoice, cls).Create(connection, record)
 
@@ -132,13 +138,10 @@ class Invoice(RichModel):
     invoices = list(super().List(*args, **kwds))
     today = pytz.utc.localize(datetime.datetime.utcnow())
     for invoice in invoices:
-      # invoice['totals'] = invoice.Totals()
-      invoice['totals'] = {
-          'total_price_without_vat': 10,
-          'total_price': 20
-      }  #TODO: Calc price
-      invoice['dateDue'] = pandas.to_datetime(invoice['dateDue'],
-                                              errors='coerce')
+      invoice['totals'] = invoice.Totals()
+      invoice['dateDue'] = invoice['dateDue'].replace(
+          tzinfo=datetime.timezone.utc)
+
       if today > invoice['dateDue'] and invoice['status'] != 'paid':
         invoice['overdue'] = 'overdue'
       else:
@@ -149,19 +152,20 @@ class Invoice(RichModel):
     """Read the price from the database and create the vat amount."""
     with self.connection as cursor:
       totals = cursor.Select(
-          table='product',
-          fields=('SUM((price / 100) * vat_percentage) + SUM(price) AS total',
-                  'SUM(price) as totalex'),
+          table='invoiceProduct',
+          fields=
+          ('SUM(((price * quantity) / 100) * vat_percentage) + SUM(price * quantity) AS total',
+           'SUM(price * quantity) as totalex'),
           conditions='invoice=%d' % self,
           escape=False)
 
     vatresults = []
     with self.connection as cursor:
       vatgroup = cursor.Select(
-          table='product',
+          table='invoiceProduct',
           fields=('vat_percentage',
-                  'sum((price / 100) * vat_percentage) as total',
-                  'sum(price) as taxable'),
+                  'sum(((price * quantity) / 100) * vat_percentage) as total',
+                  'sum(price * quantity) as taxable'),
           group='vat_percentage',
           conditions='invoice=%d' % self,
           escape=False)
@@ -192,12 +196,25 @@ class Invoice(RichModel):
       index = index + 1  # TODO implement loop indices in the template parser
       yield product
 
-  def AddProduct(self, name, price, vat_percent):
+  def AddProduct(self, id, price, vat_percent, quantity):
     """Adds a product to the current invoice."""
-    return Product.Create(
+    product = Product.FromName(self.connection, id)
+    if product.currentstock + product.possiblestock['available'] < quantity:
+      product.AssemblyPossible(
+          quantity)  # this raises the exception as of why this is not possible.
+    Stock.Create(
+        self.connection, {
+            'product': product,
+            'amount': -abs(int(quantity)),
+            'reference': f'Invoice: {self.key}',
+            'lot': None
+        })
+    return InvoiceProduct.Create(
         self.connection, {
             'invoice': self.key,
-            'name': name,
+            'product': product['ID'],
+            'name': product['name'],
             'price': price,
+            'quantity': quantity,
             'vat_percentage': vat_percent
         })
