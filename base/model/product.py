@@ -145,7 +145,9 @@ class Product(model.Record):
     return 0
 
   @property
-  def possiblestock(self):
+  def possiblestock(
+      self
+  ):  # XXX: This is actually not the possiblestock, this is the possible addition to the stock. currentstock + possiblestock['available'] = possiblestock.
     """Returns the possible stock when using up currently available parts"""
     if self._possiblestock:
       return self._possiblestock
@@ -176,8 +178,7 @@ class Product(model.Record):
     }
     return self._possiblestock
 
-  def Assemble(self, amount=1, reference='Assembled from parts', lot=None):
-    """Tries to use up this products parts and assembles them, mutating stock on all products involved."""
+  def AssemblyPossible(self, amount):
     if amount > 0:
       possiblestock = self.possiblestock
       if not possiblestock['available'] and not possiblestock['limitedby']:
@@ -196,7 +197,11 @@ class Product(model.Record):
       if parts == 0:
         raise AssemblyError(
             'Cannot Disassemble this product, is not an assembled product.')
+    return parts
 
+  def Assemble(self, amount=1, reference='Assembled from parts', lot=None):
+    """Tries to use up this products parts and assembles them, mutating stock on all products involved."""
+    parts = self.AssemblyPossible(amount)
     # Mutate parts one by one
     for part in parts:
       subreference = 'Assembly: %s, %s' % (self['name'], reference)
