@@ -44,7 +44,7 @@ class User(model.Record):
   def Create(cls, connection, record, generate_password_hash=False):
     if generate_password_hash:
       record['password'] = pbkdf2_sha256.hash(record['password'])
-    record = super().Create(connection, record)
+    return super().Create(connection, record)
 
   @classmethod
   def FromEmail(cls, connection, email, conditions=None):

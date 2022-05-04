@@ -52,6 +52,8 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
                                                       self.DEFAULTPAGESIZE))
 
   def _PreRequest(self):
+    list(model.User.List(
+        self.connection))  # XXX: mysql connection bugged. Remove this
     if self.config.Read():
       try:
         locale.setlocale(locale.LC_ALL,
@@ -198,7 +200,7 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
     If these fields are already filled out, this page will not function any
     longer.
     """
-    if not self.post or not model.User.IsFirstUser(self.connection):
+    if not model.User.IsFirstUser(self.connection):
       return self.RequestLogin()
 
     if ('email' in self.post and 'password' in self.post and
@@ -207,7 +209,7 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
       try:
         user = model.User.Create(self.connection, {
             'ID': 1,
-            'name': self.post.getfirst('email'),
+            'email': self.post.getfirst('email'),
             'active': 'true',
             'password': self.post.getfirst('password'),
         },
@@ -224,7 +226,6 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
       return self.req.Redirect('/', httpcode=301)
     if self.post:
       return {'error': 'Not all fields are properly filled out.'}
-    return
 
   @uweb3.decorators.loggedin
   @uweb3.decorators.checkxsrf
