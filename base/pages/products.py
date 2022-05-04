@@ -3,6 +3,7 @@
 
 # standard modules
 import urllib
+from base.model.product import Product, Stock
 # uweb modules
 import uweb3
 from base.decorators import apiuser, json_error_wrapper
@@ -91,14 +92,31 @@ class PageMaker:
       partsprice['assembledtotal'] += part.subtotal + part['assemblycosts']
 
     return {
-        'products': product.AssemblyOptions(),
-        'parts': parts,
-        'partsprice': partsprice,
-        'product': product,
-        'suppliers': model.Supplier.List(self.connection),
-        'stock': stock,
-        'stockrows': stockrows
+        'products':
+            product.AssemblyOptions(),
+        'possibleparts':
+            model.Product.List(self.connection,
+                               conditions=[f'ID != {product["ID"]}']),
+        'parts':
+            parts,
+        'partsprice':
+            partsprice,
+        'product':
+            product,
+        'suppliers':
+            model.Supplier.List(self.connection),
+        'stock':
+            stock,
+        'stockrows':
+            stockrows
     }
+
+  @uweb3.decorators.ContentType('application/json')
+  @json_error_wrapper
+  @apiuser
+  def JsonProducts(self):
+    """Returns the product Json"""
+    return {'products': list(model.Product.List(self.connection))}
 
   @uweb3.decorators.ContentType('application/json')
   @json_error_wrapper
@@ -256,18 +274,15 @@ class PageMaker:
     return self.req.Redirect('/product/%s' % product['name'], httpcode=301)
 
   @uweb3.decorators.ContentType('application/json')
+  @json_error_wrapper
   @apiuser
-  @NotExistsErrorCatcher
   def JsonProductStock(self, name):
     """Updates the stock for a product, assembling if needed
 
     Send negative amount to Sell a product, positive amount to put product back
     into stock"""
-    try:
-      product = model.Product.FromName(self.connection, name)
-    except model.NotExistError as error:
-      return self.RequestInvalidJsoncommand(error)
-    amount = int(self.post.getfirst('amount', -1))
+    product = model.Product.FromName(self.connection, name)
+    amount = int(self.post.get('amount', -1))
     currentstock = product.currentstock
     if (amount < 0 and  # only assemble when we sell
         abs(amount) >
@@ -276,15 +291,15 @@ class PageMaker:
         product.Assemble(
             abs(amount) -
             currentstock,  # only assemble what is missing for this sale
-            'Assembly for %s' % self.post.getfirst('reference')
-            if 'reference' in self.post else None)
+            'Assembly for %s' %
+            self.post.get('reference') if 'reference' in self.post else None)
       except model.AssemblyError as error:
-        return self.RequestInvalidJsoncommand(error)
+        raise ValueError(error.args[0])
     # by now we should have enough products in stock, one way or another
     model.Stock.Create(
         self.connection, {
             'product': product,
             'amount': amount,
-            'reference': self.post.getfirst('reference', '')
+            'reference': self.post.get('reference', '')
         })
-    return True
+    return {'stock': product.currentstock}

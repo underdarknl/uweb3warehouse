@@ -13,8 +13,7 @@ from uweb3.libs import mail
 # project modules
 from .model import model
 from .helpers import PagedResult
-from base.pages import clients, invoices, products
-from base.decorators import apiuser
+from base.pages import products
 
 
 def CentRound(monies):
@@ -23,8 +22,7 @@ def CentRound(monies):
     return '%.2f' % monies
 
 
-class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, clients.PageMaker,
-                invoices.PageMaker, products.PageMaker):
+class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
   """Holds all the request handlers for the application"""
 
   DEFAULTPAGESIZE = 10
@@ -59,6 +57,8 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, clients.PageMaker,
                                                       self.DEFAULTPAGESIZE))
 
   def _PreRequest(self):
+    model.Client.IsFirstClient(
+        self.connection)  # TODO: Remove this, temp fix for connector issue
     if self.config.Read():
       try:
         locale.setlocale(locale.LC_ALL,
@@ -71,6 +71,11 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, clients.PageMaker,
 
   def _PostRequest(self, response):
     cleanups = model.modelcache.CleanCache(self.connection.modelcache)
+    response.headers.update({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*'
+    })
     return response
 
   @uweb3.decorators.TemplateParser('login.html')

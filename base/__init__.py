@@ -46,18 +46,9 @@ def main():
           ('/product/([^/]*)/assemble', 'RequestProductAssemble', 'POST'),
           ('/product/([^/]*)/assembly', 'RequestProductAssemblySave', 'POST'),
           ('/product/([^/]*)/stock', 'RequestProductStock', 'POST'),
-          ('/invoices', 'RequestInvoices', 'GET'),
-          ('/invoice/(.*)', 'RequestInvoiceDetails', 'GET'),
-          ('/invoices', 'RequestNewInvoice', 'POST'),
-          ('/clients', 'RequestClients', 'GET'),
-          ('/clients', 'RequestNewClient', 'POST'),
-          ('/clients/save', 'RequestSaveClient', 'POST'),
-          (
-              '/client/(.*)',
-              'RequestClient',
-          ),
           ('/api/v1/product/([^/]*)', 'JsonProduct', 'GET'),
-          ('/api/v1/search_product/([^/]*)', 'JsonProductSearch', 'GET'),
+          ('/api/v1/products', 'JsonProducts', 'GET'),
+          ('/api/v1/search_product/([^/]*)', 'JsonProductSearch'),
           ('/api/v1/product/([^/]*)/stock', 'JsonProductStock', 'POST'),
 
           # Helper files

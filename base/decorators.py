@@ -28,7 +28,7 @@ def apiuser(f):
     if 'apikey' in args[0].get:
       key = args[0].get.getfirst('apikey')
     elif 'apikey' in args[0].post:
-      key = args[0].post.getfirst('apikey')
+      key = args[0].post['apikey']
     elif 'apikey' in args[0].req.headers:
       key = args[0].req.headers.get('apikey')
     try:
@@ -46,6 +46,15 @@ def json_error_wrapper(func):
   def wrapper_schema_validation(*args, **kwargs):
     try:
       return func(*args, **kwargs)
+    except ValueError as e:
+      return uweb3.Response(
+          {
+              "error": True,
+              "errors": e.args,
+              "http_status": HTTPStatus.NOT_FOUND,
+          },
+          httpcode=HTTPStatus.NOT_FOUND,
+      )
     except model.NotExistError as msg:
       return uweb3.Response(
           {

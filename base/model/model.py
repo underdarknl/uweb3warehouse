@@ -449,7 +449,6 @@ class Apiuser(model.Record):
 
 
 from base.model.product import Product, Stock, Productpart
-from base.model.invoice import Invoice
 from base.model.supplier import Supplier
 
 NotExistError = model.NotExistError

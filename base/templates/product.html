@@ -151,15 +151,14 @@
   </form>
 </section>
 {{ endif }}
-
 <section>
   <h2>Assemble product from parts:</h2>
   <form action="/product/[product:name]/assemble" method="post">
     <input type="hidden" name="xsrf" value="[xsrf]">
     <div><label for="part">Part</label>
       <select name="part" id="part" >
-          {{ for part in [parts] }}
-          <option value="[part:part:name]">[part:part:name]{{ if [part:assemblycosts] }} - [part:assemblycosts]{{ endif }}</option>
+          {{ for part in [possibleparts] }}
+          <option value="[part:name]">[part:name]{{ if [part:assemblycosts] }} - [part:assemblycosts]{{ endif }}</option>
           {{ endfor }}
         </select>
     </div>
