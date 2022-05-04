@@ -137,10 +137,18 @@ class PageMaker:
     """Returns the product Json"""
     product = model.Product.FromName(self.connection, name)
     return {
-        'product': product['name'],
-        'cost': product['cost'],
-        'assemblycosts': product['assemblycosts'],
-        'vat': product['vat'],
+        'product':
+            product['name'],
+        'cost':
+            product['cost'],
+        'assemblycosts':
+            product['assemblycosts'],
+        'vat':
+            product['vat'],
+        'stock':
+            product.currentstock,
+        'possible_stock':
+            product.currentstock + product.possiblestock['available']
     }
 
   @uweb3.decorators.loggedin
@@ -302,4 +310,7 @@ class PageMaker:
             'amount': amount,
             'reference': self.post.get('reference', '')
         })
-    return {'stock': product.currentstock}
+    return {
+        'stock': product.currentstock,
+        'possible_stock': product.possiblestock
+    }
