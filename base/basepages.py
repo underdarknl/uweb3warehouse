@@ -57,8 +57,6 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
                                                       self.DEFAULTPAGESIZE))
 
   def _PreRequest(self):
-    model.Client.IsFirstClient(
-        self.connection)  # TODO: Remove this, temp fix for connector issue
     if self.config.Read():
       try:
         locale.setlocale(locale.LC_ALL,
