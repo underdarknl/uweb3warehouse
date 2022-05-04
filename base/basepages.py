@@ -27,13 +27,8 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
 
   DEFAULTPAGESIZE = 10
 
-  def __init__(self, *args, **kwds):
-    super(PageMaker, self).__init__(*args, **kwds)
-    self.connection.modelcache = model.modelcache.ClearCache()
-
   def _PostInit(self):
     """Sets up all the default vars"""
-    self.connection.modelcache = model.modelcache.ClearCache()
     self.parser.RegisterTag('scripts', None)
     self.parser.RegisterTag('year', time.strftime('%Y'))
     self.parser.RegisterFunction('CentRound', CentRound)
@@ -68,7 +63,6 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
         self.parser.RegisterFunction('currency', lambda x: x)
 
   def _PostRequest(self, response):
-    cleanups = model.modelcache.CleanCache(self.connection.modelcache)
     response.headers.update({
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': '*',

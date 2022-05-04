@@ -9,7 +9,6 @@ import re
 
 # Custom modules
 from uweb3 import model
-from base.libs import modelcache
 
 from passlib.hash import pbkdf2_sha256
 import secrets
