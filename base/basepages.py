@@ -182,7 +182,10 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
       user = model.Session(self.connection)
     except Exception:
       raise ValueError('Session cookie invalid')
-    user = model.User.FromPrimary(self.connection, int(str(user)))
+    try:
+      user = model.User.FromPrimary(self.connection, int(str(user)))
+    except model.NotExistError:
+      return None
     if user['active'] != 'true':
       raise ValueError('User not active, session invalid')
     return user
@@ -195,23 +198,24 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
     If these fields are already filled out, this page will not function any
     longer.
     """
-    if self.options.get('general', {}).get('host', False):
-      return self.RequestIndex()
-    if (self.post and 'email' in self.post and 'password' in self.post and
-        'password_confirm' in self.post and 'hostname' in self.post and
-        self.post.getfirst('password')
+    if not self.post or not model.User.IsFirstUser(self.connection):
+      return self.RequestLogin()
+
+    if ('email' in self.post and 'password' in self.post and
+        'password_confirm' in self.post and self.post.getfirst('password')
         == self.post.getfirst('password_confirm')):
-      user = model.User.Create(
-          self.connection, {
-              'ID': 1,
-              'email': self.post.getfirst('email'),
-              'password': '',
-              'active': 'true'
-          })
       try:
-        user.UpdatePassword(self.post.getfirst('password', ''))
+        user = model.User.Create(self.connection, {
+            'ID': 1,
+            'name': self.post.getfirst('email'),
+            'active': 'true',
+            'password': self.post.getfirst('password'),
+        },
+                                 generate_password_hash=True)
       except ValueError:
         return {'error': 'Password too short, 8 characters minimal.'}
+
+      model.Session.Create(self.connection, int(user), path="/")
 
       self.config.Create('general', 'host', self.post.getfirst('hostname'))
       self.config.Create('general', 'locale',
