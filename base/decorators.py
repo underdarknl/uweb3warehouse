@@ -1,4 +1,3 @@
-from functools import wraps
 from http import HTTPStatus
 import uweb3
 from base.model import model
@@ -41,7 +40,6 @@ def apiuser(f):
 
 
 def json_error_wrapper(func):
-  wraps(func)
 
   def wrapper_schema_validation(*args, **kwargs):
     try:
