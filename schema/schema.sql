@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 8.0.28, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.29, for Linux (x86_64)
 --
 -- Host: 127.0.0.1    Database: warehouse
 -- ------------------------------------------------------
--- Server version	8.0.28-0ubuntu0.20.04.3
+-- Server version	8.0.29-0ubuntu0.20.04.2
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -35,76 +35,6 @@ CREATE TABLE `apiuser` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `client`
---
-
-DROP TABLE IF EXISTS `client`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `client` (
-  `ID` mediumint unsigned NOT NULL AUTO_INCREMENT,
-  `clientNumber` mediumint unsigned NOT NULL,
-  `name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `city` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `postalCode` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `email` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `telephone` varchar(30) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `address` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  PRIMARY KEY (`ID`),
-  UNIQUE KEY `ID_UNIQUE` (`ID`),
-  KEY `clientnumber` (`clientNumber`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `invoice`
---
-
-DROP TABLE IF EXISTS `invoice`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `invoice` (
-  `ID` int unsigned NOT NULL AUTO_INCREMENT,
-  `sequenceNumber` char(8) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-  `dateCreated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `dateDue` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `title` varchar(80) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `description` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `client` mediumint unsigned NOT NULL,
-  `status` enum('new','sent','paid') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `reservation` tinyint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`ID`),
-  UNIQUE KEY `sequenceNumber` (`sequenceNumber`),
-  KEY `status` (`status`),
-  KEY `fk_invoice_1_idx` (`client`),
-  CONSTRAINT `fk_invoice_1` FOREIGN KEY (`client`) REFERENCES `client` (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `invoiceProduct`
---
-
-DROP TABLE IF EXISTS `invoiceProduct`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `invoiceProduct` (
-  `ID` int unsigned NOT NULL AUTO_INCREMENT,
-  `invoice` int unsigned NOT NULL,
-  `product` mediumint unsigned NOT NULL,
-  `price` decimal(8,2) NOT NULL,
-  `vat_percentage` smallint NOT NULL,
-  `name` varchar(45) COLLATE utf8_unicode_ci NOT NULL,
-  `quantity` mediumint NOT NULL,
-  PRIMARY KEY (`ID`),
-  KEY `invoice` (`invoice`),
-  KEY `fk_invoiceproduct_1_idx` (`product`),
-  CONSTRAINT `fk_invoiceproduct_1` FOREIGN KEY (`product`) REFERENCES `product` (`ID`) ON DELETE RESTRICT,
-  CONSTRAINT `product_ibfk_1` FOREIGN KEY (`invoice`) REFERENCES `invoice` (`ID`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `product`
 --
 
@@ -130,7 +60,7 @@ CREATE TABLE `product` (
   UNIQUE KEY `sku_UNIQUE` (`supplier`,`sku`,`dateDeleted`),
   KEY `supplier` (`supplier`),
   CONSTRAINT `supplier` FOREIGN KEY (`supplier`) REFERENCES `supplier` (`ID`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -151,7 +81,7 @@ CREATE TABLE `productpart` (
   KEY `part` (`part`),
   CONSTRAINT `part` FOREIGN KEY (`part`) REFERENCES `product` (`ID`) ON UPDATE CASCADE,
   CONSTRAINT `product` FOREIGN KEY (`product`) REFERENCES `product` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169,7 +99,7 @@ CREATE TABLE `stock` (
   `lot` varchar(45) DEFAULT NULL,
   `dateCreated` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=95 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -229,4 +159,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-05-03 11:45:57
+-- Dump completed on 2022-05-04 12:21:51
