@@ -159,7 +159,7 @@ class Apiuser(model.Record):
                  conditions=('`key` = %s' % connection.EscapeValues(key),
                              '`active` = "true"')))
     if not user:
-      raise cls.NotExistError('Invalid key, or inactive key.')
+      raise cls.NotExistError('Invalid or inactive apikey')
     return user[0]
 
 
