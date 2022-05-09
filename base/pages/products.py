@@ -284,7 +284,6 @@ class PageMaker:
     Send negative amount to Sell a product, positive amount to put product back
     into stock"""
     product = model.Product.FromName(self.connection, name)
-    model.Product.autocommit(self.connection, False)
     amount = int(self.post.get('amount', -1))
     currentstock = product.currentstock
     if (amount < 0 and  # only assemble when we sell
@@ -297,22 +296,58 @@ class PageMaker:
             'Assembly for %s' %
             self.post.get('reference') if 'reference' in self.post else None)
       except model.AssemblyError as error:
-        model.Product.rollback(self.connection)
         raise ValueError(error.args[0])
 
+    # by now we should have enough products in stock, one way or another
+    model.Stock.Create(
+        self.connection, {
+            'product': product,
+            'amount': amount,
+            'reference': self.post.get('reference', '')
+        })
+    model.Product.commit(self.connection)
+    return {
+        'stock': product.currentstock,
+        'possible_stock': product.possiblestock
+    }
+
+  @uweb3.decorators.ContentType('application/json')
+  @json_error_wrapper
+  @apiuser
+  def JsonProductStockBulk(self):
+    products = self.post.get('products')
+    model.Product.autocommit(self.connection, False)
     try:
-      # by now we should have enough products in stock, one way or another
-      model.Stock.Create(
-          self.connection, {
-              'product': product,
-              'amount': amount,
-              'reference': self.post.get('reference', '')
-          })
-      model.Product.commit(self.connection)
-    except Exception:
+      for product in products:
+        self.UpdateStock(product['name'], product['quantity'],
+                         self.post.get('reference'))
+    except Exception as ex:
       model.Product.rollback(self.connection)
+      raise ex
     finally:
       model.Product.autocommit(self.connection, True)
+    return {'products': products}
+
+  def UpdateStock(self, product_name, amount, reference=None):
+    product = model.Product.FromName(self.connection, product_name)
+    currentstock = product.currentstock
+    if (amount < 0 and  # only assemble when we sell
+        abs(amount) >
+        currentstock):  # only assemble when we have not enough stock
+      try:
+        product.Assemble(
+            abs(amount) -
+            currentstock,  # only assemble what is missing for this sale
+            'Assembly for %s' % reference)
+      except model.AssemblyError as error:
+        raise ValueError(error.args[0])
+
+    model.Stock.Create(
+        self.connection, {
+            'product': product,
+            'amount': amount,
+            'reference': self.post.get('reference', '')
+        })
     return {
         'stock': product.currentstock,
         'possible_stock': product.possiblestock

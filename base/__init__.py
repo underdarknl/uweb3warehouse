@@ -46,10 +46,13 @@ def main():
           ('/product/([^/]*)/assemble', 'RequestProductAssemble', 'POST'),
           ('/product/([^/]*)/assembly', 'RequestProductAssemblySave', 'POST'),
           ('/product/([^/]*)/stock', 'RequestProductStock', 'POST'),
+
+          # API
           ('/api/v1/product/([^/]*)', 'JsonProduct', 'GET'),
           ('/api/v1/products', 'JsonProducts', 'GET'),
           ('/api/v1/search_product/([^/]*)', 'JsonProductSearch'),
           ('/api/v1/product/([^/]*)/stock', 'JsonProductStock', 'POST'),
+          ('/api/v1/products/bulk_stock', 'JsonProductStockBulk', 'POST'),
 
           # Helper files
           ('(/styles/.*)', 'Static'),

@@ -121,6 +121,7 @@ class User(model.Record):
 
 class Session(model.SecureCookie):
   """Provides a model to request the secure cookie named 'session'"""
+  _TABLE = 'warehouse'
 
 
 class Apiuser(model.Record):
