@@ -154,7 +154,7 @@ class PageMaker:
             product = model.Product.Create(
                 self.connection,
                 {
-                    "name": self.post.getfirst("name", "").replace(" ", "_"),
+                    "name": self.post.getfirst("name", ""),
                     "ean": int(self.post.getfirst("ean"))
                     if "ean" in self.post
                     else None,

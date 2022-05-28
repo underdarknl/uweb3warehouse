@@ -91,9 +91,10 @@ class Product(model.Record):
     def _PreCreate(self, cursor):
         super()._PreCreate(cursor)
         if self["name"]:
-            self["name"] = re.search(
-                "([\w\-_\.,]+)", self["name"].replace(" ", "_")
-            ).groups()[0][:255]
+            self["name"] = self["name"].replace("/", "_")
+        #     self["name"] = re.search(
+        #         "([\w\-_\.,]+)", self["name"].replace(" ", "_")
+        #     ).groups()[0][:255]
         if not self["gs1"]:  # set empty string to None for key contraints
             self["gs1"] = None
         if not self["sku"]:  # set empty string to None for key contraints
@@ -104,9 +105,10 @@ class Product(model.Record):
     def _PreSave(self, cursor):
         super()._PreSave(cursor)
         if self["name"]:
-            self["name"] = re.search(
-                "([\w\-_\.,]+)", self["name"].replace(" ", "_")
-            ).groups()[0][:255]
+            self["name"] = self["name"].replace("/", "_")
+        #     self["name"] = re.search(
+        #         "([\w\-_\.,]+)", self["name"].replace(" ", "_")
+        #     ).groups()[0][:255]
         if not self["gs1"]:  # set empty string to None for key contraints
             self["gs1"] = None
         if not self["sku"]:  # set empty string to None for key contraints
