@@ -1,3 +1,6 @@
+import difflib
+from fileinput import close
+
 import pandas
 
 from base import model
@@ -33,14 +36,13 @@ class StockParser:
 
     def _normalize_column_value(self, value):
         match = " ".join(value.split())
-        values = [match]
-
-        if "-" in match:
-            match = match.replace(" ", "_")
-            match = match.replace("-", "_")
-            values.append(match)
-        if " " in match:
-            values.append(match.replace(" ", "_"))
+        values = [match, match.replace("/", "_")]
+        # if "-" in match:
+        #     match = match.replace(" ", "_")
+        #     match = match.replace("-", "_")
+        #     values.append(match)
+        # if " " in match:
+        #     values.append(match.replace(" ", "_"))
         # if "(" in match:
         #     values.append(match.split("(")[0])
         return values
@@ -59,6 +61,7 @@ class StockImporter:
 
     def load_product_data(self):
         self.products = list(model.Product.List(self.connection))
+        self.product_names = [p["name"] for p in self.products]
 
     def _import_list(self, products):
         for product in products:
@@ -66,10 +69,11 @@ class StockImporter:
 
     def _import(self, result):
         for name in result["Type"]:
-            for product in self.products:
-                if name == product["name"]:
-                    self._add_stock(product, result["Op voorraad"])
-                    break
+            closest_match = difflib.get_close_matches(name, self.product_names, n=1)[0]
+            product = next(
+                (x for x in self.products if x["name"] == closest_match), None
+            )
+            return self._add_stock(product, result["Op voorraad"])
 
     def _add_stock(self, product, amount):
         return model.Stock.Create(
