@@ -120,31 +120,46 @@ class PageMaker:
     @uweb3.decorators.TemplateParser("supplier.html")
     def UpdateSupplierStock(self, supplier):
         if not self.files or not self.files.get("fileupload"):
-            return
+            return self.Error(error="No file was uploaded.")
+
+        column_name_mapping = self.post.getfirst("column_name_mapping", None)
+        column_stock_mapping = self.post.getfirst("column_stock_mapping", None)
+
+        if not column_name_mapping or not column_stock_mapping:
+            return self.Error(error="Name and stock mapping values must be set.")
+
         supplier = model.Supplier.FromName(self.connection, supplier)
-        mapping = {"amount": "Op voorraad", "name": "Type"}
-        # Get the only file in the request
         file = self.files["fileupload"][0]
-        # Pass the content of the file to a StringIO object
-        test = StringIO(file["content"])
-        # Create a parser that looks for specific columns
+
         parser = stock_importer.StockParser(
-            test,
-            ("Fabrikant", "Type", "Op voorraad", "Prijs per stuk"),
-            ("Type",),
+            file_path=StringIO(file["content"]),
+            columns=(
+                column_name_mapping,
+                column_stock_mapping,
+            ),
+            normalize_columns=(column_name_mapping,),
         )
-        # Parse the file in an attempt to find the products
+
+        try:
+            parsed_result = parser.Parse()
+        except KeyError as exception:
+            return self.RequestInvalidcommand(error=exception.args[0])
+
         products = list(
             model.Product.List(
                 self.connection, conditions=[f'supplier = {supplier["ID"]}']
             )
         )
+
         importer = stock_importer.StockImporter(
             self.connection,
-            mapping,
+            {
+                "amount": column_stock_mapping,
+                "name": column_name_mapping,
+            },
         )
         importer.Import(
-            parser.Parse(),
+            parsed_result,
             products,
         )
         return {
