@@ -1,38 +1,108 @@
 [header]
 <script src="/js/forms.js"></script>
 <section>
-  <h2>Edit Supplier: [supplier:name]</h2>
-  <p><a href="/?supplier=[supplier:ID]">Products by this supplier</a></a>
-  <form action="/supplier/[supplier:name]" method="post" class="supplier">
-    <input type="hidden" name="xsrf" value="[xsrf]" />
-    <div><label for="name">Name</label><input type="text" id="name" name="name" value="[supplier:name]" maxlength="45" required></div>
-    <p>The name for each supplier in your warehouse must be unique.</p>
-    <div><label for="website">Website</label><input type="url" id="website" name="website" value="[supplier:website|NullString]" maxlength="255"></div>
-    <div><label for="telephone">Telephone</label><input type="telephone" id="telephone" name="telephone" value="[supplier:telephone|NullString]" maxlength="45"></div>
-    <div><label for="contact_person">Contact person</label><input type="text" id="contact_person" name="contact_person" value="[supplier:contact_person|NullString]" maxlength="255"></div>
-    <div><label for="email_address">Email address</label><input type="email" id="email_address" name="email_address" value="[supplier:email_address|NullString]" maxlength="255"></div>
-    <div><label for="gscode">GS code</label><input type="number" id="gscode" name="gscode" value="[supplier:gscode|NullString]" maxlength="10"></div>
-    <p>The GS code for each supplier in your warehouse should be unique, it is used in conjunction with the suppliers products GS1 code to determine the EAN barcode.</p>
-    <div><input type="submit" value="Save changes" class="primary"></div>
-  </form>
+    <h2>Edit Supplier: [supplier:name]</h2>
+    <p><a href="/?supplier=[supplier:ID]">Products by this supplier</a></a>
+    <form action="/supplier/[supplier:name]" method="post" class="supplier">
+        <input type="hidden" name="xsrf" value="[xsrf]" />
+        <div><label for="name">Name</label><input type="text" id="name" name="name" value="[supplier:name]"
+                maxlength="45" required></div>
+        <p>The name for each supplier in your warehouse must be unique.</p>
+        <div><label for="website">Website</label><input type="url" id="website" name="website"
+                value="[supplier:website|NullString]" maxlength="255"></div>
+        <div><label for="telephone">Telephone</label><input type="telephone" id="telephone" name="telephone"
+                value="[supplier:telephone|NullString]" maxlength="45"></div>
+        <div><label for="contact_person">Contact person</label><input type="text" id="contact_person"
+                name="contact_person" value="[supplier:contact_person|NullString]" maxlength="255"></div>
+        <div><label for="email_address">Email address</label><input type="email" id="email_address" name="email_address"
+                value="[supplier:email_address|NullString]" maxlength="255"></div>
+        <div><label for="gscode">GS code</label><input type="number" id="gscode" name="gscode"
+                value="[supplier:gscode|NullString]" maxlength="10"></div>
+        <p>The GS code for each supplier in your warehouse should be unique, it is used in conjunction with the
+            suppliers products GS1 code to determine the EAN barcode.</p>
+        <div><input type="submit" value="Save changes" class="primary"></div>
+    </form>
 </section>
 
 <section>
-  <h2>Contact Supplier:</h2>
-  <nav>
-    <ul>
-    {{ if [supplier:telephone] }}<li>Call: <a href="tel:[supplier:telephone|NullString]">[supplier:telephone|NullString]</a></li>{{ endif }}
-    {{ if [supplier:email_address] }}<li>Mail: <a href="mailto:[supplier:email_address|NullString]">[supplier:email_address|NullString]</a></li>{{ endif }}
-    {{ if [supplier:website] }}<li>Visit: <a href="[supplier:website|NullString]" rel="external">[supplier:website|NullString]</a></li>{{ endif }}
-    </ul>
-  </nav>
+    <h2>Contact Supplier:</h2>
+    <nav>
+        <ul>
+            {{ if [supplier:telephone] }}<li>Call: <a
+                    href="tel:[supplier:telephone|NullString]">[supplier:telephone|NullString]</a></li>{{ endif }}
+            {{ if [supplier:email_address] }}<li>Mail: <a
+                    href="mailto:[supplier:email_address|NullString]">[supplier:email_address|NullString]</a></li>{{
+            endif }}
+            {{ if [supplier:website] }}<li>Visit: <a href="[supplier:website|NullString]"
+                    rel="external">[supplier:website|NullString]</a></li>{{ endif }}
+        </ul>
+    </nav>
+</section>
+<section>
+    <h2>Import stock</h2>
+    <form action="/supplier/updatestock/[supplier:name]" method="post" class="supplier" enctype="multipart/form-data">
+        <input type="hidden" id="xsrf" name="xsrf" value="[xsrf]" />
+        <label for="files">Select files:</label>
+        <input type="file" id="fileupload" name="fileupload" />
+        <input type="submit" value="upload" />
+    </form>
 </section>
 
+{{ ifpresent [processed_products] }}
+    {{ if [processed_products] }}
+        <section>
+            <h2>Processed products</h2>
+            <table class="products">
+                <thead>
+                    <tr>
+                        <th>Parsed product</th>
+                        <th>Database match</th>
+                        <th>Added stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ for pair in [processed_products] }}
+                    <tr>
+                        <td><a href="/product/[pair:parsed_product:name]">[pair:parsed_product:name]</a></td>
+                        <td><a href="/product/[product:name]">[pair:product:name]</a></td>
+                        <td>[pair:parsed_product:amount]</td>
+                    </tr>
+                    {{ endfor }}
+                </tbody>
+            </table>
+        </section>
+    {{ endif }}
+{{ endif }}
+
+{{ ifpresent [unprocessed_products] }}
+    {{ if [unprocessed_products] }}
+        <section>
+            <h2>Unprocessed products</h2>
+            <table class="products">
+                <thead>
+                    <tr>
+                        <th>Found product</th>
+                        <th>Stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ for product in [unprocessed_products] }}
+                    <tr>
+                        <td><a href="/product/[pair:parsed_product:name]">[product:name]</a></td>
+                        <td>[product:amount]</td>
+                    </tr>
+                    {{ endfor }}
+                </tbody>
+            </table>
+        </section>
+    {{ endif }}
+{{ endif }}
+
 <section>
-  <h2>Delete Supplier:</h2>
-  <form action="/supplier/[supplier:name]/remove" method="post">
-    <input type="hidden" name="xsrf" value="[xsrf]">
-    <input type="submit" value="Remove" onclick="return confirm('Are you sure you want to delete this supplier?');">
-  </form>
+    <h2>Delete Supplier:</h2>
+    <form action="/supplier/[supplier:name]/remove" method="post">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+        <input type="submit" value="Remove" onclick="return confirm('Are you sure you want to delete this supplier?');">
+    </form>
 </section>
 [footer]
