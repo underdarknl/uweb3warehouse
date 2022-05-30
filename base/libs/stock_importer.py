@@ -48,6 +48,13 @@ class StockParser:
     def _process_dataframe(self, dataframe):
         """Mutate the dataframe by normalizing the columns that we are interested in so that the value matches the value stored in the database."""
         for result in dataframe:
+            missing_columns = [
+                column for column in self.columns if column not in result
+            ]
+            if missing_columns:
+                raise KeyError(
+                    f"The following columns could not be found: {missing_columns}"
+                )
             self._normalize(result)
         return dataframe
 
@@ -70,19 +77,19 @@ class StockImporter:
         self.unprocessed_products = []
         self.connection = connection
         self.mapping = mapping
-        self.product_names = [p["name"] for p in self.products]
 
-    def Import(self, results, products):
+    def Import(self, parsed_results, products):
         """Attempt to find a database product for each result.
         If a product is found, add the stock to the product.
 
         Args:
-            results (list[dict]): List of dictionaries that were normalized by the StockParser class
+            parsed_results (list[dict]): List of dictionaries that were normalized by the StockParser class
             products (list[model.Prouct]): A list of all the products from the supplier that we want to import
         """
-        self.results = results
+        self.parsed_results = parsed_results
         self.products = products
-        for found_product_list in self.results:
+        self.product_names = [p["name"] for p in self.products]
+        for found_product_list in self.parsed_results:
             self._import_products(found_product_list)
 
     def _import_products(self, products):
