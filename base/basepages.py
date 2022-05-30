@@ -5,6 +5,7 @@ import locale
 
 # standard modules
 import time
+from io import StringIO
 
 # uweb modules
 import uweb3
@@ -13,6 +14,7 @@ from uweb3.libs import mail
 # project modules
 from base import model
 from base.decorators import NotExistsErrorCatcher
+from base.libs import stock_importer
 from base.pages import products
 
 from .helpers import PagedResult
@@ -630,6 +632,34 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin, products.PageMaker):
         supplier = model.Supplier.FromName(self.connection, supplier)
         supplier.Delete()
         return self.req.Redirect("/suppliers", httpcode=301)
+
+    @uweb3.decorators.loggedin
+    @uweb3.decorators.checkxsrf
+    @uweb3.decorators.TemplateParser("supplier.html")
+    def UpdateSupplierStock(self, supplier):
+        if not self.files or not self.files.get("fileupload"):
+            return
+        mapping = {"amount": "Op voorraad", "name": "Type"}
+        # Get the only file in the request
+        file = self.files["fileupload"][0]
+        # Pass the content of the file to a StringIO object
+        test = StringIO(file["content"])
+        # Create a parser that looks for specific columns
+        parser = stock_importer.StockParser(
+            test,
+            ("Fabrikant", "Type", "Op voorraad", "Prijs per stuk"),
+            ("Type",),
+        )
+        # Parse the file in an attempt to find the products
+        importer = stock_importer.StockImporter(
+            self.connection, parser.Parse(), mapping
+        )
+        importer.Import()
+        return {
+            "supplier": model.Supplier.FromName(self.connection, supplier),
+            "processed_products": importer.processed_products,
+            "unprocessed_products": importer.unprocessed_products,
+        }
 
     def XSRFInvalidToken(self):
         """Show that the users XSRF token is b0rked"""

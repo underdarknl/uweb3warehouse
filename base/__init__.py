@@ -36,6 +36,7 @@ def main():
             ("/gs1", "RequestGS1"),
             ("/ean", "RequestEAN"),
             ("/suppliers", "RequestSupplierNew", "POST"),
+            ("/supplier/updatestock/([^/]*)", "UpdateSupplierStock", "POST"),
             ("/suppliers", "RequestSuppliers"),
             ("/supplier/([^/]*)", "RequestSupplierSave", "POST"),
             ("/supplier/([^/]*)", "RequestSupplier", "GET"),
