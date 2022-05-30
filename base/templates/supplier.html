@@ -23,7 +23,6 @@
         <div><input type="submit" value="Save changes" class="primary"></div>
     </form>
 </section>
-
 <section>
     <h2>Contact Supplier:</h2>
     <nav>
@@ -41,10 +40,24 @@
 <section>
     <h2>Import stock</h2>
     <form action="/supplier/updatestock/[supplier:name]" method="post" class="supplier" enctype="multipart/form-data">
-        <input type="hidden" id="xsrf" name="xsrf" value="[xsrf]" />
+    <input type="hidden" id="xsrf" name="xsrf" value="[xsrf]" />
+    <fieldset>
+        <legend>Setup parser column mappings</legend>
+        <div>
+            <label for="column_name_mapping">Column value containing product name</label>
+            <input name="column_name_mapping" id="column_name_mapping" ></input>
+        </div>
+        <div>
+            <label for="column_stock_mapping">Column value containing product stock</label>
+            <input name="column_stock_mapping" id="column_stock_mapping"></input>
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>Import HTML table containing stock data</legend>
         <label for="files">Select files:</label>
         <input type="file" id="fileupload" name="fileupload" />
-        <input type="submit" value="upload" />
+    </fieldset>
+    <input type="submit" value="upload" />
     </form>
 </section>
 
@@ -88,7 +101,7 @@
                 <tbody>
                     {{ for product in [unprocessed_products] }}
                     <tr>
-                        <td><a href="/product/[pair:parsed_product:name]">[product:name]</a></td>
+                        <td>[product:name]</td>
                         <td>[product:amount]</td>
                     </tr>
                     {{ endfor }}
