@@ -1,4 +1,4 @@
-from warehouse.products import products
+from warehouse.products import api, products
 
 urls = [
     (
@@ -40,26 +40,26 @@ urls = [
     ),
     (
         "/api/v1/product/([^/]*)",
-        (products.PageMaker, "JsonProduct"),
+        (api.PageMaker, "JsonProduct"),
         "GET",
     ),
     (
         "/api/v1/products",
-        (products.PageMaker, "JsonProducts"),
+        (api.PageMaker, "JsonProducts"),
         "GET",
     ),
     (
         "/api/v1/search_product/([^/]*)",
-        (products.PageMaker, "JsonProductSearch"),
+        (api.PageMaker, "JsonProductSearch"),
     ),
     (
         "/api/v1/product/([^/]*)/stock",
-        (products.PageMaker, "JsonProductStock"),
+        (api.PageMaker, "JsonProductStock"),
         "POST",
     ),
     (
         "/api/v1/products/bulk_stock",
-        (products.PageMaker, "JsonProductStockBulk"),
+        (api.PageMaker, "JsonProductStockBulk"),
         "POST",
     ),
 ]
