@@ -1,17 +1,20 @@
-# standard modules
+import os
 from io import StringIO
 
-# uweb modules
 import uweb3
 
-# project modules
-from base import model
-from base.decorators import NotExistsErrorCatcher
-from base.helpers import PagedResult
-from base.libs import stock_importer
+from warehouse import basepages
+from warehouse.common import model as common_model
+from warehouse.common.decorators import NotExistsErrorCatcher
+from warehouse.common.helpers import PagedResult
+from warehouse.products import helpers
+from warehouse.products import model as product_model
+from warehouse.suppliers import model
 
 
-class PageMaker:
+class PageMaker(basepages.PageMaker):
+    TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
+
     @uweb3.decorators.loggedin
     @uweb3.decorators.TemplateParser("suppliers.html")
     def RequestSuppliers(self, error=None, success=None):
@@ -97,7 +100,7 @@ class PageMaker:
             return self.RequestInvalidcommand(
                 error="Input error, some fields are wrong."
             )
-        except model.InvalidNameError:
+        except common_model.InvalidNameError:
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the supplier."
             )
@@ -131,7 +134,7 @@ class PageMaker:
         supplier = model.Supplier.FromName(self.connection, supplier)
         file = self.files["fileupload"][0]
 
-        parser = stock_importer.StockParser(
+        parser = helpers.StockParser(
             file_path=StringIO(file["content"]),
             columns=(
                 column_name_mapping,
@@ -146,12 +149,12 @@ class PageMaker:
             return self.RequestInvalidcommand(error=exception.args[0])
 
         products = list(
-            model.Product.List(
+            product_model.Product.List(
                 self.connection, conditions=[f'supplier = {supplier["ID"]}']
             )
         )
 
-        importer = stock_importer.StockImporter(
+        importer = helpers.StockImporter(
             self.connection,
             {
                 "amount": column_stock_mapping,

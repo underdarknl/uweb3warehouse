@@ -1,18 +1,28 @@
 #!/usr/bin/python
 """Request handlers for the uWeb3 warehouse inventory software"""
 
-# standard modules
-import urllib
+import os
+import urllib.parse
 
-# uweb modules
 import uweb3
 
-from base import model
-from base.decorators import NotExistsErrorCatcher, apiuser, json_error_wrapper
-from base.helpers import PagedResult
+from warehouse import basepages
+from warehouse.common import model as common_model
+from warehouse.common.decorators import (
+    NotExistsErrorCatcher,
+    apiuser,
+    json_error_wrapper,
+)
+from warehouse.common.helpers import PagedResult
+from warehouse.login import model as login_model
+from warehouse.products import model
+from warehouse.suppliers import model as supplier_model
 
 
-class PageMaker:
+class PageMaker(basepages.PageMaker):
+
+    TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
+
     @uweb3.decorators.loggedin
     @uweb3.decorators.TemplateParser("products.html")
     def RequestProducts(self):
@@ -22,12 +32,12 @@ class PageMaker:
         linkarguments = {}
         if "supplier" in self.get:
             try:
-                supplier = model.Supplier.FromPrimary(
+                supplier = supplier_model.Supplier.FromPrimary(
                     self.connection, self.get.getfirst("supplier", None)
                 )
                 conditions.append("supplier = %d" % supplier)
                 linkarguments["supplier"] = int(supplier)
-            except model.User.NotExistError:
+            except login_model.User.NotExistError:
                 pass
 
         products_args = {"conditions": conditions, "order": [("ID", True)]}
@@ -47,12 +57,13 @@ class PageMaker:
             self.connection,
             products_args,
         )
+
         return {
             "supplier": supplier,
             "products": products,
             "linkarguments": urllib.parse.urlencode(linkarguments) or "",
             "query": query,
-            "suppliers": list(model.Supplier.List(self.connection)),
+            "suppliers": list(supplier_model.Supplier.List(self.connection)),
         }
 
     @uweb3.decorators.loggedin
@@ -107,7 +118,7 @@ class PageMaker:
             "parts": parts,
             "partsprice": partsprice,
             "product": product,
-            "suppliers": model.Supplier.List(self.connection),
+            "suppliers": supplier_model.Supplier.List(self.connection),
             "stock": stock,
             "stockrows": stockrows,
         }
@@ -175,7 +186,7 @@ class PageMaker:
             return self.RequestInvalidcommand(
                 error="Input error, some fields are wrong."
             )
-        except model.InvalidNameError:
+        except common_model.InvalidNameError:
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the product."
             )
@@ -275,7 +286,7 @@ class PageMaker:
                         "lot": self.post.getfirst("lot", ""),
                     },
                 )
-        except model.AssemblyError as error:
+        except common_model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
 
@@ -301,7 +312,7 @@ class PageMaker:
                     if "reference" in self.post
                     else None,
                 )
-            except model.AssemblyError as error:
+            except common_model.AssemblyError as error:
                 raise ValueError(error.args[0])
 
         # by now we should have enough products in stock, one way or another
@@ -346,7 +357,7 @@ class PageMaker:
                     - currentstock,  # only assemble what is missing for this sale
                     "Assembly for %s" % reference,
                 )
-            except model.AssemblyError as error:
+            except common_model.AssemblyError as error:
                 raise ValueError(error.args[0])
 
         model.Stock.Create(
@@ -358,3 +369,32 @@ class PageMaker:
             },
         )
         return {"stock": product.currentstock, "possible_stock": product.possiblestock}
+
+    @uweb3.decorators.loggedin
+    @uweb3.decorators.TemplateParser("gs1.html")
+    def RequestGS1(self):
+        """Returns the gs1 page"""
+        products = PagedResult(
+            self.pagesize,
+            self.get.getfirst("page", 1),
+            model.Product.List,
+            self.connection,
+            {"conditions": ["gs1 is not null"], "order": [("gs1", False)]},
+        )
+        return {"products": products}
+
+    @uweb3.decorators.loggedin
+    @uweb3.decorators.TemplateParser("ean.html")
+    def RequestEAN(self):
+        """Returns the EAN page"""
+        products = PagedResult(
+            self.pagesize,
+            self.get.getfirst("page", 1),
+            model.Product.List,
+            self.connection,
+            {
+                "conditions": ["(gs1 is not null or ean is not null)"],
+                "order": [("ean", False)],
+            },
+        )
+        return {"products": products}

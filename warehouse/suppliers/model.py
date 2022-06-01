@@ -13,11 +13,8 @@ import pytz
 # Custom modules
 from uweb3 import model
 
-from base.model import basemodel
-
-__all__ = [
-    "Supplier",
-]
+from warehouse.common import model as common_model
+from warehouse.login import model as login_model
 
 
 class Supplier(model.Record):
@@ -27,7 +24,10 @@ class Supplier(model.Record):
     def List(cls, connection, conditions=[], *args, **kwargs):
         """Returns the Suppliers filterd on not deleted"""
         return super().List(
-            connection, conditions=[basemodel.NOTDELETED] + conditions, *args, **kwargs
+            connection,
+            conditions=[common_model.NOTDELETED] + conditions,
+            *args,
+            **kwargs
         )
 
     @classmethod
@@ -71,7 +71,8 @@ class Supplier(model.Record):
         with connection as cursor:
             supplier = cursor.Select(
                 table=cls.TableName(),
-                conditions=["name=%s" % safe_name, basemodel.NOTDELETED] + conditions,
+                conditions=["name=%s" % safe_name, common_model.NOTDELETED]
+                + conditions,
             )
         if not supplier:
             raise cls.NotExistError("There is no supplier with common name %r" % name)
@@ -95,7 +96,7 @@ class Supplier(model.Record):
                 "([\w\-_\.,]+)", self["name"].replace(" ", "_")
             ).groups()[0][:45]
         if not self["name"]:
-            raise basemodel.InvalidNameError("Provide a valid name")
+            raise common_model.InvalidNameError("Provide a valid name")
 
     def _PreSave(self, cursor):
         super()._PreSave(cursor)
@@ -106,4 +107,4 @@ class Supplier(model.Record):
                 "([\w\-_\.,]+)", self["name"].replace(" ", "_")
             ).groups()[0][:45]
         if not self["name"]:
-            raise basemodel.InvalidNameError("Provide a valid name")
+            raise common_model.InvalidNameError("Provide a valid name")
