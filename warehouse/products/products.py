@@ -65,19 +65,6 @@ class PageMaker(basepages.PageMaker):
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
-    def RequestProductSave(self, name):
-        """Saves changes to the product"""
-        product = model.Product.FromName(self.connection, name)
-        form = forms.ProductForm(self.post)
-        form.validate()
-        if form.errors:
-            return self.RequestProduct(name, form=form)
-        product.update(form.data)
-        product.Save()
-        return uweb3.Redirect(f"/product/{product['name']}", httpcode=303)
-
-    @uweb3.decorators.loggedin
-    @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product.html")
     def RequestProduct(self, name, form=None):
         """Returns the product page"""
@@ -141,8 +128,27 @@ class PageMaker(basepages.PageMaker):
         except self.connection.IntegrityError:
             #  if 'gs1' in error:
             #    return self.Error('That GS1 code was already taken, go back, try again!', 200)
-            return self.Error("That name was already taken, go back, try again!", 200)
+            return self.Error("That name was already taken.", 200)
         return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+
+    @uweb3.decorators.loggedin
+    @NotExistsErrorCatcher
+    def RequestProductSave(self, name):
+        """Saves changes to the product"""
+        product = model.Product.FromName(self.connection, name)
+        form = forms.ProductForm(self.post)
+        form.validate()
+
+        if form.errors:
+            return self.RequestProduct(name, form=form)
+
+        product.update(form.data)
+        try:
+            product.Save()
+        except self.connection.IntegrityError:
+            return self.Error("That name was already taken.", 200)
+
+        return uweb3.Redirect(f"/product/{product['name']}", httpcode=303)
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
