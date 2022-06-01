@@ -19,7 +19,7 @@
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Supplier</th>
+                <!-- <th>Supplier</th> -->
                 <th>Created</th>
                 <th>Delete</th>
             </tr>
@@ -28,7 +28,7 @@
             {{ for product in [products] }}
             <tr>
                 <td><a href="/product/[product:name]">[product:name]</a></td>
-                <td><a href="/supplier/[product:supplier:name]">[product:supplier:name]</a></td>
+                <!-- <td><a href="/supplier/[product:supplier:name]">[product:supplier:name]</a></td> -->
                 <td title="[product:dateCreated]">[product:dateCreated|DateOnly]</td>
                 <td>
                     <form action="/product/[product:name]/remove" method="post">
@@ -84,26 +84,6 @@
 
 <section id="products_new">
     <h3>Create a product or part:</h3>
-    <form action="/" method="post">
-        <input type="hidden" name="xsrf" value="[xsrf]">
-        <div><label for="name">Name</label><input type="text" name="name" id="name" maxlength="255" required></div>
-        <p>The name for each sku in your warehouse must be unique, only products that can be ordered by end customers
-            should have an easily recognizable sku.</p>
-        <div><label for="sku">SKU</label><input type="text" id="sku" name="sku" maxlength="255"></div>
-        <p>The ean barcode for each product or part in your warehouse must be unique.</p>
-        <div><label for="ean">Ean</label><input type="number" id="ean" name="ean" maxlength="13"></div>
-
-        <p>The gs1 for each product or part in your warehouse must be unique.</p>
-        <div><label for="gs1">GS1</label><input type="text" id="gs1" name="gs1" maxlength="255"></div>
-        <p>What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be
-            filled.</p>
-        <div><label for="assemblycosts">Assembly cost</label>
-            <p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts">
-        </div>
-
-        <div><label for="description">Description</label><textarea type="text" id="description" name="description"
-                rows="4"></textarea></div>
-        <div><input type="submit" value="Create a new product." class="primary"></div>
-    </form>
+    {{ inline forms/product.html }}
 </section>
 [footer]

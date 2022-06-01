@@ -92,49 +92,7 @@
 
 <section>
     <h2>Edit Product:</h2>
-    <form action="/product/[product:name]" method="post" class="product">
-        <input type="hidden" name="xsrf" value="[xsrf]" />
-        <div><label for="name">Name</label><input type="text" id="name" name="name" value="[product:name]"
-                maxlength="255" required></div>
-        <p>The name for each product in your warehouse must be unique.</p>
-
-        <div><label for="ean">Ean</label><input type="text" id="ean" name="ean" value="[product:ean|NullString]"
-                maxlength="13"></div>
-        <p>The ean barcode for each product in your warehouse must be unique.</p>
-
-        <div><label for="gs1">GS1</label><input type="text" id="gs1" name="gs1" value="[product:gs1|NullString]"
-                maxlength="255"></div>
-        <p>The gs1 for each product in your warehouse must be unique.</p>
-
-        <div><label for="cost">Buying cost</label>
-            <p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="cost" name="cost"
-                value="[product:cost|NullString]">
-        </div>
-        <p>The price paid to source this product.</p>
-
-        <div><label for="assemblycosts">Assembly cost</label>
-            <p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts"
-                value="[product:assemblycosts|NullString]">
-        </div>
-        <p>What does it cost to use this part in a product? A sticker needs to be applied, a jar needs to be filled.</p>
-
-        <div><label for="vat">Vat percentage</label><input type="number" step="0.01" min="0" id="vat" placeholder="21"
-                name="vat" value="[product:vat]">
-            <p>%</p>
-        </div>
-        <p>The vat percentage paid over the buying costs.</p>
-
-        <div><label for="sku">SKU</label><input type="text" id="sku" name="sku" value="[product:sku|NullString]"
-                maxlength="255"></div>
-        <p>The name for each sku in your warehouse must be unique, only products that can be ordered by end customers
-            should have an easily recognizable sku.</p>
-
-        <div><label for="description">Description</label><textarea type="text" id="description" name="description"
-                rows="[product:description|NullString|TextareaRowCount]">[product:description|NullString]</textarea>
-        </div>
-
-        <div><input type="submit" value="Save changes" class="primary"></div>
-    </form>
+    {{ inline forms/product.html }}
 </section>
 
 {{ if [product:parts] }}
