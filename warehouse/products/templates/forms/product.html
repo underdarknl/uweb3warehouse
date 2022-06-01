@@ -63,7 +63,7 @@
     {{ endif }}
     <div>
         <label for="assemblycosts">Assembly cost</label>
-        <p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts"
+        <p>&euro;&nbsp;</p><input type="number" step="0.01" min="0" id="assemblycosts" name="assemblycosts"
             value="{{ ifpresent [product] }}[product:assemblycosts|NullString]{{ endif }}" required>
     </div>
 
