@@ -11,7 +11,7 @@ from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher
 from warehouse.common.helpers import PagedResult
 from warehouse.login import model as login_model
-from warehouse.products import model
+from warehouse.products import forms, model
 from warehouse.suppliers import model as supplier_model
 
 
@@ -67,24 +67,18 @@ class PageMaker(basepages.PageMaker):
     def RequestProductSave(self, name):
         """Saves changes to the product"""
         product = model.Product.FromName(self.connection, name)
-        updated_product = {
-            "sku": self.post.getfirst("sku", "").replace(" ", "_")
-            if "sku" in self.post
-            else None,
-            "name": self.post.getfirst("name", ""),
-            "ean": int(self.post.getfirst("ean")) if "ean" in self.post else None,
-            "gs1": int(self.post.getfirst("gs1")) if "gs1" in self.post else None,
-            "description": self.post.getfirst("description", ""),
-            "assemblycosts": float(self.post.getfirst("assemblycosts", 0)),
-        }
-        product.update(updated_product)
+        form = forms.ProductForm(self.post)
+        form.validate()
+        if form.errors:
+            return self.RequestProduct(name, form=form)
+        product.update(form.data)
         product.Save()
-        return uweb3.Redirect(f"/products/{product['name']}")
+        return uweb3.Redirect(f"/product/{product['name']}", httpcode=303)
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product.html")
-    def RequestProduct(self, name):
+    def RequestProduct(self, name, form=None):
         """Returns the product page"""
         product = model.Product.FromName(self.connection, name)
         parts = product.parts
@@ -125,6 +119,7 @@ class PageMaker(basepages.PageMaker):
             "suppliers": supplier_model.Supplier.List(self.connection),
             "stock": stock,
             "stockrows": stockrows,
+            "form": form,
         }
 
     @uweb3.decorators.loggedin
