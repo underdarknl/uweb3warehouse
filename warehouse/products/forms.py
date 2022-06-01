@@ -18,4 +18,6 @@ class ProductForm(Form):
         "gs1", [validators.NumberRange(min=1, max=32767), validators.Optional()]
     )
     description = TextAreaField("description", validators=[validators.Optional()])
-    assemblycosts = DecimalField("assemblycosts", validators=[validators.Optional()])
+    assemblycosts = DecimalField(
+        "assemblycosts", validators=[validators.DataRequired()]
+    )
