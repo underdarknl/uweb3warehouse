@@ -365,7 +365,7 @@ class PageMaker(
         )
         if command is None and error is None:
             command = "%s for method %s" % (self.req.path, self.req.method)
-        page_data = self.parser.Parse("404.html", command=command, error=error)
+        page_data = self.parser.Parse("parts/404.html", command=command, error=error)
         return uweb3.Response(content=page_data, httpcode=httpcode)
 
     @uweb3.decorators.ContentType("application/json")
