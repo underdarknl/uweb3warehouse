@@ -67,11 +67,19 @@ class PageMaker(basepages.PageMaker):
     def RequestProductSave(self, name):
         """Saves changes to the product"""
         product = model.Product.FromName(self.connection, name)
-        for key in product.keys():
-            if key in self.post:
-                product[key] = self.post.getfirst(key)
+        updated_product = {
+            "sku": self.post.getfirst("sku", "").replace(" ", "_")
+            if "sku" in self.post
+            else None,
+            "name": self.post.getfirst("name", ""),
+            "ean": int(self.post.getfirst("ean")) if "ean" in self.post else None,
+            "gs1": int(self.post.getfirst("gs1")) if "gs1" in self.post else None,
+            "description": self.post.getfirst("description", ""),
+            "assemblycosts": float(self.post.getfirst("assemblycosts", 0)),
+        }
+        product.update(updated_product)
         product.Save()
-        return self.RequestProducts()
+        return uweb3.Redirect(f"/products/{product['name']}")
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
