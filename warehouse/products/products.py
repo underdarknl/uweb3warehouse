@@ -21,7 +21,7 @@ class PageMaker(basepages.PageMaker):
 
     @uweb3.decorators.loggedin
     @uweb3.decorators.TemplateParser("products.html")
-    def RequestProducts(self):
+    def RequestProducts(self, form=None):
         """Returns the Products page"""
         supplier = None
         conditions = []
@@ -60,6 +60,7 @@ class PageMaker(basepages.PageMaker):
             "linkarguments": urllib.parse.urlencode(linkarguments) or "",
             "query": query,
             "suppliers": list(supplier_model.Supplier.List(self.connection)),
+            "form": form,
         }
 
     @uweb3.decorators.loggedin
@@ -126,28 +127,13 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.checkxsrf
     def RequestProductNew(self):
         """Requests the creation of a new product."""
+        form = forms.ProductForm(self.post)
+        form.validate()
+        if form.errors:
+            return self.RequestProducts(form=form)
+
         try:
-            product = model.Product.Create(
-                self.connection,
-                {
-                    "sku": self.post.getfirst("sku", "").replace(" ", "_")
-                    if "sku" in self.post
-                    else None,
-                    "name": self.post.getfirst("name", ""),
-                    "ean": int(self.post.getfirst("ean"))
-                    if "ean" in self.post
-                    else None,
-                    "gs1": int(self.post.getfirst("gs1"))
-                    if "gs1" in self.post
-                    else None,
-                    "description": self.post.getfirst("description", ""),
-                    "assemblycosts": float(self.post.getfirst("assemblycosts", 0)),
-                },
-            )
-        except ValueError:
-            return self.RequestInvalidcommand(
-                error="Input error, some fields are wrong."
-            )
+            product = model.Product.Create(self.connection, form.data)
         except common_model.InvalidNameError:
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the product."
