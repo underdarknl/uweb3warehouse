@@ -1,109 +1,109 @@
 [header]
-
 <section>
-  <h2>Your Products {{ if [supplier] }} sourced from [supplier:name]{{ endif }}:</h2>
-  {{ if len([products:items]) > 0 or [query] or [supplier] }}
+    <h2>Your Products {{ if [supplier] }} sourced from [supplier:name]{{ endif }}:</h2>
+    {{ if len([products:items]) > 0 or [query] or [supplier] }}
     <form action="/" method="get" class="lineform">
-      <div><label for="query">Search</label><input id="query" type="text" name="query" value="{{ if [query] }}[query]{{ endif}}" placeholder="Filter your products"></div>
-      <div><label for="query">Supplier</label><select name="supplier" id="filter_supplier" >
-          <option value="">All</option>
-          {{ for filtersupplier in [suppliers] }}
-          <option value="[filtersupplier:ID]" {{ if [supplier] and [filtersupplier:ID] == [supplier:ID]}}selected{{ endif }}  >[filtersupplier:name]</option>
-          {{ endfor }}
-        </select></div>
-      <div><a class="button" href="/">Clear</a> <input id="query" type="submit" value="Filter"></div>
+        <div><label for="query">Search</label><input id="query" type="text" name="query"
+                value="{{ if [query] }}[query]{{ endif}}" placeholder="Filter your products"></div>
+        <div><label for="query">Supplier</label><select name="supplier" id="filter_supplier">
+                <option value="">All</option>
+                {{ for filtersupplier in [suppliers] }}
+                <option value="[filtersupplier:ID]" {{ if [supplier] and [filtersupplier:ID]==[supplier:ID]}}selected{{
+                    endif }}>[filtersupplier:name]</option>
+                {{ endfor }}
+            </select></div>
+        <div><a class="button" href="/">Clear</a> <input id="query" type="submit" value="Filter"></div>
     </form>
     {{ if [products] }}
-      <table class="products">
+    <table class="products">
         <thead>
-          <tr><th>Name</th><th>Supplier</th><th>Created</th><th>Delete</th></tr>
+            <tr>
+                <th>Name</th>
+                <th>Supplier</th>
+                <th>Created</th>
+                <th>Delete</th>
+            </tr>
         </thead>
         <tbody>
-        {{ for product in [products] }}
-          <tr>
-            <td><a href="/product/[product:name]">[product:name]</a></td>
-            <td><a href="/supplier/[product:supplier:name]">[product:supplier:name]</a></td>
-            <td title="[product:dateCreated]">[product:dateCreated|DateOnly]</td>
-            <td>
-              <form action="/product/[product:name]/remove" method="post">
-                <input type="hidden" name="xsrf" value="[xsrf]">
-                <input type="submit" value="Remove" onclick="return confirm('Are you sure you want to delete this products? All coupled sub products will not be deleted.');">
-              </form>
-            </td>
-          </tr>
-        {{ endfor }}
+            {{ for product in [products] }}
+            <tr>
+                <td><a href="/product/[product:name]">[product:name]</a></td>
+                <td><a href="/supplier/[product:supplier:name]">[product:supplier:name]</a></td>
+                <td title="[product:dateCreated]">[product:dateCreated|DateOnly]</td>
+                <td>
+                    <form action="/product/[product:name]/remove" method="post">
+                        <input type="hidden" name="xsrf" value="[xsrf]">
+                        <input type="submit" value="Remove"
+                            onclick="return confirm('Are you sure you want to delete this products? All coupled sub products will not be deleted.');">
+                    </form>
+                </td>
+            </tr>
+            {{ endfor }}
         </tbody>
-      </table>
+    </table>
 
-      {{ if [products:pagecount] > 1 or [products:current] > 1 }}
-      <nav class="pagination">
+    {{ if [products:pagecount] > 1 or [products:current] > 1 }}
+    <nav class="pagination">
         <ol>
-          {{ if [products:current] > 1 }}
-            <li><a href="?page=1{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page 1">First</a></li>
+            {{ if [products:current] > 1 }}
+            <li><a href="?page=1{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                    title="Go to page 1">First</a></li>
             {{ if [products:current] > 2 }}
-              <li><a href="?page=[products:prev]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page [products:items:prev]">Previous</a></li>
+            <li><a href="?page=[products:prev]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                    title="Go to page [products:items:prev]">Previous</a></li>
             {{ endif }}
-          {{ endif }}
-          {{ for page in [products:pagenumbers] }}
+            {{ endif }}
+            {{ for page in [products:pagenumbers] }}
             {{ if [page] == [products:current] }}
-              <li class="active">[products:current]</li>
+            <li class="active">[products:current]</li>
             {{ else }}
-              <li><a href="?page=[page]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page [page]">[page]</a></li>
+            <li><a href="?page=[page]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                    title="Go to page [page]">[page]</a></li>
             {{ endif }}
-          {{ endfor }}
-          {{ if [products:next] }}
-            {{ if [products:next] < [products:last] }}
-              <li><a href="?page=[products:next]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page [products:next]">Next</a></li>
-            {{ endif }}
-          <li><a href="?page=[products:last]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page [products:last]">Last</a></li>{{ endif }}
+            {{ endfor }}
+            {{ if [products:next] }}
+            {{ if [products:next] < [products:last] }} <li><a
+                    href="?page=[products:next]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                    title="Go to page [products:next]">Next</a></li>
+                {{ endif }}
+                <li><a href="?page=[products:last]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                        title="Go to page [products:last]">Last</a></li>{{ endif }}
         </ol>
-      </nav>
-      {{ endif }}
+    </nav>
+    {{ endif }}
 
     {{ elif [query] }}
     <p>No products found for &quot;[query]&quot;.</p>
     {{ elif [supplier] }}
     <p>No products are sourced from <a href="/supplier/[supplier:name]">[supplier:name]</a>.</p>
     {{ endif }}
-  {{ else }}
+    {{ else }}
     <p class="info">You have no products just yet. Create one using the form below.</p>
-  {{ endif }}
+    {{ endif }}
 </section>
 
 <section id="products_new">
-  <h3>Create a product or part:</h3>
-  <form action="/" method="post">
-    <input type="hidden" name="xsrf" value="[xsrf]">
-    <div><label for="name">Name</label><input type="text" name="name" id="name" maxlength="255" required></div>
-    <div><label for="ean">Ean</label><input type="number" id="ean" name="ean" maxlength="13"></div>
-    <p>The ean barcode for each product or part in your warehouse must be unique.</p>
+    <h3>Create a product or part:</h3>
+    <form action="/" method="post">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+        <div><label for="name">Name</label><input type="text" name="name" id="name" maxlength="255" required></div>
+        <p>The name for each sku in your warehouse must be unique, only products that can be ordered by end customers
+            should have an easily recognizable sku.</p>
+        <div><label for="sku">SKU</label><input type="text" id="sku" name="sku" maxlength="255"></div>
+        <p>The ean barcode for each product or part in your warehouse must be unique.</p>
+        <div><label for="ean">Ean</label><input type="number" id="ean" name="ean" maxlength="13"></div>
 
-    <div><label for="gs1">GS1</label><input type="text" id="gs1" name="gs1" maxlength="255"></div>
-    <p>The gs1 for each product or part in your warehouse must be unique.</p>
+        <p>The gs1 for each product or part in your warehouse must be unique.</p>
+        <div><label for="gs1">GS1</label><input type="text" id="gs1" name="gs1" maxlength="255"></div>
+        <p>What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be
+            filled.</p>
+        <div><label for="assemblycosts">Assembly cost</label>
+            <p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts">
+        </div>
 
-    <div><label for="cost">Buying cost</label><p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="cost" name="cost"></div>
-    <p>The price paid to source this product or part.</p>
-    <p>A price for assembled products will be automatically generated from its parts.</p>
-
-    <div><label for="vat">Vat percentage</label><input type="number" step="0.01" min="0" id="vat" placeholder="21" name="vat"><p>%</p></div>
-    <p>The vat percentage paid over the buying costs.</p>
-
-    <div><label for="assemblycosts">Assembly cost</label><p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts"></div>
-    <p>What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be filled.</p>
-
-    <div><label for="supplier">Supplier</label>
-      <select name="supplier" id="supplier" >
-          {{ for supplier in [suppliers] }}
-          <option value="[supplier:ID]">[supplier:name]</option>
-          {{ endfor }}
-        </select>
-    </div>
-
-    <div><label for="sku">SKU</label><input type="text" id="sku" name="sku" maxlength="255"></div>
-    <p>The name for each sku in your warehouse must be unique, only products that can be ordered by end customers should have an easily recognizable sku.</p>
-
-    <div><label for="description">Description</label><textarea type="text" id="description" name="description" rows="4"></textarea></div>
-    <div><input type="submit" value="Create a new product." class="primary"></div>
-  </form>
+        <div><label for="description">Description</label><textarea type="text" id="description" name="description"
+                rows="4"></textarea></div>
+        <div><input type="submit" value="Create a new product." class="primary"></div>
+    </form>
 </section>
 [footer]
