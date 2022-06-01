@@ -377,5 +377,5 @@ class PageMaker(
     def Error(self, error="", httpcode=500, link=None):
         """Returns a generic error page based on the given parameters."""
         uweb3.logging.error("Error page triggered: %r", error)
-        page_data = self.parser.Parse("error.html", error=error, link=link)
+        page_data = self.parser.Parse("parts/error.html", error=error, link=link)
         return uweb3.Response(content=page_data, httpcode=httpcode)
