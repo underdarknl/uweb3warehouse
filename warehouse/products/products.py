@@ -8,11 +8,7 @@ import uweb3
 
 from warehouse import basepages
 from warehouse.common import model as common_model
-from warehouse.common.decorators import (
-    NotExistsErrorCatcher,
-    apiuser,
-    json_error_wrapper,
-)
+from warehouse.common.decorators import NotExistsErrorCatcher
 from warehouse.common.helpers import PagedResult
 from warehouse.login import model as login_model
 from warehouse.products import model
@@ -123,40 +119,6 @@ class PageMaker(basepages.PageMaker):
             "stockrows": stockrows,
         }
 
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProducts(self):
-        """Returns the product Json"""
-        return {"products": list(model.Product.List(self.connection))}
-
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProduct(self, name):
-        """Returns the product Json"""
-        product = model.Product.FromName(self.connection, name)
-        return {
-            "product": product,
-            "currentstock": product.currentstock,
-            "possiblestock": product.possiblestock["available"],
-        }
-
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProductSearch(self, name):
-        """Returns the product Json"""
-        product = model.Product.FromName(self.connection, name)
-        return {
-            "product": product["name"],
-            "cost": product["cost"],
-            "assemblycosts": product["assemblycosts"],
-            "vat": product["vat"],
-            "stock": product.currentstock,
-            "possible_stock": product.possiblestock["available"],
-        }
-
     @uweb3.decorators.loggedin
     @uweb3.decorators.checkxsrf
     def RequestProductNew(self):
@@ -165,6 +127,9 @@ class PageMaker(basepages.PageMaker):
             product = model.Product.Create(
                 self.connection,
                 {
+                    "sku": self.post.getfirst("sku", "").replace(" ", "_")
+                    if "sku" in self.post
+                    else None,
                     "name": self.post.getfirst("name", ""),
                     "ean": int(self.post.getfirst("ean"))
                     if "ean" in self.post
@@ -173,13 +138,7 @@ class PageMaker(basepages.PageMaker):
                     if "gs1" in self.post
                     else None,
                     "description": self.post.getfirst("description", ""),
-                    "cost": float(self.post.getfirst("cost", 0)),
                     "assemblycosts": float(self.post.getfirst("assemblycosts", 0)),
-                    "vat": float(self.post.getfirst("vat", 21)),
-                    "sku": self.post.getfirst("sku", "").replace(" ", "_")
-                    if "ski" in self.post
-                    else None,
-                    "supplier": int(self.post.getfirst("supplier", 1)),
                 },
             )
         except ValueError:
@@ -289,86 +248,6 @@ class PageMaker(basepages.PageMaker):
         except common_model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
-
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProductStock(self, name):
-        """Updates the stock for a product, assembling if needed
-
-        Send negative amount to Sell a product, positive amount to put product back
-        into stock"""
-        product = model.Product.FromName(self.connection, name)
-        amount = int(self.post.get("amount", -1))
-        currentstock = product.currentstock
-        if (
-            amount < 0 and abs(amount) > currentstock  # only assemble when we sell
-        ):  # only assemble when we have not enough stock
-            try:
-                product.Assemble(
-                    abs(amount)
-                    - currentstock,  # only assemble what is missing for this sale
-                    "Assembly for %s" % self.post.get("reference")
-                    if "reference" in self.post
-                    else None,
-                )
-            except common_model.AssemblyError as error:
-                raise ValueError(error.args[0])
-
-        # by now we should have enough products in stock, one way or another
-        model.Stock.Create(
-            self.connection,
-            {
-                "product": product,
-                "amount": amount,
-                "reference": self.post.get("reference", ""),
-            },
-        )
-        model.Product.commit(self.connection)
-        return {"stock": product.currentstock, "possible_stock": product.possiblestock}
-
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProductStockBulk(self):
-        products = self.post.get("products")
-        model.Product.autocommit(self.connection, False)
-        try:
-            for product in products:
-                self.UpdateStock(
-                    product["name"], product["quantity"], self.post.get("reference")
-                )
-        except Exception as ex:
-            model.Product.rollback(self.connection)
-            raise ex
-        finally:
-            model.Product.autocommit(self.connection, True)
-        return {"products": products}
-
-    def UpdateStock(self, product_name, amount, reference=None):
-        product = model.Product.FromName(self.connection, product_name)
-        currentstock = product.currentstock
-        if (
-            amount < 0 and abs(amount) > currentstock  # only assemble when we sell
-        ):  # only assemble when we have not enough stock
-            try:
-                product.Assemble(
-                    abs(amount)
-                    - currentstock,  # only assemble what is missing for this sale
-                    "Assembly for %s" % reference,
-                )
-            except common_model.AssemblyError as error:
-                raise ValueError(error.args[0])
-
-        model.Stock.Create(
-            self.connection,
-            {
-                "product": product,
-                "amount": amount,
-                "reference": self.post.get("reference", ""),
-            },
-        )
-        return {"stock": product.currentstock, "possible_stock": product.possiblestock}
 
     @uweb3.decorators.loggedin
     @uweb3.decorators.TemplateParser("gs1.html")
