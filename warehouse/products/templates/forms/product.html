@@ -1,9 +1,9 @@
 <form {{ ifpresent [product] }} action="/product/[product:sku]" {{ else }} action="/" {{ endif }} method="post"
     class="product">
     <input type="hidden" name="xsrf" value="[xsrf]">
-    {{ ifpresent [form] }}
-        {{ if [form] and [form:name:errors] }}
-            {{ for error in [form:name:errors] }}
+    {{ ifpresent [product_form] }}
+        {{ if [product_form] and [product_form:name:errors] }}
+            {{ for error in [product_form:name:errors] }}
                 <p class="error">[error]</p>
             {{ endfor }}
         {{ endif }}
@@ -15,9 +15,9 @@
     </div>
     <p>The name for each sku in your warehouse must be unique, only products that can be ordered by end customers
         should have an easily recognizable sku.</p>
-    {{ ifpresent [form] }}
-        {{ if [form] and [form:sku:errors] }}
-            {{ for error in [form:sku:errors] }}
+    {{ ifpresent [product_form] }}
+        {{ if [product_form] and [product_form:sku:errors] }}
+            {{ for error in [product_form:sku:errors] }}
                 <p class="error">[error]</p>
             {{ endfor }}
         {{ endif }}
@@ -28,9 +28,9 @@
             value="{{ ifpresent [product] }}[product:sku|NullString]{{ endif }}">
     </div>
     <p>The ean barcode for each product or part in your warehouse must be unique.</p>
-    {{ ifpresent [form] }}
-        {{ if [form] and [form:ean:errors] }}
-            {{ for error in [form:ean:errors] }}
+    {{ ifpresent [product_form] }}
+        {{ if [product_form] and [product_form:ean:errors] }}
+            {{ for error in [product_form:ean:errors] }}
                 <p class="error">[error]</p>
             {{ endfor }}
         {{ endif }}
@@ -41,9 +41,9 @@
     </div>
 
     <p>The gs1 for each product or part in your warehouse must be unique.</p>
-    {{ ifpresent [form] }}
-        {{ if [form] and [form:gs1:errors] }}
-            {{ for error in [form:gs1:errors] }}
+    {{ ifpresent [product_form] }}
+        {{ if [product_form] and [product_form:gs1:errors] }}
+            {{ for error in [product_form:gs1:errors] }}
                 <p class="error">[error]</p>
             {{ endfor }}
         {{ endif }}
@@ -54,9 +54,9 @@
     </div>
     <p>What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be
         filled.</p>
-    {{ ifpresent [form] }}
-        {{ if [form] and [form:assemblycosts:errors] }}
-            {{ for error in [form:assemblycosts:errors] }}
+    {{ ifpresent [product_form] }}
+        {{ if [product_form] and [product_form:assemblycosts:errors] }}
+            {{ for error in [product_form:assemblycosts:errors] }}
                 <p class="error">[error]</p>
             {{ endfor }}
         {{ endif }}
@@ -67,9 +67,9 @@
             value="{{ ifpresent [product] }}[product:assemblycosts|NullString]{{ endif }}" required>
     </div>
 
-    {{ ifpresent [form] }}
-        {{ if [form] and [form:description:errors] }}
-            {{ for error in [form:description:errors] }}
+    {{ ifpresent [product_form] }}
+        {{ if [product_form] and [product_form:description:errors] }}
+            {{ for error in [product_form:description:errors] }}
                 <p class="error">[error]</p>
             {{ endfor }}
         {{ endif }}

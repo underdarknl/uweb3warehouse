@@ -21,3 +21,11 @@ class ProductForm(Form):
     assemblycosts = DecimalField(
         "assemblycosts", validators=[validators.DataRequired()]
     )
+
+
+class ProductAssembleForm(Form):
+    part = StringField("part", [validators.Length(min=1, max=45)])
+    amount = IntegerField("amount", [validators.NumberRange(min=1, max=65535)])
+    assemblycosts = DecimalField(
+        "assemblycosts", validators=[validators.DataRequired()]
+    )

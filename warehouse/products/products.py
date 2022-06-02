@@ -21,7 +21,7 @@ class PageMaker(basepages.PageMaker):
 
     @uweb3.decorators.loggedin
     @uweb3.decorators.TemplateParser("products.html")
-    def RequestProducts(self, form=None):
+    def RequestProducts(self, product_form=None):
         """Returns the Products page"""
         supplier = None
         conditions = []
@@ -60,13 +60,13 @@ class PageMaker(basepages.PageMaker):
             "linkarguments": urllib.parse.urlencode(linkarguments) or "",
             "query": query,
             "suppliers": list(supplier_model.Supplier.List(self.connection)),
-            "form": form,
+            "product_form": product_form,
         }
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product.html")
-    def RequestProduct(self, sku, form=None):
+    def RequestProduct(self, sku, product_form=None, assemble_form=None):
         """Returns the product page"""
         product = model.Product.FromSku(self.connection, sku)
         parts = product.parts
@@ -107,7 +107,8 @@ class PageMaker(basepages.PageMaker):
             "suppliers": supplier_model.Supplier.List(self.connection),
             "stock": stock,
             "stockrows": stockrows,
-            "form": form,
+            "product_form": product_form,
+            "assemble_form": assemble_form,
         }
 
     @uweb3.decorators.loggedin
@@ -117,7 +118,7 @@ class PageMaker(basepages.PageMaker):
         form = forms.ProductForm(self.post)
         form.validate()
         if form.errors:
-            return self.RequestProducts(form=form)
+            return self.RequestProducts(product_form=form)
 
         try:
             product = model.Product.Create(self.connection, form.data)
@@ -139,7 +140,7 @@ class PageMaker(basepages.PageMaker):
         form.validate()
 
         if form.errors:
-            return self.RequestProduct(sku, form=form)
+            return self.RequestProduct(sku, product_form=form)
 
         product.update(form.data)
         try:
@@ -155,6 +156,11 @@ class PageMaker(basepages.PageMaker):
     def RequestProductAssemble(self, sku):
         """Add a new part to an existing product"""
         product = model.Product.FromSku(self.connection, sku)
+        form = forms.ProductAssembleForm(self.post)
+        form.validate()
+        if form.errors:
+            return self.RequestProduct(sku=sku, assemble_form=form)
+
         try:
             part = model.Product.FromSku(
                 self.connection, self.post.getfirst("part")
