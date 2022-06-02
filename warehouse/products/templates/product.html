@@ -153,30 +153,7 @@
 {{ endif }}
 <section>
     <h2>Assemble product from parts:</h2>
-    <form action="/product/[product:sku]/assemble" method="post">
-        <input type="hidden" name="xsrf" value="[xsrf]">
-        <div><label for="part">Part</label>
-            <select name="part" id="part">
-                {{ for part in [possibleparts] }}
-                <option value="[part:name]">[part:name]{{ if [part:assemblycosts] }} - [part:assemblycosts]{{ endif }}
-                </option>
-                {{ endfor }}
-            </select>
-        </div>
-
-        <div><label for="amount">Amount use</label><input type="number" step="1" min="1" id="amount" name="amount"
-                value="1"></div>
-        <p>How many of the selected product are used as parts in the current product?</p>
-
-        <div><label for="assemblycosts">Assembly cost</label>
-            <p>&euro;&nbsp;</p><input type="number" step="0.01" min="0" id="assemblycosts" name="assemblycosts"
-                value="[product:assemblycosts|NullString]">
-        </div>
-        <p>What does it cost to use the selected product as a part in the current product? A sticker needs to be
-            applied, a jar needs to be filled.</p>
-
-        <div><input type="submit" value="Add this part to this assembly"></div>
-    </form>
+    {{ inline forms/assemble_from_part.html }}
 </section>
 
 {{ if [product:products] }}
