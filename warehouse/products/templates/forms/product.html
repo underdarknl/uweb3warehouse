@@ -1,4 +1,4 @@
-<form {{ ifpresent [product] }} action="/product/[product:name]" {{ else }} action="/" {{ endif }} method="post"
+<form {{ ifpresent [product] }} action="/product/[product:sku]" {{ else }} action="/" {{ endif }} method="post"
     class="product">
     <input type="hidden" name="xsrf" value="[xsrf]">
     {{ ifpresent [form] }}
