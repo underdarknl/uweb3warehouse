@@ -23,6 +23,9 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.TemplateParser("products.html")
     def RequestProducts(self, product_form=None):
         """Returns the Products page"""
+        if not product_form:
+            product_form = forms.ProductForm()
+
         supplier = None
         conditions = []
         linkarguments = {}
@@ -96,6 +99,9 @@ class PageMaker(basepages.PageMaker):
             partsprice["partstotal"] += part.subtotal
             partsprice["assembledtotal"] += part.subtotal + part["assemblycosts"]
 
+        if not product_form:
+            product_form = forms.ProductForm()
+            product_form.process(data=product)
         return {
             "products": product.AssemblyOptions(),
             "possibleparts": model.Product.List(
@@ -148,7 +154,7 @@ class PageMaker(basepages.PageMaker):
         except self.connection.IntegrityError:
             return self.Error("That name was already taken.", 200)
 
-        return uweb3.Redirect(f"/product/{product['name']}", httpcode=303)
+        return uweb3.Redirect(f"/product/{product['sku']}", httpcode=303)
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
