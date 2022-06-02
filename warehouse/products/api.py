@@ -20,9 +20,9 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser
-    def JsonProduct(self, name):
+    def JsonProduct(self, sku):
         """Returns the product Json"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         return {
             "product": product,
             "currentstock": product.currentstock,
@@ -32,12 +32,13 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser
-    def JsonProductSearch(self, name):
+    def JsonProductSearch(self, sku):
         """Returns the product Json"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         return {
             "product": product["name"],
             "cost": product["cost"],
+            "sku": product["sku"],
             "assemblycosts": product["assemblycosts"],
             "vat": product["vat"],
             "stock": product.currentstock,
@@ -47,12 +48,12 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser
-    def JsonProductStock(self, name):
+    def JsonProductStock(self, sku):
         """Updates the stock for a product, assembling if needed
 
         Send negative amount to Sell a product, positive amount to put product back
         into stock"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         amount = int(self.post.get("amount", -1))
         currentstock = product.currentstock
         if (

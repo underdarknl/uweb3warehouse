@@ -11,7 +11,7 @@
       <tbody>
       {{ for product in [products] }}
         <tr>
-          <td><a href="/product/[product:name]">[product:name]</a></td>
+          <td><a href="/product/[product:sku]">[product:name]</a></td>
           <td><a href="/supplier/[product:supplier:name]">[product:supplier:name]</a></td>
           <td>[product:Eancode]</td>
           <td title="[product:dateCreated]">[product:dateCreated|DateOnly]</td>

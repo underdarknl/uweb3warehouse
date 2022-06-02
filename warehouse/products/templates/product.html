@@ -115,7 +115,7 @@
             <tbody>
                 {{ for part in [product:parts] }}
                 <tr>
-                    <td><a href="/product/[part:part:name]">[part:part:name]</a></td>
+                    <td><a href="/product/[part:part:sku]">[part:part:name]</a></td>
                     <td class="number">&euro; [part:part:cost|currency]</td>
                     <td><input type="number" step="1" min="0" id="amount" name="amount[[part:ID]]"
                             value="[part:amount]"></td>
@@ -199,7 +199,7 @@
             <tbody>
                 {{ for part in [product:products] }}
                 <tr>
-                    <td><a href="/product/[part:product:name]">[part:product:name]</a></td>
+                    <td><a href="/product/[part:product:sku]">[part:product:name]</a></td>
                     <td class="number">&euro; [part:part:cost|currency]</td>
                     <td><input type="number" step="1" min="0" id="amount" name="amount[[part:ID]]"
                             value="[part:amount]"></td>

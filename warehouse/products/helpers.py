@@ -164,8 +164,8 @@ class StockImporter:
         )
 
 
-def update_stock(connection, product_name, amount, reference=None):
-    product = model.Product.FromName(connection, product_name)
+def update_stock(connection, sku, amount, reference=None):
+    product = model.Product.FromSku(connection, sku)
     currentstock = product.currentstock
     if (
         amount < 0 and abs(amount) > currentstock  # only assemble when we sell

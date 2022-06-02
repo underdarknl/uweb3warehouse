@@ -29,7 +29,7 @@ class Product(model.Record):
             connection,
             conditions=[common_model.NOTDELETED] + conditions,
             *args,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
@@ -52,11 +52,11 @@ class Product(model.Record):
             conditions=['name like "%%%s%%"' % connection.EscapeValues(query)[1:-1]]
             + conditions,
             order=queryorder,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
-    def FromName(cls, connection, name, conditions=None):
+    def FromSku(cls, connection, sku, conditions=None):
         """Returns the product of the given common name.
 
         Arguments:
@@ -74,15 +74,14 @@ class Product(model.Record):
         """
         if not conditions:
             conditions = []
-        safe_name = connection.EscapeValues(name)
+        safe_sku = connection.EscapeValues(sku)
         with connection as cursor:
             product = cursor.Select(
                 table=cls.TableName(),
-                conditions=["name=%s" % safe_name, common_model.NOTDELETED]
-                + conditions,
+                conditions=["sku=%s" % safe_sku, common_model.NOTDELETED] + conditions,
             )
         if not product:
-            raise cls.NotExistError("There is no product with common name %r" % name)
+            raise cls.NotExistError(f"There is no product with sku {sku}")
         return cls(connection, product[0])
 
     def Delete(self):

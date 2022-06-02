@@ -66,9 +66,9 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product.html")
-    def RequestProduct(self, name, form=None):
+    def RequestProduct(self, sku, form=None):
         """Returns the product page"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         parts = product.parts
         if "unlimitedstock" in self.get:
             stock = list(product.Stock(order=[("dateCreated", True)]))
@@ -128,18 +128,18 @@ class PageMaker(basepages.PageMaker):
         except self.connection.IntegrityError as error:
             uweb3.logging.error("Error: ", error)
             return self.Error("Something went wrong", 200)
-        return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
-    def RequestProductSave(self, name):
+    def RequestProductSave(self, sku):
         """Saves changes to the product"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         form = forms.ProductForm(self.post)
         form.validate()
 
         if form.errors:
-            return self.RequestProduct(name, form=form)
+            return self.RequestProduct(sku, form=form)
 
         product.update(form.data)
         try:
@@ -152,11 +152,13 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductAssemble(self, name):
+    def RequestProductAssemble(self, sku):
         """Add a new part to an existing product"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         try:
-            part = model.Product.FromName(self.connection, self.post.getfirst("part"))
+            part = model.Product.FromSku(
+                self.connection, self.post.getfirst("part")
+            )  # TODO: get part SKU
             model.Productpart.Create(
                 self.connection,
                 {
@@ -174,15 +176,15 @@ class PageMaker(basepages.PageMaker):
             )
         except self.connection.IntegrityError:
             return self.Error("That part was already assembled in this product!", 200)
-        return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductAssemblySave(self, name):
+    def RequestProductAssemblySave(self, sku):
         """Update a products assembly by adding, removing or updating part
         references"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         deletes = self.post.getfirst("delete", [])
         updates = {
             "amount": self.post.getfirst("amount", []),
@@ -198,24 +200,24 @@ class PageMaker(basepages.PageMaker):
                     if key in updates and mateid in updates[key]:
                         mate[key] = updates[key][mateid]
                 mate.Save()
-        return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductRemove(self, product):
+    def RequestProductRemove(self, sku):
         """Removes the product"""
-        product = model.Product.FromName(self.connection, product)
+        product = model.Product.FromSku(self.connection, sku)
         product.Delete()
         return self.req.Redirect("/", httpcode=301)
 
     @uweb3.decorators.loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductStock(self, name):
+    def RequestProductStock(self, sku):
         """Creates a stock change for the product, either from a new shipment, or
         by assembling/ disassembling a product from its parts."""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         try:
             if "assemble" in self.post:
                 product.Assemble(
@@ -241,7 +243,7 @@ class PageMaker(basepages.PageMaker):
                 )
         except common_model.AssemblyError as error:
             return self.Error(error)
-        return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
     @uweb3.decorators.loggedin
     @uweb3.decorators.TemplateParser("gs1.html")
