@@ -125,10 +125,9 @@ class PageMaker(basepages.PageMaker):
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the product."
             )
-        except self.connection.IntegrityError:
-            #  if 'gs1' in error:
-            #    return self.Error('That GS1 code was already taken, go back, try again!', 200)
-            return self.Error("That name was already taken.", 200)
+        except self.connection.IntegrityError as error:
+            uweb3.logging.error("Error: ", error)
+            return self.Error("Something went wrong", 200)
         return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
 
     @uweb3.decorators.loggedin
