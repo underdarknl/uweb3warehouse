@@ -3,7 +3,8 @@ from collections import namedtuple
 
 import pandas
 
-from warehouse.products import model as product_model
+from warehouse.common import model as common_model
+from warehouse.products import model
 
 
 class StockParser:
@@ -154,10 +155,36 @@ class StockImporter:
         Returns:
             model.Stock: The added Stock record.
         """
-        return product_model.Stock.Create(
+        return model.Stock.Create(
             self.connection,
             {
                 "product": product.key,
                 "amount": amount,
             },
         )
+
+
+def update_stock(connection, sku, amount, reference=None):
+    product = model.Product.FromSku(connection, sku)
+    currentstock = product.currentstock
+    if (
+        amount < 0 and abs(amount) > currentstock  # only assemble when we sell
+    ):  # only assemble when we have not enough stock
+        try:
+            product.Assemble(
+                abs(amount)
+                - currentstock,  # only assemble what is missing for this sale
+                "Assembly for %s" % reference,
+            )
+        except common_model.AssemblyError as error:
+            raise ValueError(error.args[0])
+
+    model.Stock.Create(
+        connection,
+        {
+            "product": product,
+            "amount": amount,
+            "reference": reference,
+        },
+    )
+    return {"stock": product.currentstock, "possible_stock": product.possiblestock}

@@ -11,6 +11,8 @@ import uweb3
 from uweb3.libs import mail
 
 from warehouse.common import model as common_model
+from warehouse.common.decorators import loggedin
+from warehouse.login import helpers as login_helpers
 from warehouse.login import model as login_model
 
 
@@ -22,14 +24,23 @@ def CentRound(monies):
 
 class PageMaker(
     uweb3.DebuggingPageMaker,
-    uweb3.LoginMixin,
+    login_helpers.AuthMixin,
 ):
     """Holds all the request handlers for the application"""
 
     DEFAULTPAGESIZE = 10
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def _PostInit(self):
         """Sets up all the default vars"""
+        self.auth_services = login_helpers.AuthFactory()
+        self.auth_services.register_auth("login", login_helpers.LoginServiceBuilder())
+        self.auth_services.register_auth(
+            "apiuser", login_helpers.ApiUserServiceBuilder()
+        )
+
         self.parser.RegisterTag("scripts", None)
         self.parser.RegisterTag("year", time.strftime("%Y"))
         self.parser.RegisterFunction("CentRound", CentRound)
@@ -102,12 +113,12 @@ class PageMaker(
     def RequestLogin(self, url=None):
         """Please login"""
         if self.user:
-            return uweb3.Redirect("/products")
+            return uweb3.Redirect("/products", httpcode=303)
         if not url and "url" in self.get:
             url = self.get.getfirst("url")
         return {"url": url}
 
-    @uweb3.decorators.loggedin
+    @loggedin
     @uweb3.decorators.checkxsrf
     @uweb3.decorators.TemplateParser("admin.html")
     def RequestAdmin(self):
@@ -222,7 +233,7 @@ class PageMaker(
             return {"usersucces": "Your new user was added", "users": users}
         return {"users": users}
 
-    @uweb3.decorators.loggedin
+    @loggedin
     @uweb3.decorators.checkxsrf
     @uweb3.decorators.TemplateParser("apisettings.html")
     def RequestApiSettings(self):
@@ -305,7 +316,7 @@ class PageMaker(
             }
         return {"keys": keys}
 
-    @uweb3.decorators.loggedin
+    @loggedin
     def RequestIndex(self):
         """Returns the homepage"""
         return self.req.Redirect("/products")
@@ -365,7 +376,7 @@ class PageMaker(
         )
         if command is None and error is None:
             command = "%s for method %s" % (self.req.path, self.req.method)
-        page_data = self.parser.Parse("404.html", command=command, error=error)
+        page_data = self.parser.Parse("parts/404.html", command=command, error=error)
         return uweb3.Response(content=page_data, httpcode=httpcode)
 
     @uweb3.decorators.ContentType("application/json")
@@ -377,5 +388,5 @@ class PageMaker(
     def Error(self, error="", httpcode=500, link=None):
         """Returns a generic error page based on the given parameters."""
         uweb3.logging.error("Error page triggered: %r", error)
-        page_data = self.parser.Parse("error.html", error=error, link=link)
+        page_data = self.parser.Parse("parts/error.html", error=error, link=link)
         return uweb3.Response(content=page_data, httpcode=httpcode)

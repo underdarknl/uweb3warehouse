@@ -29,7 +29,7 @@ class Product(model.Record):
             connection,
             conditions=[common_model.NOTDELETED] + conditions,
             *args,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
@@ -52,11 +52,11 @@ class Product(model.Record):
             conditions=['name like "%%%s%%"' % connection.EscapeValues(query)[1:-1]]
             + conditions,
             order=queryorder,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
-    def FromName(cls, connection, name, conditions=None):
+    def FromSku(cls, connection, sku, conditions=None):
         """Returns the product of the given common name.
 
         Arguments:
@@ -74,15 +74,14 @@ class Product(model.Record):
         """
         if not conditions:
             conditions = []
-        safe_name = connection.EscapeValues(name)
+        safe_sku = connection.EscapeValues(sku)
         with connection as cursor:
             product = cursor.Select(
                 table=cls.TableName(),
-                conditions=["name=%s" % safe_name, common_model.NOTDELETED]
-                + conditions,
+                conditions=["sku=%s" % safe_sku, common_model.NOTDELETED] + conditions,
             )
         if not product:
-            raise cls.NotExistError("There is no product with common name %r" % name)
+            raise cls.NotExistError(f"There is no product with sku {sku}")
         return cls(connection, product[0])
 
     def Delete(self):
@@ -92,29 +91,17 @@ class Product(model.Record):
 
     def _PreCreate(self, cursor):
         super()._PreCreate(cursor)
-        if self["name"]:
-            self["name"] = self["name"].replace("/", "_")
-        #     self["name"] = re.search(
-        #         "([\w\-_\.,]+)", self["name"].replace(" ", "_")
-        #     ).groups()[0][:255]
-        if not self["gs1"]:  # set empty string to None for key contraints
-            self["gs1"] = None
-        if not self["sku"]:  # set empty string to None for key contraints
-            self["sku"] = None
-        if not self["name"]:
-            raise common_model.InvalidNameError("Provide a valid name")
+        self._Noramlize()
 
     def _PreSave(self, cursor):
         super()._PreSave(cursor)
+        self._Noramlize()
+
+    def _Noramlize(self):
         if self["name"]:
             self["name"] = self["name"].replace("/", "_")
-        #     self["name"] = re.search(
-        #         "([\w\-_\.,]+)", self["name"].replace(" ", "_")
-        #     ).groups()[0][:255]
         if not self["gs1"]:  # set empty string to None for key contraints
             self["gs1"] = None
-        if not self["sku"]:  # set empty string to None for key contraints
-            self["sku"] = None
         if not self["name"]:
             raise common_model.InvalidNameError("Provide a valid name")
 
@@ -279,4 +266,5 @@ class Productpart(model.Record):
 
     @property
     def subtotal(self):
-        return (self["amount"] * self["part"]["cost"]) + self["assemblycosts"]
+        # return (self["amount"] * self["part"]["cost"]) + self["assemblycosts"]
+        return (self["amount"] * 1) + self["assemblycosts"]

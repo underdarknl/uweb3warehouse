@@ -8,14 +8,10 @@ import uweb3
 
 from warehouse import basepages
 from warehouse.common import model as common_model
-from warehouse.common.decorators import (
-    NotExistsErrorCatcher,
-    apiuser,
-    json_error_wrapper,
-)
+from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
 from warehouse.login import model as login_model
-from warehouse.products import model
+from warehouse.products import forms, model
 from warehouse.suppliers import model as supplier_model
 
 
@@ -23,10 +19,13 @@ class PageMaker(basepages.PageMaker):
 
     TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
-    @uweb3.decorators.loggedin
+    @loggedin
     @uweb3.decorators.TemplateParser("products.html")
-    def RequestProducts(self):
+    def RequestProducts(self, product_form=None):
         """Returns the Products page"""
+        if not product_form:
+            product_form = forms.ProductForm()
+
         supplier = None
         conditions = []
         linkarguments = {}
@@ -64,25 +63,15 @@ class PageMaker(basepages.PageMaker):
             "linkarguments": urllib.parse.urlencode(linkarguments) or "",
             "query": query,
             "suppliers": list(supplier_model.Supplier.List(self.connection)),
+            "product_form": product_form,
         }
 
-    @uweb3.decorators.loggedin
-    @NotExistsErrorCatcher
-    def RequestProductSave(self, name):
-        """Saves changes to the product"""
-        product = model.Product.FromName(self.connection, name)
-        for key in product.keys():
-            if key in self.post:
-                product[key] = self.post.getfirst(key)
-        product.Save()
-        return self.RequestProducts()
-
-    @uweb3.decorators.loggedin
+    @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product.html")
-    def RequestProduct(self, name):
+    def RequestProduct(self, sku, product_form=None, assemble_form=None):
         """Returns the product page"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         parts = product.parts
         if "unlimitedstock" in self.get:
             stock = list(product.Stock(order=[("dateCreated", True)]))
@@ -110,6 +99,9 @@ class PageMaker(basepages.PageMaker):
             partsprice["partstotal"] += part.subtotal
             partsprice["assembledtotal"] += part.subtotal + part["assemblycosts"]
 
+        if not product_form:
+            product_form = forms.ProductForm()
+            product_form.process(data=product)
         return {
             "products": product.AssemblyOptions(),
             "possibleparts": model.Product.List(
@@ -121,89 +113,64 @@ class PageMaker(basepages.PageMaker):
             "suppliers": supplier_model.Supplier.List(self.connection),
             "stock": stock,
             "stockrows": stockrows,
+            "product_form": product_form,
+            "assemble_form": assemble_form,
         }
 
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProducts(self):
-        """Returns the product Json"""
-        return {"products": list(model.Product.List(self.connection))}
-
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProduct(self, name):
-        """Returns the product Json"""
-        product = model.Product.FromName(self.connection, name)
-        return {
-            "product": product,
-            "currentstock": product.currentstock,
-            "possiblestock": product.possiblestock["available"],
-        }
-
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProductSearch(self, name):
-        """Returns the product Json"""
-        product = model.Product.FromName(self.connection, name)
-        return {
-            "product": product["name"],
-            "cost": product["cost"],
-            "assemblycosts": product["assemblycosts"],
-            "vat": product["vat"],
-            "stock": product.currentstock,
-            "possible_stock": product.possiblestock["available"],
-        }
-
-    @uweb3.decorators.loggedin
+    @loggedin
     @uweb3.decorators.checkxsrf
     def RequestProductNew(self):
         """Requests the creation of a new product."""
+        form = forms.ProductForm(self.post)
+        form.validate()
+        if form.errors:
+            return self.RequestProducts(product_form=form)
+
         try:
-            product = model.Product.Create(
-                self.connection,
-                {
-                    "name": self.post.getfirst("name", ""),
-                    "ean": int(self.post.getfirst("ean"))
-                    if "ean" in self.post
-                    else None,
-                    "gs1": int(self.post.getfirst("gs1"))
-                    if "gs1" in self.post
-                    else None,
-                    "description": self.post.getfirst("description", ""),
-                    "cost": float(self.post.getfirst("cost", 0)),
-                    "assemblycosts": float(self.post.getfirst("assemblycosts", 0)),
-                    "vat": float(self.post.getfirst("vat", 21)),
-                    "sku": self.post.getfirst("sku", "").replace(" ", "_")
-                    if "ski" in self.post
-                    else None,
-                    "supplier": int(self.post.getfirst("supplier", 1)),
-                },
-            )
-        except ValueError:
-            return self.RequestInvalidcommand(
-                error="Input error, some fields are wrong."
-            )
+            product = model.Product.Create(self.connection, form.data)
         except common_model.InvalidNameError:
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the product."
             )
-        except self.connection.IntegrityError:
-            #  if 'gs1' in error:
-            #    return self.Error('That GS1 code was already taken, go back, try again!', 200)
-            return self.Error("That name was already taken, go back, try again!", 200)
-        return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+        except self.connection.IntegrityError as error:
+            uweb3.logging.error("Error: ", error)
+            return self.Error("Something went wrong", 200)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
-    @uweb3.decorators.loggedin
+    @loggedin
+    @NotExistsErrorCatcher
+    def RequestProductSave(self, sku):
+        """Saves changes to the product"""
+        product = model.Product.FromSku(self.connection, sku)
+        form = forms.ProductForm(self.post)
+        form.validate()
+
+        if form.errors:
+            return self.RequestProduct(sku, product_form=form)
+
+        product.update(form.data)
+        try:
+            product.Save()
+        except self.connection.IntegrityError:
+            return self.Error("That name was already taken.", 200)
+
+        return uweb3.Redirect(f"/product/{product['sku']}", httpcode=303)
+
+    @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductAssemble(self, name):
+    def RequestProductAssemble(self, sku):
         """Add a new part to an existing product"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
+        form = forms.ProductAssembleForm(self.post)
+        form.validate()
+        if form.errors:
+            return self.RequestProduct(sku=sku, assemble_form=form)
+
         try:
-            part = model.Product.FromName(self.connection, self.post.getfirst("part"))
+            part = model.Product.FromSku(
+                self.connection, self.post.getfirst("part")
+            )  # TODO: get part SKU
             model.Productpart.Create(
                 self.connection,
                 {
@@ -221,15 +188,15 @@ class PageMaker(basepages.PageMaker):
             )
         except self.connection.IntegrityError:
             return self.Error("That part was already assembled in this product!", 200)
-        return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
-    @uweb3.decorators.loggedin
+    @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductAssemblySave(self, name):
+    def RequestProductAssemblySave(self, sku):
         """Update a products assembly by adding, removing or updating part
         references"""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         deletes = self.post.getfirst("delete", [])
         updates = {
             "amount": self.post.getfirst("amount", []),
@@ -245,24 +212,24 @@ class PageMaker(basepages.PageMaker):
                     if key in updates and mateid in updates[key]:
                         mate[key] = updates[key][mateid]
                 mate.Save()
-        return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
-    @uweb3.decorators.loggedin
+    @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductRemove(self, product):
+    def RequestProductRemove(self, sku):
         """Removes the product"""
-        product = model.Product.FromName(self.connection, product)
+        product = model.Product.FromSku(self.connection, sku)
         product.Delete()
         return self.req.Redirect("/", httpcode=301)
 
-    @uweb3.decorators.loggedin
+    @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductStock(self, name):
+    def RequestProductStock(self, sku):
         """Creates a stock change for the product, either from a new shipment, or
         by assembling/ disassembling a product from its parts."""
-        product = model.Product.FromName(self.connection, name)
+        product = model.Product.FromSku(self.connection, sku)
         try:
             if "assemble" in self.post:
                 product.Assemble(
@@ -288,89 +255,9 @@ class PageMaker(basepages.PageMaker):
                 )
         except common_model.AssemblyError as error:
             return self.Error(error)
-        return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProductStock(self, name):
-        """Updates the stock for a product, assembling if needed
-
-        Send negative amount to Sell a product, positive amount to put product back
-        into stock"""
-        product = model.Product.FromName(self.connection, name)
-        amount = int(self.post.get("amount", -1))
-        currentstock = product.currentstock
-        if (
-            amount < 0 and abs(amount) > currentstock  # only assemble when we sell
-        ):  # only assemble when we have not enough stock
-            try:
-                product.Assemble(
-                    abs(amount)
-                    - currentstock,  # only assemble what is missing for this sale
-                    "Assembly for %s" % self.post.get("reference")
-                    if "reference" in self.post
-                    else None,
-                )
-            except common_model.AssemblyError as error:
-                raise ValueError(error.args[0])
-
-        # by now we should have enough products in stock, one way or another
-        model.Stock.Create(
-            self.connection,
-            {
-                "product": product,
-                "amount": amount,
-                "reference": self.post.get("reference", ""),
-            },
-        )
-        model.Product.commit(self.connection)
-        return {"stock": product.currentstock, "possible_stock": product.possiblestock}
-
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProductStockBulk(self):
-        products = self.post.get("products")
-        model.Product.autocommit(self.connection, False)
-        try:
-            for product in products:
-                self.UpdateStock(
-                    product["name"], product["quantity"], self.post.get("reference")
-                )
-        except Exception as ex:
-            model.Product.rollback(self.connection)
-            raise ex
-        finally:
-            model.Product.autocommit(self.connection, True)
-        return {"products": products}
-
-    def UpdateStock(self, product_name, amount, reference=None):
-        product = model.Product.FromName(self.connection, product_name)
-        currentstock = product.currentstock
-        if (
-            amount < 0 and abs(amount) > currentstock  # only assemble when we sell
-        ):  # only assemble when we have not enough stock
-            try:
-                product.Assemble(
-                    abs(amount)
-                    - currentstock,  # only assemble what is missing for this sale
-                    "Assembly for %s" % reference,
-                )
-            except common_model.AssemblyError as error:
-                raise ValueError(error.args[0])
-
-        model.Stock.Create(
-            self.connection,
-            {
-                "product": product,
-                "amount": amount,
-                "reference": self.post.get("reference", ""),
-            },
-        )
-        return {"stock": product.currentstock, "possible_stock": product.possiblestock}
-
-    @uweb3.decorators.loggedin
+    @loggedin
     @uweb3.decorators.TemplateParser("gs1.html")
     def RequestGS1(self):
         """Returns the gs1 page"""
@@ -383,7 +270,7 @@ class PageMaker(basepages.PageMaker):
         )
         return {"products": products}
 
-    @uweb3.decorators.loggedin
+    @loggedin
     @uweb3.decorators.TemplateParser("ean.html")
     def RequestEAN(self):
         """Returns the EAN page"""
