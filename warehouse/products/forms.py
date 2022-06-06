@@ -1,4 +1,5 @@
 import decimal
+from dis import disassemble
 
 from wtforms import (
     DecimalField,
@@ -38,6 +39,11 @@ class ProductForm(Form):
         "assemblycosts",
         validators=[validators.InputRequired(), validators.NumberRange(min=0)],
         description="What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be filled.",
+    )
+    disassembled_piece_price = DecimalField(
+        "disassembled piece price",
+        validators=[validators.Optional(), validators.NumberRange(min=0)],
+        description="If this product is part of a bifer product, what is the price of each piece when the bigger product is disassembled?",
     )
 
 
@@ -90,7 +96,7 @@ class ProductAssembleFromPartForm(Form):
     )
 
 
-class ProductStockForm(Form):
+class ProductAssemblyForm(Form):
     amount = IntegerField("amount", [validators.NumberRange(min=1, max=65535)])
     reference = StringField(
         "reference",
@@ -102,8 +108,11 @@ class ProductStockForm(Form):
         [validators.Optional(), validators.Length(max=45)],
         description="The Lot number of this shipment.",
     )
+
+
+class ProductStockForm(ProductAssemblyForm):
     piece_price = DecimalField(
-        "piece_price",
+        "piece price",
         validators=[validators.InputRequired(), validators.NumberRange(min=0)],
         description="How much did you pay for each individual piece from the supplier?.",
     )
@@ -151,14 +160,14 @@ def get_stock_factory(postdata=None):
     """
     factory = StockMutationFactory()
 
-    assemble_from_part = ProductStockForm(postdata)
+    assemble_from_part = ProductAssemblyForm(postdata)
     assemble_from_part.amount.description = "How many were assembled"
     assemble_from_part.reference.description = "Optional reference for this assembly"
     assemble_from_part.lot.description = (
         "The lot number for these newly assembled products"
     )
 
-    disassemble_into_parts = ProductStockForm(postdata)
+    disassemble_into_parts = ProductAssemblyForm(postdata)
     disassemble_into_parts.amount.description = "How many were disassembled"
     disassemble_into_parts.reference.description = (
         "The invoice ID from the supplier, or the customer"
