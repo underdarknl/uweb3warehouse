@@ -83,17 +83,17 @@ class StockMutationFactory:
         return form
 
 
-def get_stock_factory():
+def get_stock_factory(postdata=None):
     factory = StockMutationFactory()
 
-    assemble_from_part = ProductStockForm()
+    assemble_from_part = ProductStockForm(postdata)
     assemble_from_part.amount.description = "How many were assembled"
     assemble_from_part.reference.description = "Optional reference for this assembly"
     assemble_from_part.lot.description = (
         "The lot number for these newly assembled products"
     )
 
-    disassemble_into_parts = ProductStockForm()
+    disassemble_into_parts = ProductStockForm(postdata)
     disassemble_into_parts.amount.description = "How many were disassembled"
     disassemble_into_parts.reference.description = (
         "The invoice ID from the supplier, or the customer"
@@ -102,7 +102,7 @@ def get_stock_factory():
         "The lot number of the disassembled products"
     )
 
-    factory.register_form("stock_form", ProductStockForm())
+    factory.register_form("stock_form", ProductStockForm(postdata))
     factory.register_form("assemble_from_part", assemble_from_part)
     factory.register_form("disassemble_into_parts", disassemble_into_parts)
 
