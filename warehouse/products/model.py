@@ -186,7 +186,7 @@ class Product(model.Record):
             if not possiblestock["available"] or possiblestock["available"] < amount:
                 raise common_model.AssemblyError(
                     "Cannot assemble this product, not enough parts. Limited by: %s"
-                    % possiblestock["limitedby"]["part"]["name"]
+                    % possiblestock["limitedby"]["part"]["sku"]
                 )
             parts = possiblestock["parts"]
         elif amount < 0:
