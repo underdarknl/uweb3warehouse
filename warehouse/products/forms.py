@@ -8,6 +8,7 @@ from wtforms import (
     SelectField,
     StringField,
     TextAreaField,
+    ValidationError,
     validators,
 )
 
@@ -97,7 +98,7 @@ class ProductAssembleFromPartForm(Form):
 
 
 class ProductAssemblyForm(Form):
-    amount = IntegerField("amount", [validators.NumberRange(min=1, max=65535)])
+    amount = IntegerField("amount")
     reference = StringField(
         "reference",
         [validators.Optional(), validators.Length(max=255)],
@@ -113,9 +114,15 @@ class ProductAssemblyForm(Form):
 class ProductStockForm(ProductAssemblyForm):
     piece_price = DecimalField(
         "piece price",
-        validators=[validators.InputRequired(), validators.NumberRange(min=0)],
         description="How much did you pay for each individual piece from the supplier?.",
     )
+
+    def validate_piece_price(self, field):
+        if self.amount is not None:
+            if self.amount.data >= 0 and field.data is None:
+                raise ValidationError(
+                    "If you are adding stock, you must also specify a piece price."
+                )
 
 
 class ProductPriceForm(Form):
