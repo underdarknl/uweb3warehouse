@@ -141,6 +141,8 @@ class Product(model.Record):
 
     @property
     def product_piece_price(self):
+        """Calculates the price per piece depending on the stock that is currently available."""
+        # TODO: Handle negative stock, how do we determine the price?
         with self.connection as cursor:
             result = cursor.Execute(
                 f"""
@@ -292,7 +294,7 @@ class Productpart(model.Record):
 
     @property
     def assemble_cost(self):
-        return self["part"].test_cost[0]["piece_price"]
+        return self["part"].product_piece_price[0]["piece_price"]
 
 
 class Productprice(model.Record):
