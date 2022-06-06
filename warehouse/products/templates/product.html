@@ -15,8 +15,7 @@
 <section>
     {{ if [stock] }}
     {{ inline tables/product_stock.html }}
-
-    {{ if [stockrows] and len([stock]) < [stockrows] }}<p><a href="?unlimitedstock=true">See all [stockrows] stock
+    {{ if [stockrows] and len([stock]) < [stockrows] }} <p><a href="?unlimitedstock=true">See all [stockrows] stock
             mutations.</a></p>{{ endif }}
         <p class="info">Current stock: [product:currentstock] units</p>
         {{ if [product:possiblestock:available] }}
@@ -26,7 +25,7 @@
         </p>{{elif [parts] }}
         <p class="warning">No new stock can be created, not enough parts available.</p>
         {{ endif }}
-    {{ endif }}
+        {{ endif }}
 </section>
 
 <section>
