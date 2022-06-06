@@ -268,3 +268,7 @@ class Productpart(model.Record):
     def subtotal(self):
         # return (self["amount"] * self["part"]["cost"]) + self["assemblycosts"]
         return (self["amount"] * 1) + self["assemblycosts"]
+
+
+class Productprice(model.Record):
+    """Provides a model abstraction for the Productprice table"""
