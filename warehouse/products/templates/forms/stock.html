@@ -1,0 +1,27 @@
+<form action="/product/[product:sku]/stock" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    {{ for field in [stock_form] }}
+        <p>[field:description]</p>
+        {{ if [field:errors] }}
+            {{ for error in [field:errors] }}
+                <p class="error">[error]</p>
+            {{ endfor }}
+        {{ endif }}
+    <div>
+        [field:label]
+        [field]
+    </div>
+    {{ endfor }}
+
+    {{ if [parts] }}
+        {{ if [product:possiblestock:available] }}
+            <p class="info">This product is made up of <a href="#parts">parts</a>, use the <a href="#assembly">assembly form</a> to <strong>add</strong>
+            stock.</p>
+        {{ else }}
+        <p class="warning">No new stock can be created, not enough <a href="#parts">parts</a>
+            available. <br>Stock can be added only by adding complete products from a
+            supplier.</p>
+        {{ endif }}
+    {{ endif }}
+    <div><input type="submit" value="Add stock change" class="primary"></div>
+</form>
