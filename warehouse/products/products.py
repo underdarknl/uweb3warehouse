@@ -362,13 +362,22 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product_supplier.html")
-    def RequestProductSuppliers(self, sku, supplier_product_form=None):
+    def RequestProductSuppliers(self, sku):
         product = model.Product.FromSku(self.connection, sku)
 
-        if not supplier_product_form:
-            supplier_product_form = forms.SupplierProduct()
-            supplier_product_form.supplier.choices = helpers.suppliers_select_list(
-                supplier_model.Supplier.List(self.connection)
+        supplier_product_form = forms.SupplierProduct(self.post)
+        supplier_product_form.supplier.choices = helpers.suppliers_select_list(
+            supplier_model.Supplier.List(self.connection)
+        )
+
+        if self.post and supplier_product_form.validate():
+            supplier_product = {
+                "product": product["ID"],
+                **supplier_product_form.data,
+            }
+            supplier_model.Supplierproduct.Create(self.connection, supplier_product)
+            return self.req.Redirect(
+                f"/product/{product['sku']}/suppliers", httpcode=301
             )
 
         return dict(
@@ -380,29 +389,6 @@ class PageMaker(basepages.PageMaker):
                 )
             ),
         )
-
-    @loggedin
-    @NotExistsErrorCatcher
-    @uweb3.decorators.checkxsrf
-    def RequestProductAddSupplier(self, sku):
-        product = model.Product.FromSku(self.connection, sku)
-
-        supplier_product_form = forms.SupplierProduct(self.post)
-        supplier_product_form.supplier.choices = helpers.suppliers_select_list(
-            supplier_model.Supplier.List(self.connection)
-        )
-        supplier_product_form.validate()
-
-        if supplier_product_form.errors:
-            return self.RequestProductSuppliers(
-                sku, supplier_product_form=supplier_product_form
-            )
-        supplier_product = {
-            "product": product["ID"],
-            **supplier_product_form.data,
-        }
-        supplier_model.Supplierproduct.Create(self.connection, supplier_product)
-        return self.req.Redirect(f"/product/{product['sku']}/suppliers", httpcode=301)
 
     @loggedin
     @NotExistsErrorCatcher
