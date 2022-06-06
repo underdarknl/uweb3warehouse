@@ -1,12 +1,12 @@
-<form action="/product/[product:sku]/stock" method="post">
+<form action="/product/[product:sku]/stock/assemble" method="post">
     <input type="hidden" name="xsrf" value="[xsrf]">
     {{ for field in [assemble_from_part_form] }}
     <p>[field:description]</p>
-    {{ if [field:errors] }}
-    {{ for error in [field:errors] }}
-    <p class="error">[error]</p>
-    {{ endfor }}
-    {{ endif }}
+        {{ if [field:errors] }}
+            {{ for error in [field:errors] }}
+                <p class="error">[error]</p>
+            {{ endfor }}
+        {{ endif }}
     <div>
         [field:label]
         [field]

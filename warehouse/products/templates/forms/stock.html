@@ -1,4 +1,4 @@
-<form action="/product/[product:sku]/stock" method="post">
+<form action="/product/[product:sku]/stock/add" method="post">
     <input type="hidden" name="xsrf" value="[xsrf]">
     {{ for field in [stock_form] }}
         <p>[field:description]</p>

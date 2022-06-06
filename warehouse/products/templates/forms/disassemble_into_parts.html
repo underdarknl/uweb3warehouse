@@ -1,4 +1,4 @@
-<form action="/product/[product:sku]/stock" method="post">
+<form action="/product/[product:sku]/stock/disassemble" method="post">
     <input type="hidden" name="xsrf" value="[xsrf]">
     {{ for field in [disassemble_into_parts_form] }}
         <p>[field:description]</p>
