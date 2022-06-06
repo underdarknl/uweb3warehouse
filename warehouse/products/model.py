@@ -6,9 +6,11 @@ __version__ = "1.0"
 
 # standard modules
 import datetime
+import decimal
 import math
 
 import pytz
+import uweb3.helpers
 from uweb3 import model
 
 from warehouse.common import model as common_model
@@ -38,9 +40,9 @@ class Product(model.Record):
 
         Arguments:
         @ connection: sqltalk.connection
-          Database connection to use.
+            Database connection to use.
         % query: str
-          Filters on name
+            Filters on name
         """
         if not conditions:
             conditions = []
@@ -60,17 +62,17 @@ class Product(model.Record):
         """Returns the product of the given common name.
 
         Arguments:
-          @ connection: sqltalk.connection
-            Database connection to use.
-          @ name: str
-            The common name of the product.
+            @ connection: sqltalk.connection
+                Database connection to use.
+            @ name: str
+                The common name of the product.
 
         Raises:
-          NotExistError:
-            The given product name does not exist.
+            NotExistError:
+                The given product name does not exist.
 
         Returns:
-          Collection: product abstraction class.
+            Collection: product abstraction class.
         """
         if not conditions:
             conditions = []
@@ -136,6 +138,22 @@ class Product(model.Record):
         if stock[0]["currentstock"]:
             return int(stock[0]["currentstock"])
         return 0
+
+    @property
+    def product_piece_price(self):
+        with self.connection as cursor:
+            result = cursor.Execute(
+                f"""
+                SELECT parent.piece_price
+                FROM warehouse.stock as parent
+                WHERE product={self['ID']}
+                AND piece_price is not null
+                AND (select sum(test.amount) from warehouse.stock as test where product={self['ID']} and piece_price is not null and test.ID <= parent.ID) +
+                (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) =
+                (select sum(test.amount) from warehouse.stock as test where product={self['ID']});
+                """
+            )
+            return result
 
     @property
     def possiblestock(
@@ -205,26 +223,29 @@ class Product(model.Record):
         """Tries to use up this products parts and assembles them, mutating stock on all products involved."""
         parts = self.AssemblyPossible(amount)
         # Mutate parts one by one
-        for part in parts:
-            subreference = "Assembly: %s, %s" % (self["name"], reference)
-            Stock.Create(
+        price = decimal.Decimal(0)
+        with uweb3.helpers.transaction(self.connection, self.__class__):
+            for part in parts:
+                subreference = "Assembly: %s, %s" % (self["name"], reference)
+                price += part.assemble_cost
+                Stock.Create(
+                    self.connection,
+                    {
+                        "product": int(part["part"]),
+                        "amount": (part["amount"] * amount) * -1,
+                        "reference": subreference,
+                    },
+                )
+            return Stock.Create(
                 self.connection,
                 {
-                    "product": int(part["part"]),
-                    "amount": (part["amount"] * amount) * -1,
-                    "reference": subreference[0:45],
+                    "product": self.key,
+                    "amount": amount,
+                    "reference": reference[0:45] if reference else "",
+                    "lot": lot,
+                    "piece_price": price,
                 },
             )
-        # Mutate this product as requested
-        return Stock.Create(
-            self.connection,
-            {
-                "product": self.key,
-                "amount": amount,
-                "reference": reference[0:45] if reference else "",
-                "lot": lot,
-            },
-        )
 
     def Disassemble(self, amount=1, reference="Disassembled for parts", lot=None):
         """Remove as many assemblies as requested and create stock for parts"""
@@ -268,6 +289,10 @@ class Productpart(model.Record):
     def subtotal(self):
         # return (self["amount"] * self["part"]["cost"]) + self["assemblycosts"]
         return (self["amount"] * 1) + self["assemblycosts"]
+
+    @property
+    def assemble_cost(self):
+        return self["part"].test_cost[0]["piece_price"]
 
 
 class Productprice(model.Record):
