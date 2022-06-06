@@ -367,19 +367,18 @@ class PageMaker(basepages.PageMaker):
 
         if not supplier_product_form:
             supplier_product_form = forms.SupplierProduct()
-            supplier_product_form.supplier.choices = [
-                (s["ID"], s["name"])
-                for s in supplier_model.Supplier.List(self.connection)
-            ]
-        test = list(
-            supplier_model.Supplierproduct.List(
-                self.connection, conditions=(f'product = {product["ID"]}')
+            supplier_product_form.supplier.choices = helpers.suppliers_select_list(
+                supplier_model.Supplier.List(self.connection)
             )
-        )
+
         return dict(
             product=product,
             supplier_product_form=supplier_product_form,
-            suppliers=test,
+            suppliers=list(
+                supplier_model.Supplierproduct.List(
+                    self.connection, conditions=(f'product = {product["ID"]}')
+                )
+            ),
         )
 
     @loggedin
@@ -389,9 +388,9 @@ class PageMaker(basepages.PageMaker):
         product = model.Product.FromSku(self.connection, sku)
 
         supplier_product_form = forms.SupplierProduct(self.post)
-        supplier_product_form.supplier.choices = [
-            (s["ID"], s["name"]) for s in supplier_model.Supplier.List(self.connection)
-        ]
+        supplier_product_form.supplier.choices = helpers.suppliers_select_list(
+            supplier_model.Supplier.List(self.connection)
+        )
         supplier_product_form.validate()
 
         if supplier_product_form.errors:
