@@ -404,3 +404,14 @@ class PageMaker(basepages.PageMaker):
         }
         supplier_model.Supplierproduct.Create(self.connection, supplier_product)
         return self.req.Redirect(f"/product/{product['sku']}/suppliers", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestProductRemoveSupplier(self, sku, product_supplier):
+        product = model.Product.FromSku(self.connection, sku)
+        product_supplier = supplier_model.Supplierproduct.FromPrimary(
+            self.connection, product_supplier
+        )
+        product_supplier.Delete()
+        return self.req.Redirect(f"/product/{product['sku']}/suppliers", httpcode=301)
