@@ -195,6 +195,7 @@ class PageMaker(basepages.PageMaker):
         form = forms.ProductAssembleFromPartForm(self.post)
         form.part.choices = helpers.possibleparts_select_list(possibleparts)
         form.validate()
+
         if form.errors:
             return self.RequestProduct(sku=sku, assemble_form=form)
 
@@ -257,33 +258,74 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductStock(self, sku):
+    def RequestProductStockAdd(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+
+        factory = forms.get_stock_factory(self.post)
+        form = factory.get_form("stock_form")
+        form.validate()
+
+        if form.errors:
+            return self.RequestProduct(sku=sku, stock_form=form)
+
+        try:
+            model.Stock.Create(
+                self.connection,
+                {
+                    "product": product,
+                    "amount": form.amount.data,
+                    "reference": form.reference.data,
+                    "lot": form.lot.data,
+                },
+            )
+        except common_model.AssemblyError as error:
+            return self.Error(error)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestProductStockAssemble(self, sku):
         """Creates a stock change for the product, either from a new shipment, or
         by assembling/ disassembling a product from its parts."""
         product = model.Product.FromSku(self.connection, sku)
+
+        factory = forms.get_stock_factory(self.post)
+        form = factory.get_form("assemble_from_part")
+        form.validate()
+
+        if form.errors:
+            return self.RequestProduct(sku=sku, assemble_from_part_form=form)
+
         try:
-            if "assemble" in self.post:
-                product.Assemble(
-                    int(self.post.getfirst("assemble", 1)),
-                    self.post.getfirst("reference", None),
-                    self.post.getfirst("lot", None),
-                )
-            elif "disassemble" in self.post:
-                product.Disassemble(
-                    int(self.post.getfirst("disassemble", 1)),
-                    self.post.getfirst("reference", None),
-                    self.post.getfirst("lot", None),
-                )
-            else:
-                model.Stock.Create(
-                    self.connection,
-                    {
-                        "product": product,
-                        "amount": int(self.post.getfirst("amount", 1)),
-                        "reference": self.post.getfirst("reference", ""),
-                        "lot": self.post.getfirst("lot", ""),
-                    },
-                )
+            product.Assemble(
+                form.amount.data,
+                form.reference.data,
+                form.lot.data,
+            )
+        except common_model.AssemblyError as error:
+            return self.Error(error)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestProductStockDisassemble(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+
+        factory = forms.get_stock_factory(self.post)
+        form = factory.get_form("disassemble_into_parts")
+        form.validate()
+
+        if form.errors:
+            return self.RequestProduct(sku=sku, disassemble_into_parts_form=form)
+
+        try:
+            product.Disassemble(
+                form.amount.data,
+                form.reference.data,
+                form.lot.data,
+            )
         except common_model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
