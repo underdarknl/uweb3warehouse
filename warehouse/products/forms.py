@@ -83,7 +83,9 @@ class ProductAssembleFromPartForm(Form):
     )
     assemblycosts = DecimalField(
         "assemblycosts",
-        validators=[validators.DataRequired()],
+        rounding=decimal.ROUND_UP,
+        places=2,
+        validators=[validators.DataRequired(), validators.NumberRange(min=0)],
         description="What does it cost to use the selected product as a part in the current product? A sticker needs to be applied, a jar needs to be filled.",
     )
 
@@ -99,6 +101,21 @@ class ProductStockForm(Form):
         "lot",
         [validators.Optional(), validators.Length(max=45)],
         description="The Lot number of this shipment.",
+    )
+
+
+class ProductPriceForm(Form):
+    price = DecimalField(
+        "price",
+        rounding=decimal.ROUND_UP,
+        places=2,
+        validators=[validators.DataRequired(), validators.NumberRange(min=0)],
+        description="The sale price for the product",
+    )
+    start_range = IntegerField(
+        "start_range",
+        [validators.NumberRange(min=1)],
+        description="The amount of products that need to be purchased before the price starts to apply.",
     )
 
 
