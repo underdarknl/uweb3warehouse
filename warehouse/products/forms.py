@@ -53,9 +53,57 @@ class ProductAssembleFromPartForm(Form):
     )
 
 
-class ProductAssembleForm(Form):
+class ProductStockForm(Form):
     amount = IntegerField("amount", [validators.NumberRange(min=1, max=65535)])
     reference = StringField(
-        "reference", [validators.Optional(), validators.Length(max=255)]
+        "reference",
+        [validators.Optional(), validators.Length(max=255)],
+        description="The invoice ID to the customer.",
     )
-    lot = StringField("lot", [validators.Optional(), validators.Length(max=45)])
+    lot = StringField(
+        "lot",
+        [validators.Optional(), validators.Length(max=45)],
+        description="The Lot number of this shipment.",
+    )
+
+
+class StockMutationFactory:
+    def __init__(self):
+        self._forms = {}
+
+    def register_form(self, name, form):
+        self._forms[name] = form
+
+    def get_form(self, name):
+        form = self._forms.get(name)
+        if not form:
+            raise ValueError(
+                f"Form {name} could not be found because it was not registered."
+            )
+        return form
+
+
+def get_stock_factory():
+    factory = StockMutationFactory()
+
+    assemble_from_part = ProductStockForm()
+    assemble_from_part.amount.description = "How many were assembled"
+    assemble_from_part.reference.description = "Optional reference for this assembly"
+    assemble_from_part.lot.description = (
+        "The lot number for these newly assembled products"
+    )
+
+    disassemble_into_parts = ProductStockForm()
+    disassemble_into_parts.amount.description = "How many were disassembled"
+    disassemble_into_parts.reference.description = (
+        "The invoice ID from the supplier, or the customer"
+    )
+    disassemble_into_parts.lot.description = (
+        "The lot number of the disassembled products"
+    )
+
+    factory.register_form("stock_form", ProductStockForm())
+    factory.register_form("assemble_from_part", assemble_from_part)
+    factory.register_form("disassemble_into_parts", disassemble_into_parts)
+
+    return factory
