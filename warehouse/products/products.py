@@ -68,7 +68,15 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product.html")
-    def RequestProduct(self, sku, product_form=None, assemble_form=None):
+    def RequestProduct(
+        self,
+        sku,
+        product_form=None,
+        assemble_form=None,
+        stock_form=None,
+        assemble_from_part_form=None,
+        disassemble_into_parts_form=None,
+    ):
         """Returns the product page"""
         product = model.Product.FromSku(self.connection, sku)
         parts = product.parts
@@ -101,6 +109,7 @@ class PageMaker(basepages.PageMaker):
         possibleparts = model.Product.List(
             self.connection, conditions=[f'ID != {product["ID"]}']
         )
+
         if not product_form:
             product_form = forms.ProductForm()
             product_form.process(data=product)
@@ -109,6 +118,15 @@ class PageMaker(basepages.PageMaker):
             assemble_form.part.choices = helpers.possibleparts_select_list(
                 possibleparts
             )
+
+        factory = forms.get_stock_factory()
+
+        if not stock_form:
+            stock_form = factory.get_form("stock_form")
+        if not assemble_from_part_form:
+            assemble_from_part_form = factory.get_form("assemble_from_part")
+        if not disassemble_into_parts_form:
+            disassemble_into_parts_form = factory.get_form("disassemble_into_parts")
 
         return {
             "products": product.AssemblyOptions(),
@@ -121,6 +139,9 @@ class PageMaker(basepages.PageMaker):
             "stockrows": stockrows,
             "product_form": product_form,
             "assemble_form": assemble_form,
+            "stock_form": stock_form,
+            "assemble_from_part_form": assemble_from_part_form,
+            "disassemble_into_parts_form": disassemble_into_parts_form,
         }
 
     @loggedin

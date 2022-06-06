@@ -27,76 +27,29 @@
             {{ endfor }}
         </tbody>
     </table>
-    {{ if [stockrows] and len([stock]) < [stockrows] }}<p><a href="?unlimitedstock=true">See all [stockrows] stock
-            mutations.</a></p>{{ endif }}
-        <p class="info">Current stock: [product:currentstock] units</p>
-        {{ if [product:possiblestock:available] }}
-        <p class="info">Possible addition to stock by using up available parts: [product:possiblestock:available] units,
-            limited by <a
-                href="/product/[product:possiblestock:limitedby:part:name]">[product:possiblestock:limitedby:part:name]</a>
-        </p>{{elif [parts] }}
-        <p class="warning">No new stock can be created, not enough parts available.</p>
+        {{ if [stockrows] and len([stock]) < [stockrows] }}<p><a href="?unlimitedstock=true">See all [stockrows] stock
+                mutations.</a></p>{{ endif }}
+            <p class="info">Current stock: [product:currentstock] units</p>
+            {{ if [product:possiblestock:available] }}
+            <p class="info">Possible addition to stock by using up available parts: [product:possiblestock:available] units,
+                limited by <a
+                    href="/product/[product:possiblestock:limitedby:part:sku]">[product:possiblestock:limitedby:part:name]</a>
+            </p>{{elif [parts] }}
+            <p class="warning">No new stock can be created, not enough parts available.</p>
+            {{ endif }}
         {{ endif }}
-        {{ endif }}
+
         <h2>Change the current stock:</h2>
-        <form action="/product/[product:sku]/stock" method="post">
-            <input type="hidden" name="xsrf" value="[xsrf]">
-            <div><label for="amount">Amount</label><input type="number" id="amount" name="amount" {{ if [parts]
-                    }}value="-1" {{ else }}value="1" {{ endif }} required></div>
-            <p>How many where {{ if not [parts] }}added or {{ endif }}removed from the stock.</p>
-            <div><label for="reference">Reference</label><input type="text" id="reference" name="reference"
-                    placeholder="Invoice XYZ" maxlength="45"></div>
-            <p>The invoice ID {{ if not [parts] }}from the supplier, or {{ endif }}to the customer.</p>
-            <div><label for="lot">Lot number</label><input type="text" id="lot" name="lot" maxlength="45"></div>
-            <p>The Lot number of this shipment.</p>
-            {{ if [parts] }}{{ if [product:possiblestock:available] }} <p class="info">This product is made up of <a
-                    href="#parts">parts</a>, use the <a href="#assembly">assembly form</a> to <strong>add</strong>
-                stock.</p>{{ else }}<p class="warning">No new stock can be created, not enough <a
-                    href="#parts">parts</a> available. <br>Stock can be added only by adding complete products from a
-                supplier.</p>{{ endif }}{{ endif }}
-            <div><input type="submit" value="Add stock change" class="primary"></div>
-        </form>
+        {{ inline forms/stock.html }}
+
         {{ if [product:possiblestock:available] and [product:parts] }}
-        <h2 id="assembly">Assemble new stock from parts:</h2>
-        <form action="/product/[product:sku]/stock" method="post">
-            <input type="hidden" name="xsrf" value="[xsrf]">
-            <div><label for="assemble_amount">Amount</label><input type="number" id="assemble_amount" name="assemble"
-                    value="1" required min="1" max="[product:possiblestock:available]"></div>
-            <p>How many where assembled.</p>
-            <div><label for="assemble_reference">Reference</label><input type="text" id="assemble_reference"
-                    name="reference" placeholder="Assembled [product:name]" maxlength="45"></div>
-            <p>Optional reference for this assembly.</p>
-            <div><label for="assemble_lot">Lot number</label><input type="text" id="assemble_lot" name="lot"
-                    maxlength="45"></div>
-            <p>The Lot number for these newly assembled products.</p>
-            <div><input type="submit" value="Add stock change" class="secundary"></div>
-        </form>
+            <h2 id="assembly">Assemble new stock from parts:</h2>
+            {{ inline forms/stock_from_parts.html }}
         {{ endif }}
+
         {{ if [product:currentstock] and [product:parts] }}
         <h2>Disassemble stock into parts:</h2>
-        <form action="/product/[product:sku]/stock" method="post">
-            <input type="hidden" name="xsrf" value="[xsrf]">
-            <div>
-                <label for="disassemble_amount">Amount</label>
-                <input type="number" id="disassemble_amount" name="disassemble" value="1" required min="1"
-                    max="[product:currentstock]">
-            </div>
-            <p>How many where disassembled.</p>
-            <div>
-                <label for="disassemble_reference">Reference</label>
-                <input type="text" id="disassemble_reference" name="reference" placeholder="Disassembled [product:name]"
-                    maxlength="45">
-            </div>
-            <p>The invoice ID from the supplier, or to the customer.</p>
-            <div>
-                <label for="disassemble_lot">Lot number</label>
-                <input type="text" id="disassemble_lot" name="lot" maxlength="45">
-            </div>
-            <p>The Lot number of the disassembled products.</p>
-            <div>
-                <input type="submit" value="Add stock change" class="secundary">
-            </div>
-        </form>
+            {{ inline forms/disassemble_into_parts.html }}
         {{ endif }}
 </section>
 
@@ -163,7 +116,7 @@
 {{ endif }}
 <section>
     <h2>Assemble product from parts:</h2>
-    {{ inline forms/assemble_from_part.html }}
+    {{ inline forms/assemble.html }}
 </section>
 
 {{ if [product:products] }}
