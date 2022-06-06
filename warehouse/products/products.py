@@ -414,3 +414,37 @@ class PageMaker(basepages.PageMaker):
         )
         product_supplier.Delete()
         return self.req.Redirect(f"/product/{product['sku']}/suppliers", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    @uweb3.decorators.TemplateParser("prices.html")
+    def RequestProductPrices(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+        product_price_form = forms.ProductPriceForm(self.post)
+
+        if self.post and product_price_form.validate():
+            new_product_price = {"product": product["ID"], **product_price_form.data}
+            model.Productprice.Create(self.connection, new_product_price)
+            return self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)
+
+        return dict(
+            product=product,
+            product_price_form=product_price_form,
+            product_prices=list(
+                model.Productprice.List(
+                    self.connection, conditions=f"product = {product['ID']}"
+                )
+            ),
+        )
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestDeleteProductPrice(self, sku, product_price_id):
+        product = model.Product.FromSku(self.connection, sku)
+        product_price = model.Productprice.FromPrimary(
+            self.connection, product_price_id
+        )
+        product_price.Delete()
+        self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)

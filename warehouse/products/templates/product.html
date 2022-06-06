@@ -2,7 +2,14 @@
 <script src="/js/forms.js"></script>
 <section>
     <h2>Product: [product:name]</h2>
-    <a href="/product/[product:sku]/suppliers">Manage suppliers</a>
+    <ul id="manage-products">
+        <li>
+            <a href="/product/[product:sku]/suppliers">Manage suppliers</a>
+        </li>
+        <li>
+            <a href="/product/[product:sku]/prices">Manage product sale price</a>
+        </li>
+    </ul>
 </section>
 
 <section>

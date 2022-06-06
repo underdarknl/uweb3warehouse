@@ -1,0 +1,31 @@
+{{ if len([product_prices]) >= 1 }}
+<table>
+    <thead>
+        <tr>
+            <th>Price</th>
+            <th>Start range</th>
+            <th>Actions</th>
+
+        </tr>
+    </thead>
+    {{for product_price in [product_prices] }}
+    <tr>
+        <td>
+            &euro;[product_price:price]</a>
+        </td>
+        <td>
+            [product_price:start_range]
+        </td>
+        <td>
+            <form action="/product/[product:sku]/prices/[product_price:ID]/delete" method="post">
+                <input type="hidden" name="xsrf" value="[xsrf]">
+                <input type="submit" value="Remove"
+                    onclick="return confirm('Are you sure you want to delete this price range?');">
+            </form>
+        </td>
+    </tr>
+    {{ endfor }}
+</table>
+{{ else }}
+    <p class="info">No prices for the current product</p>
+{{ endif }}

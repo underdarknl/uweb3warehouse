@@ -1,13 +1,15 @@
 {{ if len([suppliers]) >= 1 }}
 <table>
-    <tr>
-        <th>Supplier</th>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Vat</th>
-        <th>Stock</th>
-        <th>Action</th>
-    </tr>
+    <thead>
+        <tr>
+            <th>Supplier</th>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Vat</th>
+            <th>Stock</th>
+            <th>Action</th>
+        </tr>
+    </thead>
     {{ for supplier_product in [suppliers] }}
     <tr>
         <td>

@@ -63,6 +63,14 @@ urls = [
         "POST",
     ),
     (
+        "/product/([^/]*)/prices",
+        (products.PageMaker, "RequestProductPrices"),
+    ),
+    (
+        "/product/([^/]*)/prices/([0-9]+)/delete",
+        (products.PageMaker, "RequestDeleteProductPrice"),
+    ),
+    (
         "/api/v1/product/([^/]*)",
         (api.PageMaker, "JsonProduct"),
         "GET",
