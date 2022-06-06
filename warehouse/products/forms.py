@@ -1,3 +1,5 @@
+import decimal
+
 from wtforms import (
     DecimalField,
     Form,
@@ -36,6 +38,37 @@ class ProductForm(Form):
         "assemblycosts",
         validators=[validators.DataRequired()],
         description="What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be filled.",
+    )
+
+
+class SupplierProduct(Form):
+    supplier = SelectField("supplier")
+    cost = DecimalField(
+        "cost",
+        rounding=decimal.ROUND_UP,
+        places=2,
+        description="The amount that we pay for the product.",
+        validators=[validators.DataRequired(), validators.NumberRange(min=0)],
+    )
+    vat = DecimalField(
+        "vat",
+        rounding=decimal.ROUND_UP,
+        places=2,
+        description="The VAT percentage that we pay for the product.",
+        validators=[validators.DataRequired(), validators.NumberRange(min=0, max=100)],
+    )
+    name = StringField(
+        "name",
+        [validators.Length(min=5, max=255), validators.DataRequired()],
+        description="The name that the supplier has for the product",
+    )
+    lead = StringField(
+        "lead",
+        description="The amount of days that it takes to ship the product from the supplier to us.",
+    )
+    supplier_stock = IntegerField(
+        "supplier_stock",
+        description="The amount of stock that the supplier currently has for this product.",
     )
 
 
@@ -84,6 +117,14 @@ class StockMutationFactory:
 
 
 def get_stock_factory(postdata=None):
+    """Factory used to create forms that are similar to the stock mutation form but have different descriptions.
+
+    Args:
+        postdata (dict, optional): The PageMaker.post data from the request. Defaults to None.
+
+    Returns:
+        wtfforms.Form: The form used for the stock mutation.
+    """
     factory = StockMutationFactory()
 
     assemble_from_part = ProductStockForm(postdata)

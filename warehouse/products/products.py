@@ -358,3 +358,49 @@ class PageMaker(basepages.PageMaker):
             },
         )
         return {"products": products}
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.TemplateParser("product_supplier.html")
+    def RequestProductSuppliers(self, sku, supplier_product_form=None):
+        product = model.Product.FromSku(self.connection, sku)
+
+        if not supplier_product_form:
+            supplier_product_form = forms.SupplierProduct()
+            supplier_product_form.supplier.choices = [
+                (s["ID"], s["name"])
+                for s in supplier_model.Supplier.List(self.connection)
+            ]
+        test = list(
+            supplier_model.Supplierproduct.List(
+                self.connection, conditions=(f'product = {product["ID"]}')
+            )
+        )
+        return dict(
+            product=product,
+            supplier_product_form=supplier_product_form,
+            suppliers=test,
+        )
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestProductAddSupplier(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+
+        supplier_product_form = forms.SupplierProduct(self.post)
+        supplier_product_form.supplier.choices = [
+            (s["ID"], s["name"]) for s in supplier_model.Supplier.List(self.connection)
+        ]
+        supplier_product_form.validate()
+
+        if supplier_product_form.errors:
+            return self.RequestProductSuppliers(
+                sku, supplier_product_form=supplier_product_form
+            )
+        supplier_product = {
+            "product": product["ID"],
+            **supplier_product_form.data,
+        }
+        supplier_model.Supplierproduct.Create(self.connection, supplier_product)
+        return self.req.Redirect(f"/product/{product['sku']}/suppliers", httpcode=301)
