@@ -192,3 +192,7 @@ def update_stock(connection, sku, amount, reference=None):
 
 def possibleparts_select_list(possibleparts):
     return [(p["sku"], f"{p['sku']} - {p['name']}") for p in possibleparts]
+
+
+def suppliers_select_list(suppliers):
+    return [(s["ID"], s["name"]) for s in suppliers]
