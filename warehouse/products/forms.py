@@ -36,7 +36,7 @@ class ProductForm(Form):
     description = TextAreaField("description", validators=[validators.Optional()])
     assemblycosts = DecimalField(
         "assemblycosts",
-        validators=[validators.DataRequired()],
+        validators=[validators.InputRequired(), validators.NumberRange(min=0)],
         description="What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be filled.",
     )
 
@@ -48,14 +48,14 @@ class SupplierProduct(Form):
         rounding=decimal.ROUND_UP,
         places=2,
         description="The amount that we pay for the product.",
-        validators=[validators.DataRequired(), validators.NumberRange(min=0)],
+        validators=[validators.InputRequired(), validators.NumberRange(min=0)],
     )
     vat = DecimalField(
         "vat",
         rounding=decimal.ROUND_UP,
         places=2,
         description="The VAT percentage that we pay for the product.",
-        validators=[validators.DataRequired(), validators.NumberRange(min=0, max=100)],
+        validators=[validators.InputRequired(), validators.NumberRange(min=0, max=100)],
     )
     name = StringField(
         "name",
@@ -85,7 +85,7 @@ class ProductAssembleFromPartForm(Form):
         "assemblycosts",
         rounding=decimal.ROUND_UP,
         places=2,
-        validators=[validators.DataRequired(), validators.NumberRange(min=0)],
+        validators=[validators.InputRequired(), validators.NumberRange(min=0)],
         description="What does it cost to use the selected product as a part in the current product? A sticker needs to be applied, a jar needs to be filled.",
     )
 
@@ -102,6 +102,11 @@ class ProductStockForm(Form):
         [validators.Optional(), validators.Length(max=45)],
         description="The Lot number of this shipment.",
     )
+    piece_price = DecimalField(
+        "piece_price",
+        validators=[validators.InputRequired(), validators.NumberRange(min=0)],
+        description="How much did you pay for each individual piece from the supplier?.",
+    )
 
 
 class ProductPriceForm(Form):
@@ -109,7 +114,7 @@ class ProductPriceForm(Form):
         "price",
         rounding=decimal.ROUND_UP,
         places=2,
-        validators=[validators.DataRequired(), validators.NumberRange(min=0)],
+        validators=[validators.InputRequired(), validators.NumberRange(min=0)],
         description="The sale price for the product",
     )
     start_range = IntegerField(
