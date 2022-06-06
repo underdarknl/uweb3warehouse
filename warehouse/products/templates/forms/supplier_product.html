@@ -1,0 +1,18 @@
+<form action="/product/[product:sku]/suppliers/add" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    {{ for field in [supplier_product_form] }}
+        <p>[field:description]</p>
+        {{ if [field:errors] }}
+            {{ for error in [field:errors] }}
+                <p class="error">[error]</p>
+            {{ endfor }}
+        {{ endif }}
+    <div>
+        [field:label]
+        [field]
+    </div>
+    {{ endfor }}
+    <div>
+        <input type="submit" value="Add supplier" class="secundary">
+    </div>
+</form>

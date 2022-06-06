@@ -1,0 +1,32 @@
+{{ if len([suppliers]) >= 1 }}
+<table>
+    <tr>
+        <th>Supplier</th>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Vat</th>
+        <th>Stock</th>
+    </tr>
+    {{ for supplier_product in [suppliers] }}
+    <tr>
+        <td>
+            <a href="#">[supplier_product:supplier:name]</a>
+        </td>
+        <td>
+            [supplier_product:name]
+        </td>
+        <td>
+            [supplier_product:cost]
+        </td>
+        <td>
+            [supplier_product:vat]
+        </td>
+        <td>
+            [supplier_product:supplier_stock]
+        </td>
+    </tr>
+    {{ endfor }}
+</table>
+{{ else }}
+    <p class="info">There are no suppliers for this product</p>
+{{ endif }}
