@@ -49,6 +49,14 @@ urls = [
         "POST",
     ),
     (
+        "/product/([^/]*)/suppliers",
+        (products.PageMaker, "RequestProductSuppliers"),
+    ),
+    (
+        "/product/([^/]*)/suppliers/add",
+        (products.PageMaker, "RequestProductAddSupplier"),
+    ),
+    (
         "/api/v1/product/([^/]*)",
         (api.PageMaker, "JsonProduct"),
         "GET",
