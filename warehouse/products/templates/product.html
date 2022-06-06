@@ -76,16 +76,26 @@
         <h2>Disassemble stock into parts:</h2>
         <form action="/product/[product:sku]/stock" method="post">
             <input type="hidden" name="xsrf" value="[xsrf]">
-            <div><label for="disassemble_amount">Amount</label><input type="number" id="disassemble_amount"
-                    name="disassemble" value="1" required min="1" max="[product:currentstock]"></div>
+            <div>
+                <label for="disassemble_amount">Amount</label>
+                <input type="number" id="disassemble_amount" name="disassemble" value="1" required min="1"
+                    max="[product:currentstock]">
+            </div>
             <p>How many where disassembled.</p>
-            <div><label for="disassemble_reference">Reference</label><input type="text" id="disassemble_reference"
-                    name="reference" placeholder="Disassembled [product:name]" maxlength="45"></div>
+            <div>
+                <label for="disassemble_reference">Reference</label>
+                <input type="text" id="disassemble_reference" name="reference" placeholder="Disassembled [product:name]"
+                    maxlength="45">
+            </div>
             <p>The invoice ID from the supplier, or to the customer.</p>
-            <div><label for="disassemble_lot">Lot number</label><input type="text" id="disassemble_lot" name="lot"
-                    maxlength="45"></div>
+            <div>
+                <label for="disassemble_lot">Lot number</label>
+                <input type="text" id="disassemble_lot" name="lot" maxlength="45">
+            </div>
             <p>The Lot number of the disassembled products.</p>
-            <div><input type="submit" value="Add stock change" class="secundary"></div>
+            <div>
+                <input type="submit" value="Add stock change" class="secundary">
+            </div>
         </form>
         {{ endif }}
 </section>

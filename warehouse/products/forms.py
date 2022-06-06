@@ -2,6 +2,7 @@ from wtforms import (
     DecimalField,
     Form,
     IntegerField,
+    SelectField,
     StringField,
     TextAreaField,
     validators,
@@ -38,9 +39,23 @@ class ProductForm(Form):
     )
 
 
-class ProductAssembleForm(Form):
-    part = StringField("part", [validators.Length(min=1, max=45)])
-    amount = IntegerField("amount", [validators.NumberRange(min=1, max=65535)])
-    assemblycosts = DecimalField(
-        "assemblycosts", validators=[validators.DataRequired()]
+class ProductAssembleFromPartForm(Form):
+    part = SelectField("part")
+    amount = IntegerField(
+        "amount",
+        [validators.NumberRange(min=1, max=65535)],
+        description="How many of the selected product are used as parts in the current product?",
     )
+    assemblycosts = DecimalField(
+        "assemblycosts",
+        validators=[validators.DataRequired()],
+        description="What does it cost to use the selected product as a part in the current product? A sticker needs to be applied, a jar needs to be filled.",
+    )
+
+
+class ProductAssembleForm(Form):
+    amount = IntegerField("amount", [validators.NumberRange(min=1, max=65535)])
+    reference = StringField(
+        "reference", [validators.Optional(), validators.Length(max=255)]
+    )
+    lot = StringField("lot", [validators.Optional(), validators.Length(max=45)])
