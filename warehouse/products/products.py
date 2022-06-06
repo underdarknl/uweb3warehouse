@@ -11,7 +11,7 @@ from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
 from warehouse.login import model as login_model
-from warehouse.products import forms, model
+from warehouse.products import forms, helpers, model
 from warehouse.suppliers import model as supplier_model
 
 
@@ -23,9 +23,6 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.TemplateParser("products.html")
     def RequestProducts(self, product_form=None):
         """Returns the Products page"""
-        if not product_form:
-            product_form = forms.ProductForm()
-
         supplier = None
         conditions = []
         linkarguments = {}
@@ -57,6 +54,8 @@ class PageMaker(basepages.PageMaker):
             products_args,
         )
 
+        if not product_form:
+            product_form = forms.ProductForm()
         return {
             "supplier": supplier,
             "products": products,
@@ -99,14 +98,21 @@ class PageMaker(basepages.PageMaker):
             partsprice["partstotal"] += part.subtotal
             partsprice["assembledtotal"] += part.subtotal + part["assemblycosts"]
 
+        possibleparts = model.Product.List(
+            self.connection, conditions=[f'ID != {product["ID"]}']
+        )
         if not product_form:
             product_form = forms.ProductForm()
             product_form.process(data=product)
+        if not assemble_form:
+            assemble_form = forms.ProductAssembleFromPartForm()
+            assemble_form.part.choices = helpers.possibleparts_select_list(
+                possibleparts
+            )
+
         return {
             "products": product.AssemblyOptions(),
-            "possibleparts": model.Product.List(
-                self.connection, conditions=[f'ID != {product["ID"]}']
-            ),
+            "possibleparts": possibleparts,
             "parts": parts,
             "partsprice": partsprice,
             "product": product,
@@ -162,7 +168,11 @@ class PageMaker(basepages.PageMaker):
     def RequestProductAssemble(self, sku):
         """Add a new part to an existing product"""
         product = model.Product.FromSku(self.connection, sku)
-        form = forms.ProductAssembleForm(self.post)
+        possibleparts = model.Product.List(
+            self.connection, conditions=[f'ID != {product["ID"]}']
+        )
+        form = forms.ProductAssembleFromPartForm(self.post)
+        form.part.choices = helpers.possibleparts_select_list(possibleparts)
         form.validate()
         if form.errors:
             return self.RequestProduct(sku=sku, assemble_form=form)
