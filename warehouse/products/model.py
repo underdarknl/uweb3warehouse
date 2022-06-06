@@ -146,13 +146,15 @@ class Product(model.Record):
         with self.connection as cursor:
             result = cursor.Execute(
                 f"""
-                SELECT parent.piece_price
+                SELECT
+                    parent.piece_price,
+                    (select sum(test.amount) from warehouse.stock as test where product={self['ID']} and piece_price is not null and test.ID <= parent.ID) +
+                    (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) as leftover_stock
                 FROM warehouse.stock as parent
                 WHERE product={self['ID']}
                 AND piece_price is not null
                 AND (select sum(test.amount) from warehouse.stock as test where product={self['ID']} and piece_price is not null and test.ID <= parent.ID) +
-                (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) =
-                (select sum(test.amount) from warehouse.stock as test where product={self['ID']});
+                (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) >= 1;
                 """
             )
             return result
@@ -229,7 +231,8 @@ class Product(model.Record):
         with uweb3.helpers.transaction(self.connection, self.__class__):
             for part in parts:
                 subreference = "Assembly: %s, %s" % (self["name"], reference)
-                price += part.assemble_cost
+                test = part.assemble_cost  # TODO: Take amount of parts into account
+                price += test[0]["piece_price"]
                 Stock.Create(
                     self.connection,
                     {
@@ -294,7 +297,7 @@ class Productpart(model.Record):
 
     @property
     def assemble_cost(self):
-        return self["part"].product_piece_price[0]["piece_price"]
+        return self["part"].product_piece_price
 
 
 class Productprice(model.Record):
