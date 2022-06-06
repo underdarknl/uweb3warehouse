@@ -69,6 +69,7 @@ class SupplierProduct(Form):
     )
     supplier_stock = IntegerField(
         "supplier_stock",
+        [validators.NumberRange(min=0), validators.Optional()],
         description="The amount of stock that the supplier currently has for this product.",
     )
 
