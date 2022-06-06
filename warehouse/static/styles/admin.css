@@ -88,3 +88,7 @@ form table.products .number input[name$="_prices"] {
 form table.products .number input[name$="_vat"] {
     margin-right: 0.25rem;
 }
+#manage-products{
+    list-style-type: none;
+    padding-left: 0;
+}
