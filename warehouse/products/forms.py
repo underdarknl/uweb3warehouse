@@ -62,8 +62,9 @@ class SupplierProduct(Form):
         [validators.Length(min=5, max=255), validators.DataRequired()],
         description="The name that the supplier has for the product",
     )
-    lead = StringField(
+    lead = IntegerField(
         "lead",
+        [validators.NumberRange(min=0), validators.Optional()],
         description="The amount of days that it takes to ship the product from the supplier to us.",
     )
     supplier_stock = IntegerField(
