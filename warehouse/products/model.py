@@ -37,6 +37,19 @@ class Product(model.Record):
     _products = None
 
     @classmethod
+    def Create(self, connection, record):
+        sku = record.get("sku")
+        if not sku:
+            raise KeyError("Product must have a SKU value.")
+        try:
+            self.FromSku(connection, sku, check_deleted=True)
+        except self.NotExistError:
+            pass
+        else:
+            raise self.AlreadyExistError(f"Product with SKU {sku} already exists.")
+        return super().Create(connection, record)
+
+    @classmethod
     def List(cls, connection, conditions=[], *args, **kwargs):
         """Returns the Products filtered on not deleted"""
         return super().List(
@@ -70,7 +83,7 @@ class Product(model.Record):
         )
 
     @classmethod
-    def FromSku(cls, connection, sku, conditions=None):
+    def FromSku(cls, connection, sku, conditions=None, check_deleted=False):
         """Returns the product of the given common name.
 
         Arguments:
@@ -78,7 +91,8 @@ class Product(model.Record):
                 Database connection to use.
             @ name: str
                 The common name of the product.
-
+            @ check_deleted: bool
+                If true return the deleted product if it exists.
         Raises:
             NotExistError:
                 The given product name does not exist.
@@ -89,10 +103,14 @@ class Product(model.Record):
         if not conditions:
             conditions = []
         safe_sku = connection.EscapeValues(sku)
+        conditions.append("sku=%s" % safe_sku)
+        if not check_deleted:
+            conditions.append(common_model.NOTDELETED)
+
         with connection as cursor:
             product = cursor.Select(
                 table=cls.TableName(),
-                conditions=["sku=%s" % safe_sku, common_model.NOTDELETED] + conditions,
+                conditions=conditions,
             )
         if not product:
             raise cls.NotExistError(f"There is no product with sku {sku}")
