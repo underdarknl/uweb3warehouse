@@ -276,12 +276,12 @@ class Product(model.Record):
         Returns:
             model.Stock: The newly created stock record.
         """
-        piece_price = self._CalculateDisassemblyPrice(part)
+        piece_price = self._CalculateDisassemblyPrice(part["part"])
         return Stock.Create(
             self.connection,
             {
                 "product": part["part"]["ID"],
-                "amount": amount,
+                "amount": amount * part["amount"],
                 "reference": f"Disassembly: {part['product']['name']}, amount: {amount}",
                 "piece_price": piece_price,
             },
@@ -289,21 +289,23 @@ class Product(model.Record):
 
     def _CalculateDisassemblyPrice(self, part):
         """Retrieve the most recent piece price for this part.
+        If no price could be found because there is no stock present for a given product
+        the piece price is returned as decimal 0.
 
         Args:
-            part (model.Productpart): The ProductPart record to disassemble from.
+            part (model.Product): The ProductPart record to disassemble from.
 
         Raises:
-            ValueError: _description_
+            AssemblyError: Raised when no recent product price could be found from the stock.
 
         Returns:
-            _type_: _description_
+            decimal.Decimal: The piece price for each part, or decimal 0 if no price is found.
         """
         latest_price = list(
             Stock.List(
                 self.connection,
                 conditions=(
-                    f'product={part["part"]["ID"]}',
+                    f'product={part["ID"]}',
                     "piece_price is not null",
                 ),
                 limit=1,
@@ -311,7 +313,7 @@ class Product(model.Record):
             )
         )
         if not latest_price:
-            raise AssemblyError(f"No price found for part {part['part']['ID']}")
+            return decimal.Decimal(0)
         return latest_price[0]["piece_price"]
 
     def Assemble(self, amount=1, reference="Assembled from parts", lot=None):
@@ -415,6 +417,16 @@ class Product(model.Record):
                 return None
         return None
 
+    @property
+    def cost(self):
+        """Returns the current cost of a single product, this price is dynamic and depends on the
+        currently available stock. This is the price that is used when the product is sold.
+
+        Returns:
+            decimal.Decimal: The current price for a single product depending on stock
+        """
+        return self._CalculateDisassemblyPrice(self)
+
 
 class Stock(model.Record):
     """Provides a model abstraction for the stock table"""
@@ -427,8 +439,7 @@ class Productpart(model.Record):
 
     @property
     def subtotal(self):
-        # return (self["amount"] * self["part"]["cost"]) + self["assemblycosts"]
-        return (self["amount"] * 1) + self["assemblycosts"]
+        return (self["amount"] * self["part"].cost) + self["assemblycosts"]
 
 
 class Productprice(model.Record):
