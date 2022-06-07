@@ -7,7 +7,6 @@ import urllib.parse
 import uweb3
 
 from warehouse import basepages
-from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
 from warehouse.login import model as login_model
@@ -155,7 +154,7 @@ class PageMaker(basepages.PageMaker):
 
         try:
             product = model.Product.Create(self.connection, form.data)
-        except common_model.InvalidNameError:
+        except model.InvalidNameError:
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the product."
             )
@@ -275,7 +274,7 @@ class PageMaker(basepages.PageMaker):
                     "lot": form.lot.data,
                 },
             )
-        except common_model.AssemblyError as error:
+        except model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
@@ -308,7 +307,7 @@ class PageMaker(basepages.PageMaker):
                     )
                 }
             )
-        except common_model.AssemblyError as error:
+        except model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
@@ -339,7 +338,7 @@ class PageMaker(basepages.PageMaker):
                     )
                 }
             )
-        except common_model.AssemblyError as error:
+        except model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 

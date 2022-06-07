@@ -3,7 +3,6 @@ from collections import namedtuple
 
 import pandas
 
-from warehouse.common import model as common_model
 from warehouse.products import model
 
 
@@ -176,7 +175,7 @@ def update_stock(connection, sku, amount, reference=None):
                 - currentstock,  # only assemble what is missing for this sale
                 "Assembly for %s" % reference,
             )
-        except common_model.AssemblyError as error:
+        except model.AssemblyError as error:
             raise ValueError(error.args[0])
 
     model.Stock.Create(
