@@ -192,7 +192,6 @@ class PageMaker(basepages.PageMaker):
         possibleparts = model.Product.List(
             self.connection, conditions=[f'ID != {product["ID"]}']
         )
-
         form = forms.ProductAssembleFromPartForm(self.post)
         form.part.choices = helpers.possibleparts_select_list(possibleparts)
         form.validate()
@@ -201,15 +200,23 @@ class PageMaker(basepages.PageMaker):
             return self.RequestProduct(sku=sku, assemble_form=form)
 
         try:
-            part = model.Product.FromSku(self.connection, form.part.data)
+            part = model.Product.FromSku(
+                self.connection, self.post.getfirst("part")
+            )  # TODO: get part SKU
             model.Productpart.Create(
                 self.connection,
                 {
                     "product": product,
                     "part": part,
-                    "amount": form.amount.data,
-                    "assemblycosts": form.assemblycosts.data,
+                    "amount": int(self.post.getfirst("amount", 1)),
+                    "assemblycosts": float(
+                        self.post.getfirst("assemblycosts", part["assemblycosts"])
+                    ),
                 },
+            )
+        except ValueError:
+            return self.RequestInvalidcommand(
+                error="Input error, some fields are wrong."
             )
         except self.connection.IntegrityError:
             return self.Error("That part was already assembled in this product!", 200)
@@ -264,7 +271,12 @@ class PageMaker(basepages.PageMaker):
         try:
             model.Stock.Create(
                 self.connection,
-                {"product": product, **form.data},
+                {
+                    "product": product,
+                    "amount": form.amount.data,
+                    "reference": form.reference.data,
+                    "lot": form.lot.data,
+                },
             )
         except common_model.AssemblyError as error:
             return self.Error(error)
@@ -286,7 +298,11 @@ class PageMaker(basepages.PageMaker):
             return self.RequestProduct(sku=sku, assemble_from_part_form=form)
 
         try:
-            product.Assemble(**form.data)
+            product.Assemble(
+                form.amount.data,
+                form.reference.data,
+                form.lot.data,
+            )
         except common_model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
@@ -305,7 +321,11 @@ class PageMaker(basepages.PageMaker):
             return self.RequestProduct(sku=sku, disassemble_into_parts_form=form)
 
         try:
-            product.Disassemble(**form.data)
+            product.Disassemble(
+                form.amount.data,
+                form.reference.data,
+                form.lot.data,
+            )
         except common_model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
