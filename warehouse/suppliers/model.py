@@ -14,7 +14,10 @@ import pytz
 from uweb3 import model
 
 from warehouse.common import model as common_model
-from warehouse.login import model as login_model
+
+
+class Supplierproduct(model.Record):
+    """Used for mapping a product to a supplier product."""
 
 
 class Supplier(model.Record):

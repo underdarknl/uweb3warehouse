@@ -4,7 +4,6 @@
 import uweb3
 
 from warehouse import basepages
-from warehouse.common import model as common_model
 from warehouse.common.decorators import apiuser, json_error_wrapper
 from warehouse.products import helpers, model
 
@@ -72,7 +71,7 @@ class PageMaker(basepages.PageMaker):
                     if "reference" in self.post
                     else None,
                 )
-            except common_model.AssemblyError as error:
+            except model.AssemblyError as error:
                 raise ValueError(error.args[0])
 
         # by now we should have enough products in stock, one way or another

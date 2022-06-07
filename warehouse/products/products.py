@@ -11,7 +11,7 @@ from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
 from warehouse.login import model as login_model
-from warehouse.products import forms, model
+from warehouse.products import forms, helpers, model
 from warehouse.suppliers import model as supplier_model
 
 
@@ -23,9 +23,6 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.TemplateParser("products.html")
     def RequestProducts(self, product_form=None):
         """Returns the Products page"""
-        if not product_form:
-            product_form = forms.ProductForm()
-
         supplier = None
         conditions = []
         linkarguments = {}
@@ -57,6 +54,8 @@ class PageMaker(basepages.PageMaker):
             products_args,
         )
 
+        if not product_form:
+            product_form = forms.ProductForm()
         return {
             "supplier": supplier,
             "products": products,
@@ -69,7 +68,15 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product.html")
-    def RequestProduct(self, sku, product_form=None, assemble_form=None):
+    def RequestProduct(
+        self,
+        sku,
+        product_form=None,
+        assemble_form=None,
+        stock_form=None,
+        assemble_from_part_form=None,
+        disassemble_into_parts_form=None,
+    ):
         """Returns the product page"""
         product = model.Product.FromSku(self.connection, sku)
         parts = product.parts
@@ -99,14 +106,30 @@ class PageMaker(basepages.PageMaker):
             partsprice["partstotal"] += part.subtotal
             partsprice["assembledtotal"] += part.subtotal + part["assemblycosts"]
 
+        possibleparts = model.Product.List(
+            self.connection, conditions=[f'ID != {product["ID"]}']
+        )
+
         if not product_form:
             product_form = forms.ProductForm()
             product_form.process(data=product)
+        if not assemble_form:
+            assemble_form = forms.ProductAssembleFromPartForm()
+            assemble_form.part.choices = helpers.possibleparts_select_list(
+                possibleparts
+            )
+
+        factory = forms.get_stock_factory()
+
+        if not stock_form:
+            stock_form = factory.get_form("stock_form")
+        if not assemble_from_part_form:
+            assemble_from_part_form = factory.get_form("assemble_from_part")
+        if not disassemble_into_parts_form:
+            disassemble_into_parts_form = factory.get_form("disassemble_into_parts")
+
         return {
             "products": product.AssemblyOptions(),
-            "possibleparts": model.Product.List(
-                self.connection, conditions=[f'ID != {product["ID"]}']
-            ),
             "parts": parts,
             "partsprice": partsprice,
             "product": product,
@@ -115,6 +138,9 @@ class PageMaker(basepages.PageMaker):
             "stockrows": stockrows,
             "product_form": product_form,
             "assemble_form": assemble_form,
+            "stock_form": stock_form,
+            "assemble_from_part_form": assemble_from_part_form,
+            "disassemble_into_parts_form": disassemble_into_parts_form,
         }
 
     @loggedin
@@ -132,6 +158,9 @@ class PageMaker(basepages.PageMaker):
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the product."
             )
+        except model.Product.AlreadyExistError:
+            form.sku.errors = ["A product with this SKU already exists."]
+            return self.RequestProducts(product_form=form)
         except self.connection.IntegrityError as error:
             uweb3.logging.error("Error: ", error)
             return self.Error("Something went wrong", 200)
@@ -162,24 +191,25 @@ class PageMaker(basepages.PageMaker):
     def RequestProductAssemble(self, sku):
         """Add a new part to an existing product"""
         product = model.Product.FromSku(self.connection, sku)
-        form = forms.ProductAssembleForm(self.post)
+        possibleparts = model.Product.List(
+            self.connection, conditions=[f'ID != {product["ID"]}']
+        )
+        form = forms.ProductAssembleFromPartForm(self.post)
+        form.part.choices = helpers.possibleparts_select_list(possibleparts)
         form.validate()
+
         if form.errors:
             return self.RequestProduct(sku=sku, assemble_form=form)
 
         try:
-            part = model.Product.FromSku(
-                self.connection, self.post.getfirst("part")
-            )  # TODO: get part SKU
+            part = model.Product.FromSku(self.connection, form.part.data)
             model.Productpart.Create(
                 self.connection,
                 {
                     "product": product,
                     "part": part,
-                    "amount": int(self.post.getfirst("amount", 1)),
-                    "assemblycosts": float(
-                        self.post.getfirst("assemblycosts", part["assemblycosts"])
-                    ),
+                    "amount": form.amount.data,
+                    "assemblycosts": form.assemblycosts.data,
                 },
             )
         except ValueError:
@@ -226,34 +256,92 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    def RequestProductStock(self, sku):
+    def RequestProductStockAdd(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+
+        factory = forms.get_stock_factory(self.post)
+        form = factory.get_form("stock_form")
+        form.validate()
+
+        if form.errors:
+            return self.RequestProduct(sku=sku, stock_form=form)
+
+        try:
+            model.Stock.Create(
+                self.connection,
+                {
+                    "product": product,
+                    "amount": form.amount.data,
+                    "reference": form.reference.data,
+                    "piece_price": form.piece_price.data,
+                    "lot": form.lot.data,
+                },
+            )
+        except model.AssemblyError as error:
+            return self.Error(error)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestProductStockAssemble(self, sku):
         """Creates a stock change for the product, either from a new shipment, or
         by assembling/ disassembling a product from its parts."""
         product = model.Product.FromSku(self.connection, sku)
+
+        factory = forms.get_stock_factory(self.post)
+        form = factory.get_form("assemble_from_part")
+        form.validate()
+
+        if form.errors:
+            return self.RequestProduct(sku=sku, assemble_from_part_form=form)
+
         try:
-            if "assemble" in self.post:
-                product.Assemble(
-                    int(self.post.getfirst("assemble", 1)),
-                    self.post.getfirst("reference", None),
-                    self.post.getfirst("lot", None),
-                )
-            elif "disassemble" in self.post:
-                product.Disassemble(
-                    int(self.post.getfirst("disassemble", 1)),
-                    self.post.getfirst("reference", None),
-                    self.post.getfirst("lot", None),
-                )
-            else:
-                model.Stock.Create(
-                    self.connection,
-                    {
-                        "product": product,
-                        "amount": int(self.post.getfirst("amount", 1)),
-                        "reference": self.post.getfirst("reference", ""),
-                        "lot": self.post.getfirst("lot", ""),
-                    },
-                )
-        except common_model.AssemblyError as error:
+            product.Assemble(
+                **{
+                    key: value
+                    for key, value in form.data.items()
+                    if value is not None
+                    and key
+                    in (
+                        "amount",
+                        "reference",
+                        "lot",
+                    )
+                }
+            )
+        except model.AssemblyError as error:
+            return self.Error(error)
+        return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestProductStockDisassemble(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+
+        factory = forms.get_stock_factory(self.post)
+        form = factory.get_form("disassemble_into_parts")
+        form.validate()
+
+        if form.errors:
+            return self.RequestProduct(sku=sku, disassemble_into_parts_form=form)
+
+        try:
+            product.Disassemble(
+                **{
+                    key: value
+                    for key, value in form.data.items()
+                    if value is not None
+                    and key
+                    in (
+                        "amount",
+                        "reference",
+                        "lot",
+                    )
+                }
+            )
+        except model.AssemblyError as error:
             return self.Error(error)
         return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
@@ -285,3 +373,79 @@ class PageMaker(basepages.PageMaker):
             },
         )
         return {"products": products}
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.TemplateParser("product_supplier.html")
+    def RequestProductSuppliers(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+
+        supplier_product_form = forms.SupplierProduct(self.post)
+        supplier_product_form.supplier.choices = helpers.suppliers_select_list(
+            supplier_model.Supplier.List(self.connection)
+        )
+
+        if self.post and supplier_product_form.validate():
+            supplier_product = {
+                "product": product["ID"],
+                **supplier_product_form.data,
+            }
+            supplier_model.Supplierproduct.Create(self.connection, supplier_product)
+            return self.req.Redirect(
+                f"/product/{product['sku']}/suppliers", httpcode=301
+            )
+
+        return dict(
+            product=product,
+            supplier_product_form=supplier_product_form,
+            suppliers=list(
+                supplier_model.Supplierproduct.List(
+                    self.connection, conditions=(f'product = {product["ID"]}')
+                )
+            ),
+        )
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestProductRemoveSupplier(self, sku, product_supplier):
+        product = model.Product.FromSku(self.connection, sku)
+        product_supplier = supplier_model.Supplierproduct.FromPrimary(
+            self.connection, product_supplier
+        )
+        product_supplier.Delete()
+        return self.req.Redirect(f"/product/{product['sku']}/suppliers", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    @uweb3.decorators.TemplateParser("prices.html")
+    def RequestProductPrices(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+        product_price_form = forms.ProductPriceForm(self.post)
+
+        if self.post and product_price_form.validate():
+            new_product_price = {"product": product["ID"], **product_price_form.data}
+            model.Productprice.Create(self.connection, new_product_price)
+            return self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)
+
+        return dict(
+            product=product,
+            product_price_form=product_price_form,
+            product_prices=list(
+                model.Productprice.List(
+                    self.connection, conditions=f"product = {product['ID']}"
+                )
+            ),
+        )
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestDeleteProductPrice(self, sku, product_price_id):
+        product = model.Product.FromSku(self.connection, sku)
+        product_price = model.Productprice.FromPrimary(
+            self.connection, product_price_id
+        )
+        product_price.Delete()
+        return self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)

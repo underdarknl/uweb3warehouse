@@ -187,7 +187,9 @@ class AuthFactory:
         """
         builder = self._authenticators.get(key)
         if not builder:
-            raise ValueError(key)
+            raise ValueError(
+                f"Authentication service with name {key} is not registered."
+            )
         return builder(**kwargs)
 
 

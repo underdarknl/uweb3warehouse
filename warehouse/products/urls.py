@@ -34,9 +34,36 @@ urls = [
         "POST",
     ),
     (
-        "/product/([^/]*)/stock",
-        (products.PageMaker, "RequestProductStock"),
+        "/product/([^/]*)/stock/assemble",
+        (products.PageMaker, "RequestProductStockAssemble"),
         "POST",
+    ),
+    (
+        "/product/([^/]*)/stock/disassemble",
+        (products.PageMaker, "RequestProductStockDisassemble"),
+        "POST",
+    ),
+    (
+        "/product/([^/]*)/stock/add",
+        (products.PageMaker, "RequestProductStockAdd"),
+        "POST",
+    ),
+    (
+        "/product/([^/]*)/suppliers",
+        (products.PageMaker, "RequestProductSuppliers"),
+    ),
+    (
+        "/product/([^/]*)/suppliers/([0-9]+)/delete",
+        (products.PageMaker, "RequestProductRemoveSupplier"),
+        "POST",
+    ),
+    (
+        "/product/([^/]*)/prices",
+        (products.PageMaker, "RequestProductPrices"),
+    ),
+    (
+        "/product/([^/]*)/prices/([0-9]+)/delete",
+        (products.PageMaker, "RequestDeleteProductPrice"),
     ),
     (
         "/api/v1/product/([^/]*)",

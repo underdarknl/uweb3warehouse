@@ -1,0 +1,42 @@
+{{ if len([suppliers]) >= 1 }}
+<table>
+    <thead>
+        <tr>
+            <th>Supplier</th>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Vat</th>
+            <th>Stock</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    {{ for supplier_product in [suppliers] }}
+    <tr>
+        <td>
+            <a href="#">[supplier_product:supplier:name]</a>
+        </td>
+        <td>
+            [supplier_product:name]
+        </td>
+        <td>
+            &euro;[supplier_product:cost]
+        </td>
+        <td>
+            &euro;[supplier_product:vat]
+        </td>
+        <td>
+            [supplier_product:supplier_stock]
+        </td>
+        <td>
+            <form action="/product/[product:sku]/suppliers/[supplier_product:ID]/delete" method="post">
+                <input type="hidden" name="xsrf" value="[xsrf]">
+                <input type="submit" value="Remove"
+                    onclick="return confirm('Are you sure you want to delete supplier \'[supplier_product:supplier:name]\' for product \'[product:name]\'?');">
+            </form>
+        </td>
+    </tr>
+    {{ endfor }}
+</table>
+{{ else }}
+    <p class="info">There are no suppliers for this product</p>
+{{ endif }}

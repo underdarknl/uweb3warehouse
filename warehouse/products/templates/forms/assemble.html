@@ -1,0 +1,16 @@
+<form action="/product/[product:sku]/assemble" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    {{ for field in [assemble_form] }}
+        <p>[field:description]</p>
+        {{ if [field:errors] }}
+            {{ for error in [field:errors] }}
+                <p class="error">[error]</p>
+            {{ endfor }}
+        {{ endif }}
+    <div>
+        [field:label]
+        [field]
+    </div>
+    {{ endfor }}
+     <div><input type="submit" value="Add this part to this assembly"></div>
+</form>
