@@ -157,7 +157,9 @@ class Product(model.Record):
                 f"""
                 SELECT
                     parent.piece_price,
-                    parent.amount
+                    parent.amount,
+                    (select sum(test.amount) from warehouse.stock as test where product={self['ID']} and piece_price is not null and test.ID <= parent.ID) +
+                    (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) as actual_leftover_stock
                 FROM warehouse.stock as parent
                 WHERE product={self['ID']}
                 AND piece_price is not null
@@ -165,8 +167,16 @@ class Product(model.Record):
                 (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) >= 1;
                 """
             )
-
-        return [ProductPiecePrice(row["piece_price"], row["amount"]) for row in results]
+        prv = 0
+        lst = []
+        for row in results:
+            lst.append(
+                ProductPiecePrice(
+                    row["piece_price"], row["actual_leftover_stock"] - prv
+                )
+            )
+            prv = row["actual_leftover_stock"]
+        return lst
 
     @property
     def possiblestock(
@@ -208,29 +218,76 @@ class Product(model.Record):
         return self._possiblestock
 
     def AssemblyPossible(self, amount):
-        if amount > 0:
-            possiblestock = self.possiblestock
-            if not possiblestock["available"] and not possiblestock["limitedby"]:
-                raise common_model.AssemblyError(
-                    "Cannot assemble this product, is not an assembled product."
-                )
-            if not possiblestock["available"] or possiblestock["available"] < amount:
-                raise common_model.AssemblyError(
-                    "Cannot assemble this product, not enough parts. Limited by: %s"
-                    % possiblestock["limitedby"]["part"]["sku"]
-                )
-            parts = possiblestock["parts"]
-        elif amount < 0:
-            if self.currentstock < abs(amount):
-                raise common_model.AssemblyError(
-                    "Cannot Disassemble this product, not enough stock available."
-                )
-            parts = list(self.parts)
-            if parts == 0:
-                raise common_model.AssemblyError(
-                    "Cannot Disassemble this product, is not an assembled product."
-                )
+        possiblestock = self.possiblestock
+        if not possiblestock["available"] and not possiblestock["limitedby"]:
+            raise common_model.AssemblyError(
+                "Cannot assemble this product, is not an assembled product."
+            )
+        if not possiblestock["available"] or possiblestock["available"] < amount:
+            raise common_model.AssemblyError(
+                "Cannot assemble this product, not enough parts. Limited by: %s"
+                % possiblestock["limitedby"]["part"]["sku"]
+            )
+        return possiblestock["parts"]
+
+    def DisassemblyPossible(self, amount):
+        if self.currentstock < amount:
+            raise common_model.AssemblyError(
+                "Cannot Disassemble this product, not enough stock available."
+            )
+        parts = list(self.parts)
+        if not parts:
+            raise common_model.AssemblyError(
+                "Cannot Disassemble this product, is not an assembled product."
+            )
         return parts
+
+    def Disassemble(self, amount=1, reference="Disassembled for parts", lot=None):
+        """Remove as many assemblies as requested and create stock for parts"""
+        parts = self.DisassemblyPossible(amount)
+        # Mutate parts one by one
+
+        with uweb3.helpers.transaction(self.connection, self.__class__):
+            for part in parts:
+                self._ManageDisassemblyFromParts(amount, part)
+
+            return Stock.Create(
+                self.connection,
+                {
+                    "product": self.key,
+                    "amount": amount * -1,
+                    "reference": reference,
+                    "lot": lot,
+                },
+            )
+
+    def _ManageDisassemblyFromParts(self, amount, part):
+        piece_price = self._CalculateDisassemblyPrice(amount, part)
+        return Stock.Create(
+            self.connection,
+            {
+                "product": part["part"]["ID"],
+                "amount": amount,
+                "reference": f"Disassembly: {part['product']['name']}, amount: {amount}",
+                "piece_price": piece_price,
+            },
+        )
+
+    def _CalculateDisassemblyPrice(self, amount, part):
+        latest_price = list(
+            Stock.List(
+                self.connection,
+                conditions=(
+                    f'product={part["part"]["ID"]}',
+                    "piece_price is not null",
+                ),
+                limit=1,
+                order=[("ID", True)],
+            )
+        )
+        if not latest_price:
+            raise ValueError("No price found for part %s" % part["part"]["ID"])
+        return latest_price[0]["piece_price"]
 
     def Assemble(self, amount=1, reference="Assembled from parts", lot=None):
         """Tries to use up this products parts and assembles them, mutating stock on all products involved."""
@@ -266,11 +323,11 @@ class Product(model.Record):
             decimal.Decimal: The price of the assembled product.
         """
 
-        price = self._CalculatePrice(part, amount)
+        price = self._CalculateAssemblyPrice(amount, part)
         self._AssembleFromParts(amount, part)
         return price
 
-    def _CalculatePrice(self, part, amount):
+    def _CalculateAssemblyPrice(self, amount, part):
         """Calculate the total price of assembly for a part based on the current stock, and the prices the stock was bought at.
 
         Args:
@@ -308,10 +365,6 @@ class Product(model.Record):
                 "reference": subreference,
             },
         )
-
-    def Disassemble(self, amount=1, reference="Disassembled for parts", lot=None):
-        """Remove as many assemblies as requested and create stock for parts"""
-        return self.Assemble(amount * -1, reference or "Disassembled for parts", lot)
 
     def AssemblyOptions(self):
         partIds = []
