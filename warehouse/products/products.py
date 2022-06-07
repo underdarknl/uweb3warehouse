@@ -273,6 +273,7 @@ class PageMaker(basepages.PageMaker):
                     "product": product,
                     "amount": form.amount.data,
                     "reference": form.reference.data,
+                    "piece_price": form.piece_price.data,
                     "lot": form.lot.data,
                 },
             )
@@ -297,7 +298,17 @@ class PageMaker(basepages.PageMaker):
 
         try:
             product.Assemble(
-                amount=form.amount.data,
+                **{
+                    key: value
+                    for key, value in form.data.items()
+                    if value is not None
+                    and value
+                    in (
+                        "amount",
+                        "reference",
+                        "lot",
+                    )
+                }
             )
         except common_model.AssemblyError as error:
             return self.Error(error)
@@ -318,8 +329,17 @@ class PageMaker(basepages.PageMaker):
 
         try:
             product.Disassemble(
-                form.amount.data,
-                form.lot.data,
+                **{
+                    key: value
+                    for key, value in form.data.items()
+                    if value is not None
+                    and value
+                    in (
+                        "amount",
+                        "reference",
+                        "lot",
+                    )
+                }
             )
         except common_model.AssemblyError as error:
             return self.Error(error)
