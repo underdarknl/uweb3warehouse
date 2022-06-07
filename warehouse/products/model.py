@@ -245,7 +245,6 @@ class Product(model.Record):
     def Disassemble(self, amount=1, reference="Disassembled for parts", lot=None):
         """Remove as many assemblies as requested and create stock for parts"""
         parts = self.DisassemblyPossible(amount)
-        # Mutate parts one by one
 
         with uweb3.helpers.transaction(self.connection, self.__class__):
             for part in parts:
@@ -262,7 +261,7 @@ class Product(model.Record):
             )
 
     def _ManageDisassemblyFromParts(self, amount, part):
-        piece_price = self._CalculateDisassemblyPrice(amount, part)
+        piece_price = self._CalculateDisassemblyPrice(part)
         return Stock.Create(
             self.connection,
             {
@@ -273,7 +272,7 @@ class Product(model.Record):
             },
         )
 
-    def _CalculateDisassemblyPrice(self, amount, part):
+    def _CalculateDisassemblyPrice(self, part):
         latest_price = list(
             Stock.List(
                 self.connection,
