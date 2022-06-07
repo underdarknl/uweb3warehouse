@@ -41,11 +41,6 @@ class ProductForm(Form):
         validators=[validators.InputRequired(), validators.NumberRange(min=0)],
         description="What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be filled.",
     )
-    disassembled_piece_price = DecimalField(
-        "disassembled piece price",
-        validators=[validators.Optional(), validators.NumberRange(min=0)],
-        description="If this product is part of a bifer product, what is the price of each piece when the bigger product is disassembled?",
-    )
 
 
 class SupplierProduct(Form):
