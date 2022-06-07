@@ -200,9 +200,7 @@ class PageMaker(basepages.PageMaker):
             return self.RequestProduct(sku=sku, assemble_form=form)
 
         try:
-            part = model.Product.FromSku(
-                self.connection, form.sku.data
-            )  # TODO: get part SKU
+            part = model.Product.FromSku(self.connection, sku)  # TODO: get part SKU
             model.Productpart.Create(
                 self.connection,
                 {
@@ -302,7 +300,7 @@ class PageMaker(basepages.PageMaker):
                     key: value
                     for key, value in form.data.items()
                     if value is not None
-                    and value
+                    and key
                     in (
                         "amount",
                         "reference",
@@ -333,7 +331,7 @@ class PageMaker(basepages.PageMaker):
                     key: value
                     for key, value in form.data.items()
                     if value is not None
-                    and value
+                    and key
                     in (
                         "amount",
                         "reference",
