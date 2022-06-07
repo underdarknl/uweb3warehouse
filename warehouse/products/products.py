@@ -201,17 +201,15 @@ class PageMaker(basepages.PageMaker):
 
         try:
             part = model.Product.FromSku(
-                self.connection, self.post.getfirst("part")
+                self.connection, form.sku.data
             )  # TODO: get part SKU
             model.Productpart.Create(
                 self.connection,
                 {
                     "product": product,
                     "part": part,
-                    "amount": int(self.post.getfirst("amount", 1)),
-                    "assemblycosts": float(
-                        self.post.getfirst("assemblycosts", part["assemblycosts"])
-                    ),
+                    "amount": form.amount.data,
+                    "assemblycosts": form.assemblycosts.data,
                 },
             )
         except ValueError:
@@ -299,9 +297,7 @@ class PageMaker(basepages.PageMaker):
 
         try:
             product.Assemble(
-                form.amount.data,
-                form.reference.data,
-                form.lot.data,
+                amount=form.amount.data,
             )
         except common_model.AssemblyError as error:
             return self.Error(error)
@@ -323,7 +319,6 @@ class PageMaker(basepages.PageMaker):
         try:
             product.Disassemble(
                 form.amount.data,
-                form.reference.data,
                 form.lot.data,
             )
         except common_model.AssemblyError as error:
