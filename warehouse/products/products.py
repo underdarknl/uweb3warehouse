@@ -7,6 +7,7 @@ import urllib.parse
 import uweb3
 
 from warehouse import basepages
+from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
 from warehouse.login import model as login_model
@@ -129,7 +130,6 @@ class PageMaker(basepages.PageMaker):
 
         return {
             "products": product.AssemblyOptions(),
-            "possibleparts": possibleparts,
             "parts": parts,
             "partsprice": partsprice,
             "product": product,
@@ -154,10 +154,13 @@ class PageMaker(basepages.PageMaker):
 
         try:
             product = model.Product.Create(self.connection, form.data)
-        except model.InvalidNameError:
+        except common_model.InvalidNameError:
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the product."
             )
+        except model.Product.AlreadyExistError:
+            form.sku.errors = ["A product with this SKU already exists."]
+            return self.RequestProducts(product_form=form)
         except self.connection.IntegrityError as error:
             uweb3.logging.error("Error: ", error)
             return self.Error("Something went wrong", 200)

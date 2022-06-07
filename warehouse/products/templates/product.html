@@ -106,10 +106,13 @@
     </form>
 </section>
 {{ endif }}
-<section>
-    <h2>Assemble product from parts:</h2>
-    {{ inline forms/assemble.html }}
-</section>
+
+{{ if [assemble_form:part:choices]}}
+    <section>
+        <h2>Assemble product from parts:</h2>
+        {{ inline forms/assemble.html }}
+    </section>
+{{ endif }}
 
 {{ if [product:products] }}
 <section>
