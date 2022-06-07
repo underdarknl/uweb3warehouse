@@ -398,7 +398,7 @@ class Product(model.Record):
                 price += pair.piece_price * parts_needed
                 pair.leftover_stock -= parts_needed
                 current_pieces_used += parts_needed
-        return decimal.Decimal(price / amount)
+        return decimal.Decimal(price / amount) + part["assemblycosts"]
 
     def _AssembleFromParts(self, amount, part):
         subreference = "Assembly: %s, amount: %s " % (self["name"], amount)
