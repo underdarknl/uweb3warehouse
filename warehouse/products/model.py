@@ -10,14 +10,17 @@ import math
 
 # standard modules
 from dataclasses import dataclass
-from typing import NamedTuple
 
 import pytz
 import uweb3.helpers
 from uweb3 import model
 
 from warehouse.common import model as common_model
-from warehouse.login import model as login_model
+
+
+class AssemblyError(common_model.WarehouseException):
+    """The requested operation cannot continue because we could not assemble a
+    product as requested."""
 
 
 @dataclass
@@ -193,9 +196,11 @@ class Product(model.Record):
 
         limitedby = parts[0]
         availableassemblies = math.inf
+
         for part in parts:
             part["availablestock"] = part["part"].currentstock
             part["availablepossiblestock"] = part["part"].possiblestock
+
             if part["amount"]:
                 part["availableassemblies"] = int(
                     (
@@ -211,7 +216,7 @@ class Product(model.Record):
                 )
 
         self._possiblestock = {
-            "available": availableassemblies,
+            "available": availableassemblies if availableassemblies >= 0 else 0,
             "parts": parts,
             "limitedby": limitedby,
         }
@@ -220,11 +225,11 @@ class Product(model.Record):
     def AssemblyPossible(self, amount):
         possiblestock = self.possiblestock
         if not possiblestock["available"] and not possiblestock["limitedby"]:
-            raise common_model.AssemblyError(
+            raise AssemblyError(
                 "Cannot assemble this product, is not an assembled product."
             )
         if not possiblestock["available"] or possiblestock["available"] < amount:
-            raise common_model.AssemblyError(
+            raise AssemblyError(
                 "Cannot assemble this product, not enough parts. Limited by: %s"
                 % possiblestock["limitedby"]["part"]["sku"]
             )
@@ -232,12 +237,12 @@ class Product(model.Record):
 
     def DisassemblyPossible(self, amount):
         if self.currentstock < amount:
-            raise common_model.AssemblyError(
+            raise AssemblyError(
                 "Cannot Disassemble this product, not enough stock available."
             )
         parts = list(self.parts)
         if not parts:
-            raise common_model.AssemblyError(
+            raise AssemblyError(
                 "Cannot Disassemble this product, is not an assembled product."
             )
         return parts
@@ -261,6 +266,16 @@ class Product(model.Record):
             )
 
     def _ManageDisassemblyFromParts(self, amount, part):
+        """Determines the price of the part that this product is disassembled to.
+        The price is determined based on the most recent stock piece price.
+
+        Args:
+            amount (int): The amount of parts to disassemble
+            part (model.Productpart): The ProductPart record to disassemble from.
+
+        Returns:
+            model.Stock: The newly created stock record.
+        """
         piece_price = self._CalculateDisassemblyPrice(part)
         return Stock.Create(
             self.connection,
@@ -273,6 +288,17 @@ class Product(model.Record):
         )
 
     def _CalculateDisassemblyPrice(self, part):
+        """Retrieve the most recent piece price for this part.
+
+        Args:
+            part (model.Productpart): The ProductPart record to disassemble from.
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            _type_: _description_
+        """
         latest_price = list(
             Stock.List(
                 self.connection,
@@ -285,7 +311,7 @@ class Product(model.Record):
             )
         )
         if not latest_price:
-            raise ValueError("No price found for part %s" % part["part"]["ID"])
+            raise AssemblyError(f"No price found for part {part['part']['ID']}")
         return latest_price[0]["piece_price"]
 
     def Assemble(self, amount=1, reference="Assembled from parts", lot=None):
