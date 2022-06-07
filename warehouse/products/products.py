@@ -199,7 +199,7 @@ class PageMaker(basepages.PageMaker):
             return self.RequestProduct(sku=sku, assemble_form=form)
 
         try:
-            part = model.Product.FromSku(self.connection, sku)  # TODO: get part SKU
+            part = model.Product.FromSku(self.connection, form.part.data)
             model.Productpart.Create(
                 self.connection,
                 {
