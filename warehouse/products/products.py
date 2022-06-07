@@ -448,4 +448,4 @@ class PageMaker(basepages.PageMaker):
             self.connection, product_price_id
         )
         product_price.Delete()
-        self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)
+        return self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)
