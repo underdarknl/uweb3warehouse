@@ -239,7 +239,7 @@ class Product(model.Record):
         price = decimal.Decimal(0)
         with uweb3.helpers.transaction(self.connection, self.__class__):
             for part in parts:
-                price += self.ManageAssemblyFromParts(amount, part)
+                price += self._ManageAssemblyFromParts(amount, part)
 
             return Stock.Create(
                 self.connection,
@@ -252,38 +252,54 @@ class Product(model.Record):
                 },
             )
 
-    def ManageAssemblyFromParts(self, amount, part):
-        stock_info = part["part"].product_stock_prices
-        # Calculate the amount of parts needed to assemble the product
-        amount_needed_per_part = part["amount"]
-        # Calculate the total amount of parts that would be needed
-        total_pieces_needed = amount_needed_per_part * amount
-        # Keep track of the current cost for this mutation
-        price = decimal.Decimal(0)
-        if stock_info[0].leftover_stock >= total_pieces_needed:
-            self.AssembleFromParts(amount, part)
-            price += (stock_info[0].piece_price * amount * part["amount"]) + part[
-                "assemblycosts"
-            ]
-            return price
+    def _ManageAssemblyFromParts(self, amount, part):
+        """Assembles a part from stock, using the piece prices of the stock to determine how much
+        an assembled part cost.
 
-        current_total = 0
+        Args:
+            amount (int): The amount of parts to assemble, this is not the amount of pieces in the assembled product.
+                            For example, if you have a product with 3 parts and you want to assemble 2 of them,
+                            amount will be 2.
+            part (model.Productpart): The ProductPart that we want to assemble.
+
+        Returns:
+            decimal.Decimal: The price of the assembled product.
+        """
+
+        price = self._CalculatePrice(part, amount)
+        self._AssembleFromParts(amount, part)
+        return price
+
+    def _CalculatePrice(self, part, amount):
+        """Calculate the total price of assembly for a part based on the current stock, and the prices the stock was bought at.
+
+        Args:
+            part (model.Productpart): The ProductPart that we want to assemble.
+            amount (int): The amount of products that we want to assemble.
+
+        Returns:
+            decimal.Decimal: The cost of assembly for each individual product.
+        """
+        stock_info = part["part"].product_stock_prices
+        parts_needed_for_assembly = part["amount"]
+        pieces_needed = parts_needed_for_assembly * amount
+
+        price = decimal.Decimal(0)
+        current_pieces_used = 0
         for pair in stock_info:
-            if (current_total + pair.leftover_stock) <= total_pieces_needed:
-                current_total += pair.leftover_stock
+            if (current_pieces_used + pair.leftover_stock) <= pieces_needed:
+                current_pieces_used += pair.leftover_stock
                 price += pair.piece_price * pair.leftover_stock
                 pair.leftover_stock = 0
             else:
-                parts_needed = total_pieces_needed - current_total
+                parts_needed = pieces_needed - current_pieces_used
                 price += pair.piece_price * parts_needed
                 pair.leftover_stock -= parts_needed
-                current_total += parts_needed
+                current_pieces_used += parts_needed
+        return decimal.Decimal(price / amount)
 
-        self.AssembleFromParts(amount, part)
-        return price
-
-    def AssembleFromParts(self, amount, part):
-        subreference = "Assembly: %s" % (self["name"])
+    def _AssembleFromParts(self, amount, part):
+        subreference = "Assembly: %s, amount: %s " % (self["name"], amount)
         Stock.Create(
             self.connection,
             {
