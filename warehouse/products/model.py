@@ -4,10 +4,13 @@
 __author__ = "Jan Klopper <janklopper@underdark.nl>"
 __version__ = "1.0"
 
-# standard modules
 import datetime
 import decimal
 import math
+
+# standard modules
+from dataclasses import dataclass
+from typing import NamedTuple
 
 import pytz
 import uweb3.helpers
@@ -15,6 +18,12 @@ from uweb3 import model
 
 from warehouse.common import model as common_model
 from warehouse.login import model as login_model
+
+
+@dataclass
+class ProductPiecePrice:
+    piece_price: decimal.Decimal
+    leftover_stock: int
 
 
 class Product(model.Record):
@@ -140,16 +149,15 @@ class Product(model.Record):
         return 0
 
     @property
-    def product_piece_price(self):
-        """Calculates the price per piece depending on the stock that is currently available."""
+    def product_stock_prices(self):
+        """Returns the piece_price and the amount of leftovers of the stock for that price."""
         # TODO: Handle negative stock, how do we determine the price?
         with self.connection as cursor:
-            result = cursor.Execute(
+            results = cursor.Execute(
                 f"""
                 SELECT
                     parent.piece_price,
-                    (select sum(test.amount) from warehouse.stock as test where product={self['ID']} and piece_price is not null and test.ID <= parent.ID) +
-                    (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) as leftover_stock
+                    parent.amount
                 FROM warehouse.stock as parent
                 WHERE product={self['ID']}
                 AND piece_price is not null
@@ -157,7 +165,8 @@ class Product(model.Record):
                 (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) >= 1;
                 """
             )
-            return result
+
+        return [ProductPiecePrice(row["piece_price"], row["amount"]) for row in results]
 
     @property
     def possiblestock(
@@ -230,27 +239,59 @@ class Product(model.Record):
         price = decimal.Decimal(0)
         with uweb3.helpers.transaction(self.connection, self.__class__):
             for part in parts:
-                subreference = "Assembly: %s, %s" % (self["name"], reference)
-                test = part.assemble_cost  # TODO: Take amount of parts into account
-                price += test[0]["piece_price"]
-                Stock.Create(
-                    self.connection,
-                    {
-                        "product": int(part["part"]),
-                        "amount": (part["amount"] * amount) * -1,
-                        "reference": subreference,
-                    },
-                )
+                price += self.ManageAssemblyFromParts(amount, part)
+
             return Stock.Create(
                 self.connection,
                 {
                     "product": self.key,
                     "amount": amount,
-                    "reference": reference[0:45] if reference else "",
+                    "reference": reference,
                     "lot": lot,
                     "piece_price": price,
                 },
             )
+
+    def ManageAssemblyFromParts(self, amount, part):
+        stock_info = part["part"].product_stock_prices
+        # Calculate the amount of parts needed to assemble the product
+        amount_needed_per_part = part["amount"]
+        # Calculate the total amount of parts that would be needed
+        total_pieces_needed = amount_needed_per_part * amount
+        # Keep track of the current cost for this mutation
+        price = decimal.Decimal(0)
+        if stock_info[0].leftover_stock >= total_pieces_needed:
+            self.AssembleFromParts(amount, part)
+            price += (stock_info[0].piece_price * amount * part["amount"]) + part[
+                "assemblycosts"
+            ]
+            return price
+
+        current_total = 0
+        for pair in stock_info:
+            if (current_total + pair.leftover_stock) <= total_pieces_needed:
+                current_total += pair.leftover_stock
+                price += pair.piece_price * pair.leftover_stock
+                pair.leftover_stock = 0
+            else:
+                parts_needed = total_pieces_needed - current_total
+                price += pair.piece_price * parts_needed
+                pair.leftover_stock -= parts_needed
+                current_total += parts_needed
+
+        self.AssembleFromParts(amount, part)
+        return price
+
+    def AssembleFromParts(self, amount, part):
+        subreference = "Assembly: %s" % (self["name"])
+        Stock.Create(
+            self.connection,
+            {
+                "product": int(part["part"]),
+                "amount": (part["amount"] * amount) * -1,
+                "reference": subreference,
+            },
+        )
 
     def Disassemble(self, amount=1, reference="Disassembled for parts", lot=None):
         """Remove as many assemblies as requested and create stock for parts"""
@@ -294,10 +335,6 @@ class Productpart(model.Record):
     def subtotal(self):
         # return (self["amount"] * self["part"]["cost"]) + self["assemblycosts"]
         return (self["amount"] * 1) + self["assemblycosts"]
-
-    @property
-    def assemble_cost(self):
-        return self["part"].product_piece_price
 
 
 class Productprice(model.Record):
