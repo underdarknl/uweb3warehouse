@@ -173,9 +173,6 @@ def get_stock_factory(postdata=None):
     """
     factory = StockMutationFactory()
     _register_default_forms(factory, postdata)
-    factory.register_form(
-        "stock_form", ProductStockForm(postdata, prefix="product-stock")
-    )
     return factory
 
 
@@ -207,3 +204,7 @@ def _register_default_forms(factory, postdata):
         form.reference.description = item.reference
         form.lot.description = item.lot
         factory.register_form(item.form_name, form)
+
+    factory.register_form(
+        "stock_form", ProductStockForm(postdata, prefix="product-stock")
+    )
