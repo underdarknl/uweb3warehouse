@@ -148,8 +148,8 @@ class PageMaker(basepages.PageMaker):
     def RequestProductNew(self):
         """Requests the creation of a new product."""
         form = forms.ProductForm(self.post, prefix="product")
-        form.validate()
-        if form.errors:
+
+        if not form.validate():
             return self.RequestProducts(product_form=form)
 
         try:
@@ -172,9 +172,8 @@ class PageMaker(basepages.PageMaker):
         """Saves changes to the product"""
         product = model.Product.FromSku(self.connection, sku)
         form = forms.ProductForm(self.post, prefix="product")
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku, product_form=form)
 
         product.update(form.data)
@@ -196,9 +195,8 @@ class PageMaker(basepages.PageMaker):
         )
         form = forms.ProductAssembleFromPartForm(self.post, prefix="product-part")
         form.part.choices = helpers.possibleparts_select_list(possibleparts)
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku=sku, assemble_form=form)
 
         try:
@@ -261,9 +259,8 @@ class PageMaker(basepages.PageMaker):
 
         factory = forms.get_stock_factory(self.post)
         form = factory.get_form("stock_form")
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku=sku, stock_form=form)
 
         try:
@@ -291,9 +288,8 @@ class PageMaker(basepages.PageMaker):
 
         factory = forms.get_stock_factory(self.post)
         form = factory.get_form("assemble_from_part")
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku=sku, assemble_from_part_form=form)
 
         try:
@@ -322,9 +318,8 @@ class PageMaker(basepages.PageMaker):
 
         factory = forms.get_stock_factory(self.post)
         form = factory.get_form("disassemble_into_parts")
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku=sku, disassemble_into_parts_form=form)
 
         try:

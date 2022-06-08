@@ -89,9 +89,8 @@ class PageMaker(basepages.PageMaker):
         """Returns the supplier page"""
         supplier = model.Supplier.FromName(self.connection, name)
         supplier_form = forms.SupplierForm(self.post)
-        supplier_form.validate()
 
-        if supplier_form.errors:
+        if not supplier_form.validate():
             return self.RequestSupplier(name, supplier_form=supplier_form)
 
         supplier.update(supplier_form.data)
@@ -130,9 +129,8 @@ class PageMaker(basepages.PageMaker):
     def RequestSupplierNew(self):
         """Requests the creation of a new supplier."""
         supplier_form = forms.SupplierForm(self.post)
-        supplier_form.validate()
 
-        if supplier_form.errors:
+        if not supplier_form.validate():
             return self.RequestSuppliers(supplier_form=supplier_form)
 
         try:
