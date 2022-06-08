@@ -99,13 +99,15 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.TemplateParser("supplier.html")
     def RequestSupplier(self, name, supplier_stock_form=None):
         """Returns the supplier page"""
+        supplier = model.Supplier.FromName(self.connection, name)
+
         if not supplier_stock_form:
             supplier_stock_form = forms.ImportSupplierStock(
-                self.post, prefix="import-supplier-stock"
+                self.post, prefix=helpers.get_importer_prefix(supplier)
             )
 
         return dict(
-            supplier=model.Supplier.FromName(self.connection, name),
+            supplier=supplier,
             supplier_stock_form=supplier_stock_form,
         )
 
@@ -162,14 +164,14 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.TemplateParser("supplier.html")
     def UpdateSupplierStock(self, supplier):
         supplier = model.Supplier.FromName(self.connection, supplier)
+        prefix = helpers.get_importer_prefix(supplier)
+        upload_field = f"{prefix}-fileupload"
 
-        if not self.files or not self.files.get("fileupload"):
+        if not self.files or not self.files.get(upload_field):
             return self.Error(error="No file was uploaded.")
 
-        supplier_stock_form = forms.ImportSupplierStock(
-            self.post, prefix="import-supplier-stock"
-        )
-        supplier_stock_form.fileupload.data = self.files.get("fileupload")
+        supplier_stock_form = forms.ImportSupplierStock(self.post, prefix=prefix)
+        supplier_stock_form.fileupload.data = self.files.get(upload_field)
         supplier_stock_form.validate()
 
         if supplier_stock_form.errors:

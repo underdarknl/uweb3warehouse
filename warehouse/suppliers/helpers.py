@@ -60,3 +60,17 @@ def get_supplier_product_form(connection, supplier, postdata):
     form.supplier.choices = [(supplier["ID"], supplier["name"])]
     form.product.choices = [(p["ID"], p["name"]) for p in products]
     return form
+
+
+def get_importer_prefix(supplier):
+    """Generate a prefix based on the supplier.
+
+    This allows the browser to remember the column names for the specific supplier.
+
+    Args:
+        supplier (model.Supplier): The supplier object.
+
+    Returns:
+        str: The prefix for the wtform.
+    """
+    return f"import-supplier-stock-{supplier['ID']}"
