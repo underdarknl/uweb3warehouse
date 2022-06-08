@@ -12,7 +12,6 @@ from wtforms import (
 )
 
 
-# TODO: Fix inconsistencies between forms with different names
 class ProductForm(Form):
     sku = StringField(
         "sku",
@@ -38,6 +37,8 @@ class ProductForm(Form):
     description = TextAreaField("description", validators=[validators.Optional()])
     assemblycosts = DecimalField(
         "assemblycosts",
+        rounding=decimal.ROUND_UP,
+        places=2,
         validators=[validators.InputRequired(), validators.NumberRange(min=0)],
         description="What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be filled.",
     )
@@ -116,6 +117,8 @@ class ProductAssemblyForm(Form):
 class ProductStockForm(ProductAssemblyForm):
     piece_price = DecimalField(
         "piece price",
+        rounding=decimal.ROUND_UP,
+        places=2,
         description="How much did you pay for each individual piece from the supplier?.",
     )
 
