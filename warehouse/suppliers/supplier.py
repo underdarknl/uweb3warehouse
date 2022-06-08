@@ -75,7 +75,9 @@ class PageMaker(basepages.PageMaker):
         product = model.Supplierproduct.FromPrimary(self.connection, productID)
 
         if product["supplier"] != supplier:
-            return  # TODO:
+            return self.Error(
+                "Can not delete this product. The product is from another supplier."
+            )
 
         product.Delete()
         return self.req.Redirect(f"/supplier/{supplierID}/products", httpcode=301)
