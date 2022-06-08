@@ -1,5 +1,4 @@
 import os
-from io import StringIO
 
 import uweb3
 
@@ -7,7 +6,6 @@ from warehouse import basepages
 from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
-from warehouse.products import helpers as product_helpers
 from warehouse.suppliers import forms, helpers, model
 
 
@@ -97,9 +95,12 @@ class PageMaker(basepages.PageMaker):
 
         try:
             supplier.Save()
-        except self.connection.IntegrityError:
-            supplier_form.name.errors = ["Supplier name is already taken."]
-            return self.RequestSupplier(name, supplier_form=supplier_form)
+        except self.connection.IntegrityError as error:
+            if error.args[0] == 1062:
+                supplier_form.name.errors = ["Supplier name is already taken."]
+                return self.RequestSupplier(name, supplier_form=supplier_form)
+            else:
+                return self.Error(error)
 
         return self.req.Redirect(f'/supplier/{supplier["name"]}', httpcode=303)
 
