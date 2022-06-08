@@ -3,25 +3,7 @@
 <section>
     <h2>Edit Supplier: [supplier:name]</h2>
     <p><a href="/supplier/[supplier:ID]/products">Products by this supplier</a></a>
-    <form action="/supplier/[supplier:name]" method="post" class="supplier">
-        <input type="hidden" name="xsrf" value="[xsrf]" />
-        <div><label for="name">Name</label><input type="text" id="name" name="name" value="[supplier:name]"
-                maxlength="45" required></div>
-        <p>The name for each supplier in your warehouse must be unique.</p>
-        <div><label for="website">Website</label><input type="url" id="website" name="website"
-                value="[supplier:website|NullString]" maxlength="255"></div>
-        <div><label for="telephone">Telephone</label><input type="telephone" id="telephone" name="telephone"
-                value="[supplier:telephone|NullString]" maxlength="45"></div>
-        <div><label for="contact_person">Contact person</label><input type="text" id="contact_person"
-                name="contact_person" value="[supplier:contact_person|NullString]" maxlength="255"></div>
-        <div><label for="email_address">Email address</label><input type="email" id="email_address" name="email_address"
-                value="[supplier:email_address|NullString]" maxlength="255"></div>
-        <div><label for="gscode">GS code</label><input type="number" id="gscode" name="gscode"
-                value="[supplier:gscode|NullString]" maxlength="10"></div>
-        <p>The GS code for each supplier in your warehouse should be unique, it is used in conjunction with the
-            suppliers products GS1 code to determine the EAN barcode.</p>
-        <div><input type="submit" value="Save changes" class="primary"></div>
-    </form>
+    {{ inline forms/supplier.html }}
 </section>
 <section>
     <h2>Contact Supplier:</h2>

@@ -1,83 +1,85 @@
 [header]
 
 <section>
-  {{ if [success] }}
+    {{ if [success] }}
     <p class="success">[success]</p>
-  {{ endif }}
-  {{ if [error] }}
+    {{ endif }}
+    {{ if [error] }}
     <p class="error">[error]</p>
-  {{ endif }}
+    {{ endif }}
 
-  <h2>Your Suppliers:</h2>
-  {{ if [suppliers] or [query] }}
+    <h2>Your Suppliers:</h2>
+    {{ if [suppliers] or [query] }}
     <form action="/suppliers" method="get" class="lineform">
-      <div><input id="query" type="text" name="query" value="{{ if [query] }}[query]{{ endif}}" placeholder="Filter your suppliers"><input id="query" type="submit" value="Filter"><a class="button" href="/suppliers">Clear</a></div>
+        <div><input id="query" type="text" name="query" value="{{ if [query] }}[query]{{ endif}}"
+                placeholder="Filter your suppliers"><input id="query" type="submit" value="Filter"><a class="button"
+                href="/suppliers">Clear</a></div>
     </form>
     {{ if [suppliers] }}
     <table class="suppliers">
-      <thead>
-        <tr><th>Name</th><th>Delete</th></tr>
-      </thead>
-      <tbody>
-      {{ for supplier in [suppliers] }}
-        <tr>
-          <td><a href="/supplier/[supplier:name]">[supplier:name]</a></td>
-          <td>
-            <form action="/supplier/[supplier:name]/delete" method="post">
-              <input type="hidden" name="xsrf" value="[xsrf]">
-              <input type="submit" value="Remove" onclick="return confirm('Are you sure you want to delete this suppliers? All coupled sub suppliers will not be deleted.');">
-            </form>
-          </td>
-        </tr>
-      {{ endfor }}
-      </tbody>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ for supplier in [suppliers] }}
+            <tr>
+                <td><a href="/supplier/[supplier:name]">[supplier:name]</a></td>
+                <td>
+                    <form action="/supplier/[supplier:name]/delete" method="post">
+                        <input type="hidden" name="xsrf" value="[xsrf]">
+                        <input type="submit" value="Remove"
+                            onclick="return confirm('Are you sure you want to delete this suppliers? All coupled sub suppliers will not be deleted.');">
+                    </form>
+                </td>
+            </tr>
+            {{ endfor }}
+        </tbody>
     </table>
 
     {{ if [suppliers:pagecount] > 1 or [suppliers:current] > 1 }}
-      <nav class="pagination">
+    <nav class="pagination">
         <ol>
-          {{ if [suppliers:current] > 1 }}
-            <li><a href="?page=1{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page 1">First</a></li>
+            {{ if [suppliers:current] > 1 }}
+            <li><a href="?page=1{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                    title="Go to page 1">First</a></li>
             {{ if [suppliers:current] > 2 }}
-              <li><a href="?page=[suppliers:prev]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page [suppliers:items:prev]">Previous</a></li>
+            <li><a href="?page=[suppliers:prev]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                    title="Go to page [suppliers:items:prev]">Previous</a></li>
             {{ endif }}
-          {{ endif }}
-          {{ for page in [suppliers:pagenumbers] }}
+            {{ endif }}
+            {{ for page in [suppliers:pagenumbers] }}
             {{ if [page] == [suppliers:current] }}
-              <li class="active">[suppliers:current]</li>
+            <li class="active">[suppliers:current]</li>
             {{ else }}
-              <li><a href="?page=[page]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page [page]">[page]</a></li>
+            <li><a href="?page=[page]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                    title="Go to page [page]">[page]</a></li>
             {{ endif }}
-          {{ endfor }}
-          {{ if [suppliers:next] }}
-            {{ if [suppliers:next] < [suppliers:last] }}
-              <li><a href="?page=[suppliers:next]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page [suppliers:next]">Next</a></li>
-            {{ endif }}
-          <li><a href="?page=[suppliers:last]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}" title="Go to page [suppliers:last]">Last</a></li>{{ endif }}
+            {{ endfor }}
+            {{ if [suppliers:next] }}
+            {{ if [suppliers:next] < [suppliers:last] }} <li><a
+                    href="?page=[suppliers:next]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                    title="Go to page [suppliers:next]">Next</a></li>
+                {{ endif }}
+                <li><a href="?page=[suppliers:last]{{ ifpresent [linkarguments] }}&amp;[linkarguments]{{ endif }}"
+                        title="Go to page [suppliers:last]">Last</a></li>{{ endif }}
         </ol>
-      </nav>
+    </nav>
     {{ endif }}
 
 
     {{ elif [query] }}
     <p>No suppliers found for &quot;[query]&quot;.</p>
     {{ endif }}
-  {{ else }}
+    {{ else }}
     <p class="info">You have no suppliers just yet. Create one using the form below.</p>
-  {{ endif }}
+    {{ endif }}
 </section>
 
 <section>
-  <h3>Create a fresh supplier:</h3>
-  <form action="/suppliers" method="post">
-    <input type="hidden" name="xsrf" value="[xsrf]">
-    <div><label for="supplier_name">Name</label><input type="text" name="name" id="supplier_name" maxlength="255" required></div>
-    <p>The name for each supplier in your warehouse must be unique.</p>
-    <div><label for="website">Website</label><input type="url" id="website" name="website" maxlength="255"></div>
-    <div><label for="telephone">Telephone</label><input type="telephone" id="telephone" name="telephone"maxlength="45"></div>
-    <div><label for="contact_person">Contact person</label><input type="text" id="contact_person" name="contact_person" maxlength="255"></div>
-    <div><label for="email_address">Email address</label><input type="email" id="email_address" name="email_address" maxlength="255"></div>
-    <div><input type="submit" value="Create a new supplier." class="primary"></div>
-  </form>
+    <h3>Create a fresh supplier:</h3>
+    {{ inline forms/supplier.html }}
 </section>
 [footer]
