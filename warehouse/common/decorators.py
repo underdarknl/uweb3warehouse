@@ -50,11 +50,11 @@ def json_error_wrapper(func):
     def wrapper_schema_validation(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except ValueError as e:
+        except ValueError as exception:
             return uweb3.Response(
                 {
                     "error": True,
-                    "errors": e.args,
+                    "errors": exception.args,
                     "http_status": HTTPStatus.NOT_FOUND,
                 },
                 httpcode=HTTPStatus.NOT_FOUND,
