@@ -1,4 +1,5 @@
 import decimal
+from collections import namedtuple
 
 from wtforms import (
     DecimalField,
@@ -171,27 +172,38 @@ def get_stock_factory(postdata=None):
         wtfforms.Form: The form used for the stock mutation.
     """
     factory = StockMutationFactory()
-
-    assemble_from_part = ProductAssemblyForm(postdata, prefix="product-assembly")
-    assemble_from_part.amount.description = "How many were assembled"
-    assemble_from_part.reference.description = "Optional reference for this assembly"
-    assemble_from_part.lot.description = (
-        "The lot number for these newly assembled products"
-    )
-
-    disassemble_into_parts = ProductAssemblyForm(postdata, prefix="product-disassembly")
-    disassemble_into_parts.amount.description = "How many were disassembled"
-    disassemble_into_parts.reference.description = (
-        "The invoice ID from the supplier, or the customer"
-    )
-    disassemble_into_parts.lot.description = (
-        "The lot number of the disassembled products"
-    )
-
+    _register_default_forms(factory, postdata)
     factory.register_form(
         "stock_form", ProductStockForm(postdata, prefix="product-stock")
     )
-    factory.register_form("assemble_from_part", assemble_from_part)
-    factory.register_form("disassemble_into_parts", disassemble_into_parts)
-
     return factory
+
+
+def _register_default_forms(factory, postdata):
+    """Register some forms that have the same structure but different descriptions.
+    This mutates the factory object.
+    """
+    form_tuple = namedtuple("form_tuple", "prefix amount reference lot form_name")
+    lot = "The lot number for these newly assembled products"
+    default_forms = [
+        form_tuple(
+            prefix="product-assembly",
+            amount="How many were assembled",
+            reference="Optional reference for this assembly",
+            lot=lot,
+            form_name="assemble_from_part",
+        ),
+        form_tuple(
+            prefix="product-disassembly",
+            amount="How many were disassembled",
+            reference="The invoice ID from the supplier, or the customer",
+            lot=lot,
+            form_name="disassemble_into_parts",
+        ),
+    ]
+    for item in default_forms:
+        form = ProductAssemblyForm(postdata, prefix=item.prefix)
+        form.amount.description = item.amount
+        form.reference.description = item.reference
+        form.lot.description = item.lot
+        factory.register_form(item.form_name, form)
