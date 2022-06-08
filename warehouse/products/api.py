@@ -2,6 +2,7 @@
 """Request handlers for the uWeb3 warehouse inventory software"""
 
 import uweb3
+from uweb3.helpers import transaction
 
 from warehouse import basepages
 from warehouse.common.decorators import apiuser, json_error_wrapper
@@ -41,12 +42,10 @@ class PageMaker(basepages.PageMaker):
         product = model.Product.FromSku(self.connection, sku)
         return {
             "product": product["name"],
-            "cost": product["cost"],
             "sku": product["sku"],
-            "assemblycosts": product["assemblycosts"],
-            "vat": product["vat"],
             "stock": product.currentstock,
             "possible_stock": product.possiblestock["available"],
+            "prices": list(model.Productprice.ProductPrices(self.connection, product)),
         }
 
     @uweb3.decorators.ContentType("application/json")
@@ -57,42 +56,42 @@ class PageMaker(basepages.PageMaker):
 
         Send negative amount to Sell a product, positive amount to put product back
         into stock"""
-        product = model.Product.FromSku(self.connection, sku)
-        amount = int(self.post.get("amount", -1))
-        currentstock = product.currentstock
-        if (
-            amount < 0 and abs(amount) > currentstock  # only assemble when we sell
-        ):  # only assemble when we have not enough stock
-            try:
-                product.Assemble(
-                    abs(amount)
-                    - currentstock,  # only assemble what is missing for this sale
-                    "Assembly for %s" % self.post.get("reference")
-                    if "reference" in self.post
-                    else None,
-                )
-            except model.AssemblyError as error:
-                raise ValueError(error.args[0])
+        raise Exception("Not implemented yet")
+        # product = model.Product.FromSku(self.connection, sku)
+        # amount = int(self.post.get("amount", -1))
+        # currentstock = product.currentstock
+        # if (
+        #     amount < 0 and abs(amount) > currentstock  # only assemble when we sell
+        # ):  # only assemble when we have not enough stock
+        #     try:
+        #         product.Assemble(
+        #             abs(amount)
+        #             - currentstock,  # only assemble what is missing for this sale
+        #             "Assembly for %s" % self.post.get("reference")
+        #             if "reference" in self.post
+        #             else None,
+        #         )
+        #     except model.AssemblyError as error:
+        #         raise ValueError(error.args[0])
 
-        # by now we should have enough products in stock, one way or another
-        model.Stock.Create(
-            self.connection,
-            {
-                "product": product,
-                "amount": amount,
-                "reference": self.post.get("reference", ""),
-            },
-        )
-        model.Product.commit(self.connection)
-        return {"stock": product.currentstock, "possible_stock": product.possiblestock}
+        # # by now we should have enough products in stock, one way or another
+        # model.Stock.Create(
+        #     self.connection,
+        #     {
+        #         "product": product,
+        #         "amount": amount,
+        #         "reference": self.post.get("reference", ""),
+        #     },
+        # )
+        # model.Product.commit(self.connection)
+        # return {"stock": product.currentstock, "possible_stock": product.possiblestock}
 
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser
     def JsonProductStockBulk(self):
         products = self.post.get("products")
-        model.Product.autocommit(self.connection, False)
-        try:
+        with transaction(self.connection, model.Product):
             for product in products:
                 helpers.update_stock(
                     self.connection,
@@ -100,9 +99,4 @@ class PageMaker(basepages.PageMaker):
                     product["quantity"],
                     self.post.get("reference", ""),
                 )
-        except Exception as ex:
-            model.Product.rollback(self.connection)
-            raise ex
-        finally:
-            model.Product.autocommit(self.connection, True)
         return {"products": products}

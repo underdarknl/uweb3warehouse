@@ -104,6 +104,7 @@ class Product(model.Record):
             conditions = []
         safe_sku = connection.EscapeValues(sku)
         conditions.append("sku=%s" % safe_sku)
+
         if not check_deleted:
             conditions.append(common_model.NOTDELETED)
 
@@ -462,3 +463,7 @@ class Productpart(model.Record):
 
 class Productprice(model.Record):
     """Provides a model abstraction for the Productprice table"""
+
+    @classmethod
+    def ProductPrices(cls, connection, product):
+        return cls.List(connection, conditions=[f"product={product['ID']}"])
