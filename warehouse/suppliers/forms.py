@@ -1,6 +1,6 @@
 import collections
 
-from wtforms import FileField, Form, SelectField, StringField, validators
+from wtforms import EmailField, FileField, Form, SelectField, StringField, validators
 
 from warehouse.products.forms import SupplierProduct
 
@@ -43,3 +43,34 @@ class SupplierAddProductForm(SupplierProduct):
 
         self._fields = ordered_fields
         return super().__iter__()
+
+
+class SupplierForm(Form):
+    name = StringField(
+        "Name",
+        [validators.DataRequired(), validators.Length(max=45)],
+        description="The name of the supplier.",
+    )
+    website = StringField(
+        "Website",
+        [validators.Optional(), validators.Length(min=10, max=255)],
+        description="The website of the supplier.",
+    )
+    telephone = StringField(
+        "Telephone",
+        [validators.DataRequired(), validators.Length(min=5, max=45)],
+        description="The telephone of the supplier.",
+    )
+    contact_person = StringField(
+        "Contact person",
+        [validators.Optional(), validators.Length(max=255)],
+        description="The name of the contact person at the supplier.",
+    )
+    email_address = EmailField(
+        "Email address",
+        [validators.DataRequired(), validators.Email()],
+        description="The email address of the supplier.",
+    )
+    gscode = StringField(
+        "GSCode", [validators.Optional()], description="The GSCode of the supplier."
+    )
