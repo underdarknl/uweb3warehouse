@@ -23,7 +23,7 @@ class PageMaker(basepages.PageMaker):
         """Returns the product Json"""
         product_converter = self.dto_service.get_registered_item("product")
         products = product_converter.to_dto(model.Product.List(self.connection))
-        return products
+        return {"products": products}
 
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
