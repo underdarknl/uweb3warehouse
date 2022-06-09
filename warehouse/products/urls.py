@@ -66,6 +66,11 @@ urls = [
         (products.PageMaker, "RequestDeleteProductPrice"),
     ),
     (
+        "/product/([^/]*)/prices/vat",
+        (products.PageMaker, "RequestSetProductVat"),
+        "POST",
+    ),
+    (
         "/api/v1/product/([^/]*)",
         (api.PageMaker, "JsonProduct"),
         "GET",
