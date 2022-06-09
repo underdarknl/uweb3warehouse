@@ -99,3 +99,39 @@ class PagedResult:
 
     def __iter__(self):
         return iter(self.items)
+
+
+class BaseFactory:
+    """Base class for factory classes."""
+
+    def __init__(self):
+        self._registered_items = {}
+
+    def register(self, key, builder):
+        """Registers a service within the factory.
+
+        Args:
+            key (str): The name of the service.
+            builder: The builder class for the given service.
+                    The builder class is used to supply the Service class with the correct
+                    attributes on call. The builder class must have a __call__ method
+                    that supplies the service with the provided arguments.
+        """
+        self._registered_items[key] = builder
+
+    def get_registered_item(self, key, **kwargs):
+        """Retrieve a service by name.
+
+        Args:
+            key (str): The name of the service by which it was registered.
+
+        Raises:
+            ValueError: Raised when the service could not be found in the registered services.
+
+        Returns:
+            _type_: An authentication service.
+        """
+        builder = self._registered_items.get(key)
+        if not builder:
+            raise ValueError(f"No item with key {key} is registered.")
+        return builder(**kwargs)
