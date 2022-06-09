@@ -1,9 +1,11 @@
+import decimal
 import difflib
-from collections import namedtuple
+import types
 from typing import NamedTuple
 
 import pandas
 
+from warehouse.common import helpers as common_helpers
 from warehouse.products import model
 from warehouse.suppliers import model as supplier_model
 
@@ -203,3 +205,77 @@ def possibleparts_select_list(possibleparts):
 
 def suppliers_select_list(suppliers):
     return [(s["ID"], s["name"]) for s in suppliers]
+
+
+class ProductDTO(NamedTuple):
+    product: str
+    vat: decimal.Decimal
+    sku: str
+
+
+class ProductPriceDTO(NamedTuple):
+    ID: int
+    price: decimal.Decimal
+    start_range: int
+
+
+class ProductDTOService:
+    def to_dto(self, product):
+        match product:  # noqa: E999
+            case [model.Product(), *_]:
+                return self._convert_list(product)
+            case types.GeneratorType():
+                to_list = list(product)
+                return self.to_dto(to_list)
+            case model.Product():
+                return self._convert(product)
+            case _:
+                raise ValueError("Product did not match any known type.")
+
+    def _convert_list(self, products):
+        items = []
+        for product in products:
+            items.append(self._convert(product))
+        return items
+
+    def _convert(self, product):
+        return ProductDTO(
+            product=product["ID"], vat=product["vat"], sku=product["sku"]
+        )._asdict()
+
+
+class ProductPriceDTOService:
+    def to_dto(self, product_price):
+        match product_price:
+            case [model.Productprice(), *_]:
+                return self._convert_list(product_price)
+            case types.GeneratorType():
+                to_list = list(product_price)
+                return self.to_dto(to_list)
+            case model.Product():
+                return self._convert(product_price)
+            case _:
+                raise ValueError("Product did not match any known type.")
+
+    def _convert_list(self, product_prices):
+        items = []
+        for product in product_prices:
+            items.append(self._convert(product))
+        return items
+
+    def _convert(self, product_price_obj):
+        return ProductPriceDTO(
+            ID=product_price_obj["ID"],
+            price=product_price_obj["price"],
+            start_range=product_price_obj["start_range"],
+        )._asdict()
+
+
+class DtoManager(common_helpers.BaseFactory):
+    def __init__(self):
+        super().__init__()
+        self.register_base_handlers()
+
+    def register_base_handlers(self):
+        self.register("product", ProductDTOService)
+        self.register("product_price", ProductPriceDTOService)
