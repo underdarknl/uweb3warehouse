@@ -227,7 +227,19 @@ class ProductDTOService:
     def to_dto(
         self,
         product: model.Product | list[model.Product] | Iterable[model.Product],
-    ):
+    ) -> ProductDTO | list[ProductDTO]:
+        """Converts either a single Product object, or any iterable to the DTO
+        representation object.
+
+        Args:
+            product (model.Product | list[model.Product] | Iterable[model.Product]): The single Product a iterable of Products to convert to DTO
+
+        Raises:
+            TypeError: Raised when the product object is of an unsupported type.
+
+        Returns:
+            ProductDTO|list[ProductDTO]: Single object or list containing the DTO's of all passed objects.
+        """
         match product:  # noqa: E999
             case [model.Product(), *_]:
                 return self._convert_list(product)
@@ -239,7 +251,7 @@ class ProductDTOService:
             case []:
                 return []
             case _:
-                raise ValueError("Product did not match any known type.")
+                raise TypeError("Product did not match any known type.")
 
     def _convert_list(self, products):
         items = []
@@ -264,18 +276,18 @@ class ProductPriceDTOService:
         product_price: model.Productprice
         | list[model.Productprice]
         | Iterator[model.Productprice],
-    ):
+    ) -> ProductPriceDTO | list[ProductPriceDTO]:
         """Converts either a single Productprice object, or any iterable to the DTO
         representation object.
 
         Args:
-            product_price (model.Productprice | list[model.Productprice] | Iterator[model.Productprice]): _description_
+            product_price (model.Productprice | list[model.Productprice] | Iterator[model.Productprice]): The target object to convert to DTO.
 
         Raises:
-            ValueError: _description_
+            ValueError: Raised when the product_price object is of an unsupported type.
 
         Returns:
-            _type_: _description_
+            ProductPriceDTO | list[ProductPriceDTO]: Single object or list containing the DTO's of all passed objects.
         """
         match product_price:
             case [model.Productprice(), *_]:
@@ -284,11 +296,11 @@ class ProductPriceDTOService:
                 to_list = list(product_price)
                 return self.to_dto(to_list)
             case model.Productprice():
-                return self._convert(product_price)
+                return self._convert(product_price)  # type: ignore this is because a model object is a dict.
             case []:
                 return []
             case _:
-                raise ValueError("Product price dit not match any known price")
+                raise TypeError("Product price dit not match any known price")
 
     def _convert_list(self, product_prices: list[model.Productprice]):
         items = []
@@ -296,11 +308,11 @@ class ProductPriceDTOService:
             items.append(self._convert(product))
         return items
 
-    def _convert(self, product_price_obj: model.Productprice):
+    def _convert(self, product_price_obj: model.Productprice) -> ProductPriceDTO:
         return ProductPriceDTO(
-            ID=product_price_obj["ID"],
-            price=product_price_obj["price"],
-            start_range=product_price_obj["start_range"],
+            ID=product_price_obj["ID"],  # type: ignore
+            price=product_price_obj["price"],  # type: ignore
+            start_range=product_price_obj["start_range"],  # type: ignore
         )._asdict()
 
 
