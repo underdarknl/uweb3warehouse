@@ -1,7 +1,7 @@
 import decimal
 import difflib
 import types
-from typing import NamedTuple
+from typing import Iterable, Iterator, NamedTuple
 
 import pandas
 
@@ -221,7 +221,9 @@ class ProductPriceDTO(NamedTuple):
 
 
 class ProductDTOService:
-    def to_dto(self, product):
+    def to_dto(
+        self, product: model.Product | list[model.Product] | Iterable[model.Product]
+    ):
         match product:  # noqa: E999
             case [model.Product(), *_]:
                 return self._convert_list(product)
@@ -251,27 +253,46 @@ class ProductDTOService:
 
 
 class ProductPriceDTOService:
-    def to_dto(self, product_price):
+    """Converts the Productprice model class to a DTO object for API usage."""
+
+    def to_dto(
+        self,
+        product_price: model.Productprice
+        | list[model.Productprice]
+        | Iterator[model.Productprice],
+    ):
+        """Converts either a single Productprice object, or any iterable to the DTO
+        representation object.
+
+        Args:
+            product_price (model.Productprice | list[model.Productprice] | Iterator[model.Productprice]): _description_
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            _type_: _description_
+        """
         match product_price:
             case [model.Productprice(), *_]:
                 return self._convert_list(product_price)
             case types.GeneratorType():
                 to_list = list(product_price)
                 return self.to_dto(to_list)
-            case model.Product():
+            case model.Productprice():
                 return self._convert(product_price)
             case []:
                 return []
             case _:
                 raise ValueError("Product price dit not match any known price")
 
-    def _convert_list(self, product_prices):
+    def _convert_list(self, product_prices: list[model.Productprice]):
         items = []
         for product in product_prices:
             items.append(self._convert(product))
         return items
 
-    def _convert(self, product_price_obj):
+    def _convert(self, product_price_obj: model.Productprice):
         return ProductPriceDTO(
             ID=product_price_obj["ID"],
             price=product_price_obj["price"],
