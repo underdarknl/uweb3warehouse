@@ -208,6 +208,7 @@ def suppliers_select_list(suppliers):
 
 
 class ProductDTO(NamedTuple):
+    name: str
     product: str
     vat: decimal.Decimal
     sku: str
@@ -229,6 +230,8 @@ class ProductDTOService:
                 return self.to_dto(to_list)
             case model.Product():
                 return self._convert(product)
+            case []:
+                return []
             case _:
                 raise ValueError("Product did not match any known type.")
 
@@ -240,7 +243,10 @@ class ProductDTOService:
 
     def _convert(self, product):
         return ProductDTO(
-            product=product["ID"], vat=product["vat"], sku=product["sku"]
+            name=product["name"],
+            product=product["ID"],
+            vat=product["vat"],
+            sku=product["sku"],
         )._asdict()
 
 
@@ -254,8 +260,10 @@ class ProductPriceDTOService:
                 return self.to_dto(to_list)
             case model.Product():
                 return self._convert(product_price)
+            case []:
+                return []
             case _:
-                raise ValueError("Product did not match any known type.")
+                raise ValueError("Product price dit not match any known price")
 
     def _convert_list(self, product_prices):
         items = []
