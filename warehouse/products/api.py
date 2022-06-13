@@ -6,7 +6,7 @@ from uweb3.helpers import transaction
 
 from warehouse import basepages
 from warehouse.common.decorators import apiuser, json_error_wrapper
-from warehouse.products import helpers, model
+from warehouse.products import helpers, model, schemas
 
 
 class PageMaker(basepages.PageMaker):
@@ -101,14 +101,34 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser
-    def JsonProductStockBulk(self):
-        products = self.post.get("products")
+    def JsonProductStockRemove(self):
+        data = schemas.BulkStockSchema().load(self.post)
+
+        products = data["products"]
+        reference = data["reference"]
+
         with transaction(self.connection, model.Product):
             for product in products:
-                helpers.update_stock(
-                    self.connection,
-                    product["name"],
-                    product["quantity"],
-                    self.post.get("reference", ""),
+                helpers.remove_stock(
+                    self.connection, product["sku"], product["quantity"], reference
                 )
-        return {"products": products}
+        return data
+
+    @uweb3.decorators.ContentType("application/json")
+    @json_error_wrapper
+    @apiuser
+    def JsonProductStockBulkAdd(self):
+        data = schemas.BulkRefundSchema().load(self.post)
+
+        products = data["products"]
+        reference = data["reference"]
+
+        with transaction(self.connection, model.Product):
+            for product in products:
+                helpers.add_stock(
+                    self.connection,
+                    product["sku"],
+                    product["quantity"],
+                    reference,
+                )
+        return data

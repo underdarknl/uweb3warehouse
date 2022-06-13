@@ -90,8 +90,13 @@ urls = [
         "POST",
     ),
     (
-        "/api/v1/products/bulk_stock",
-        (api.PageMaker, "JsonProductStockBulk"),
+        "/api/v1/products/bulk_remove_stock",
+        (api.PageMaker, "JsonProductStockRemove"),
+        "POST",
+    ),
+    (
+        "/api/v1/products/bulk_add",
+        (api.PageMaker, "JsonProductStockBulkAdd"),
         "POST",
     ),
 ]
