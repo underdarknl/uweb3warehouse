@@ -1,8 +1,9 @@
 from http import HTTPStatus
 
+import marshmallow
 import uweb3
 
-from warehouse.login import model
+from warehouse.products.model import AssemblyError
 
 
 def NotExistsErrorCatcher(f):
@@ -50,26 +51,44 @@ def json_error_wrapper(func):
     def wrapper_schema_validation(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except ValueError as exception:
+        except ValueError as exc:
             return uweb3.Response(
                 {
                     "error": True,
-                    "errors": exception.args,
+                    "errors": exc.args,
                     "http_status": HTTPStatus.NOT_FOUND,
                 },
                 httpcode=HTTPStatus.NOT_FOUND,
             )
-        except uweb3.model.NotExistError as msg:
+        except uweb3.model.NotExistError as exc:
             return uweb3.Response(
                 {
                     "error": True,
-                    "errors": msg.args,
+                    "errors": exc.args,
                     "http_status": HTTPStatus.NOT_FOUND,
                 },
                 httpcode=HTTPStatus.NOT_FOUND,
             )
-        except Exception as err:
-            print(err)
+        except AssemblyError as exc:
+            return uweb3.Response(
+                {
+                    "error": True,
+                    "errors": exc.args,
+                    "http_status": HTTPStatus.CONFLICT,
+                },
+                httpcode=HTTPStatus.CONFLICT,
+            )
+        except marshmallow.ValidationError as exc:
+            return uweb3.Response(
+                {
+                    "error": True,
+                    "errors": exc.messages,
+                    "http_status": HTTPStatus.BAD_REQUEST,
+                },
+                httpcode=HTTPStatus.BAD_REQUEST,
+            )
+        except Exception as exc:
+            print(exc)
             return uweb3.Response(
                 {
                     "error": True,
