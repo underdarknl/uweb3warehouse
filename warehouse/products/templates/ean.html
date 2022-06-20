@@ -6,13 +6,6 @@
     <form action="/ean" method="get" class="lineform">
         <div><label for="query">Search</label><input id="query" type="text" name="query"
                 value="{{ if [query] }}[query]{{ endif}}" placeholder="Search for (partial) ean."></div>
-        <div><label for="query">Supplier</label><select name="supplier" id="filter_supplier">
-                <option value="">All</option>
-                {{ for filtersupplier in [suppliers] }}
-                <option value="[filtersupplier:ID]" {{ if [supplier] and [filtersupplier:ID]==[supplier:ID]}}selected{{
-                    endif }}>[filtersupplier:name]</option>
-                {{ endfor }}
-            </select></div>
         <div><a class="button" href="/ean">Clear</a> <input id="query" type="submit" value="Filter"></div>
     </form>
     {{ if len([products:items]) }}

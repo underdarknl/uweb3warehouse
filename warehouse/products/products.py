@@ -380,16 +380,6 @@ class PageMaker(basepages.PageMaker):
         conditions = ["(gs1 is not null or ean is not null)"]
         linkarguments = {}
 
-        # if "supplier" in self.get:
-        #     try:
-        #         supplier = supplier_model.Supplier.FromPrimary(
-        #             self.connection, self.get.getfirst("supplier", None)
-        #         )
-        #         conditions.append("supplier = %d" % supplier)
-        #         linkarguments["supplier"] = int(supplier)
-        #     except uweb3.model.NotExistError:
-        #         pass
-
         query = ""
         products_args = {"conditions": conditions, "order": [("ean", False)]}
         products_method = model.Product.List
