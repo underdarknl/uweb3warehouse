@@ -1,9 +1,17 @@
-import difflib
-from collections import namedtuple
+import decimal
+import types
+from typing import Iterable, Iterator, NamedTuple
 
 import pandas
 
+from warehouse.common import helpers as common_helpers
 from warehouse.products import model
+from warehouse.suppliers import model as supplier_model
+
+
+class ProductPair(NamedTuple):
+    parsed_product: dict
+    supplier_product: supplier_model.Supplierproduct
 
 
 class StockParser:
@@ -13,7 +21,7 @@ class StockParser:
         Args:
             file_path (StringIO): The StringIO object containing the HTML with the table.
             columns (tuple[str]): The columns that we are interested in
-            normalize_columns (_type_): The column containing the product name that should be normalized to match the database value.
+            normalize_columns (tuple[str]): The column containing the product name that should be normalized to match the database value.
         """
         self.columns = columns
         self.normalize_columns = normalize_columns
@@ -37,77 +45,101 @@ class StockParser:
         Returns:
             list[dict]: Returns the list with the matches.
         """
-        processed = []
         # Because multiple tables can be present in a page we can have multiple dataframes.
-        for dataframe in dataframes:
-            processed.append(self._process_dataframe(dataframe.to_dict("record")))
-        return processed
+        return [
+            self._process_dataframe(dataframe.to_dict("record"))
+            for dataframe in dataframes
+        ]
 
     def _process_dataframe(self, dataframe):
-        """Mutate the dataframe by normalizing the columns that we are interested in so that the value matches the value stored in the database."""
+        """Process the dataframe by normalizing the values contained in the columns.
+
+        Returns:
+            list[dict]: A list of dictionaries with the processed matches.
+        """
+        results = []
+
         for result in dataframe:
-            missing_columns = [
-                column for column in self.columns if column not in result
-            ]
-            if missing_columns:
+            if any(
+                missing_columns := [
+                    column for column in self.columns if column not in result.keys()
+                ]
+            ):
                 raise KeyError(
                     f"The following columns could not be found: {missing_columns}"
                 )
-            self._normalize(result)
-        return dataframe
 
-    def _normalize(self, match):
+            results.append(self._normalize(result))
+
+        return results
+
+    def _normalize(self, result):
         """Normalize only the columns which are of interest. This should be the column containing the product name."""
+        clean_result = self._remove_unwanted_keys(result)
+
         for column in self.normalize_columns:
-            match[column] = match[column].replace("/", "_")
+            clean_result[column] = clean_result[column].replace("/", "_")
+        return clean_result
+
+    def _remove_unwanted_keys(self, result):
+        """Create a copy of the result and mutate the object by removing keys that are not sought after."""
+        copy = dict(result)
+        for key in result.keys():
+            if key not in self.columns:
+                del copy[key]
+        return copy
 
 
 class StockImporter:
-    def __init__(self, connection, mapping):
+    def __init__(self, mapping: dict[str, str]):
         """Initialize the importer that will import the stock from the passed results.
 
         Args:
-            connection (self.connection): Uweb3 connection object
             mapping (dict): Contains the key value mappings for the columns in the table.
                 For example {"amount": "Op voorraad"} would mean that the amount column in the table is named "Op voorraad".
         """
-        self.processed_products = []
-        self.unprocessed_products = []
-        self.connection = connection
-        self.mapping = mapping
+        self.products = []
+        self.parsed_results = []
 
-    def Import(self, parsed_results, products):
+        self.mapping = mapping
+        self._processed_products = []
+        self._unprocessed_products = []
+
+    def Import(
+        self, parsed_results: list[list[dict]], products: list[model.Product]
+    ) -> tuple[list[ProductPair], list[dict]]:
         """Attempt to find a database product for each result.
         If a product is found, add the stock to the product.
 
         Args:
-            parsed_results (list[dict]): List of dictionaries that were normalized by the StockParser class
-            products (list[model.Prouct]): A list of all the products from the supplier that we want to import
+            parsed_results (list[list[dict]]): List of dictionaries that were normalized by the StockParser class
+            products (list[model.Product]): A list of all the products from the supplier that we want to import
         """
-        self.parsed_results = parsed_results
-        self.products = products
-        self.product_names = [p["name"] for p in self.products]
+        self.parsed_results = list(parsed_results)
+        self.products = list(products)
+
         for found_product_list in self.parsed_results:
-            self._import_products(found_product_list)
+            self._import_parsed_results(found_product_list)
 
-    def _import_products(self, products):
-        for product in products:
-            self._import_product(product)
+        return self._processed_products, self._unprocessed_products
 
-    def _import_product(self, parsed_product):
+    def _import_parsed_results(self, results: list[dict]):
+        for product in results:
+            self._import_as_supplier_stock(product)
+
+    def _import_as_supplier_stock(self, parsed_product: dict):
         # Find corresponding product by mapping the column name to the database field name.
         # This is because every supplier can have a different naming convention.
         name = parsed_product[self.mapping["name"]]
         product = self._find_product(name)
 
         if not product:
-            self.unprocessed_products.append(self._normalize_keys(parsed_product))
-            return
+            return self._add_to_unprocessed(parsed_product)
 
-        self._add_stock(product, parsed_product[self.mapping["amount"]])
+        self._update_stock(product, parsed_product[self.mapping["amount"]])
         self._add_to_processed(parsed_product, product)
 
-    def _find_product(self, name):
+    def _find_product(self, name: str):
         """Attempt to find the closest matching database product for the passed name.
 
         Args:
@@ -116,15 +148,12 @@ class StockImporter:
         Returns:
             product (model.Product): The product that was found to be the best match.
         """
-        # Finds the top3 matches for the product name.
-        closest_matches = difflib.get_close_matches(
-            name, self.product_names, n=3, cutoff=0.8
-        )
-        # If no match is found return None
-        if not closest_matches:
+        product = [p for p in self.products if p["name"] == name]
+
+        if not product:
             return None
-        # Get the actual Product object from the list of products and return it.
-        return next((x for x in self.products if x["name"] == closest_matches[0]), None)
+
+        return product[0]
 
     def _add_to_processed(self, parsed_product, product):
         """Adds the parsed_product from the parsed file and the database product to a tuple
@@ -136,15 +165,18 @@ class StockImporter:
             parsed_product (_type_): The product that was found by the parser.
             product (model.Product): The product that was found in the database.
         """
-        pair = namedtuple("ProductPair", "parsed_product product".split())
         normalized_result = self._normalize_keys(parsed_product)
-        self.processed_products.append(pair(normalized_result, product))
+        self._processed_products.append(ProductPair(normalized_result, product))
+
+    def _add_to_unprocessed(self, parsed_product):
+        normalized_result = self._normalize_keys(parsed_product)
+        self._unprocessed_products.append(normalized_result)
 
     def _normalize_keys(self, result):
         """Normalize the keys of the result dictionary so that they match the database field names."""
         return {key: result[self.mapping[key]] for key in self.mapping.keys()}
 
-    def _add_stock(self, product, amount):
+    def _update_stock(self, product, amount):
         """Update the stock of the product with the amount that was found in the parsed file.
 
         Args:
@@ -154,16 +186,12 @@ class StockImporter:
         Returns:
             model.Stock: The added Stock record.
         """
-        return model.Stock.Create(
-            self.connection,
-            {
-                "product": product.key,
-                "amount": amount,
-            },
-        )
+        product["supplier_stock"] = amount
+        product.Save()
+        return product.Refresh()
 
 
-def update_stock(connection, sku, amount, reference=None):
+def remove_stock(connection, sku, amount, reference=None):
     product = model.Product.FromSku(connection, sku)
     currentstock = product.currentstock
     if (
@@ -178,6 +206,13 @@ def update_stock(connection, sku, amount, reference=None):
         except model.AssemblyError as error:
             raise ValueError(error.args[0])
 
+    # only assemble when we sell
+    if amount < 0 and abs(amount) > currentstock:
+        # only assemble when we have not enough stock
+        product.Assemble(
+            abs(amount) - currentstock,  # only assemble what is missing for this sale
+            "Assembly for %s" % reference,
+        )
     model.Stock.Create(
         connection,
         {
@@ -186,7 +221,31 @@ def update_stock(connection, sku, amount, reference=None):
             "reference": reference,
         },
     )
-    return {"stock": product.currentstock, "possible_stock": product.possiblestock}
+    return {
+        "stock": product.currentstock,
+        "possible_stock": product.possiblestock,
+    }
+
+
+def add_stock(connection, sku, amount, reference=None):
+    """Used to refund after an invoice is canceled.
+    This is an addition to stock.
+
+    Args:
+        connection (PageMaker.connection): The connection object
+        sku (str): The product SKU
+        amount (int): The amount to refund
+        reference (str, optional): The description for the refund
+    """
+    product = model.Product.FromSku(connection, sku)
+    model.Stock.Create(
+        connection,
+        {
+            "product": product,
+            "amount": amount,
+            "reference": reference,
+        },
+    )
 
 
 def possibleparts_select_list(possibleparts):
@@ -195,3 +254,119 @@ def possibleparts_select_list(possibleparts):
 
 def suppliers_select_list(suppliers):
     return [(s["ID"], s["name"]) for s in suppliers]
+
+
+class ProductDTO(NamedTuple):
+    name: str
+    product: str
+    vat: decimal.Decimal
+    sku: str
+
+
+class ProductPriceDTO(NamedTuple):
+    ID: int
+    price: decimal.Decimal
+    start_range: int
+
+
+class ProductDTOService:
+    def to_dto(
+        self,
+        product: model.Product | list[model.Product] | Iterable[model.Product],
+    ) -> ProductDTO | list[ProductDTO]:
+        """Converts either a single Product object, or any iterable to the DTO
+        representation object.
+
+        Args:
+            product (model.Product | list[model.Product] | Iterable[model.Product]): The single Product a iterable of Products to convert to DTO
+
+        Raises:
+            TypeError: Raised when the product object is of an unsupported type.
+
+        Returns:
+            ProductDTO|list[ProductDTO]: Single object or list containing the DTO's of all passed objects.
+        """
+        match product:  # noqa: E999
+            case [model.Product(), *_]:
+                return self._convert_list(product)
+            case types.GeneratorType():
+                to_list = list(product)
+                return self.to_dto(to_list)
+            case model.Product():
+                return self._convert(product)
+            case []:
+                return []
+            case _:
+                raise TypeError("Product did not match any known type.")
+
+    def _convert_list(self, products):
+        items = []
+        for product in products:
+            items.append(self._convert(product))
+        return items
+
+    def _convert(self, product):
+        return ProductDTO(
+            name=product["name"],
+            product=product["ID"],
+            vat=product["vat"],
+            sku=product["sku"],
+        )._asdict()
+
+
+class ProductPriceDTOService:
+    """Converts the Productprice model class to a DTO object for API usage."""
+
+    def to_dto(
+        self,
+        product_price: model.Productprice
+        | list[model.Productprice]
+        | Iterator[model.Productprice],
+    ) -> ProductPriceDTO | list[ProductPriceDTO]:
+        """Converts either a single Productprice object, or any iterable to the DTO
+        representation object.
+
+        Args:
+            product_price (model.Productprice | list[model.Productprice] | Iterator[model.Productprice]): The target object to convert to DTO.
+
+        Raises:
+            ValueError: Raised when the product_price object is of an unsupported type.
+
+        Returns:
+            ProductPriceDTO | list[ProductPriceDTO]: Single object or list containing the DTO's of all passed objects.
+        """
+        match product_price:
+            case [model.Productprice(), *_]:
+                return self._convert_list(product_price)
+            case types.GeneratorType():
+                to_list = list(product_price)
+                return self.to_dto(to_list)
+            case model.Productprice():
+                return self._convert(product_price)  # type: ignore this is because a model object is a dict.
+            case []:
+                return []
+            case _:
+                raise TypeError("Product price dit not match any known price")
+
+    def _convert_list(self, product_prices: list[model.Productprice]):
+        items = []
+        for product in product_prices:
+            items.append(self._convert(product))
+        return items
+
+    def _convert(self, product_price_obj: model.Productprice) -> ProductPriceDTO:
+        return ProductPriceDTO(
+            ID=product_price_obj["ID"],  # type: ignore
+            price=product_price_obj["price"],  # type: ignore
+            start_range=product_price_obj["start_range"],  # type: ignore
+        )._asdict()
+
+
+class DtoManager(common_helpers.BaseFactory):
+    def __init__(self):
+        super().__init__()
+        self.register_base_handlers()
+
+    def register_base_handlers(self):
+        self.register("product", ProductDTOService)
+        self.register("product_price", ProductPriceDTOService)

@@ -19,6 +19,21 @@ from warehouse.common import model as common_model
 class Supplierproduct(model.Record):
     """Used for mapping a product to a supplier product."""
 
+    @classmethod
+    def Products(self, connection, supplier):
+        return self.List(
+            connection,
+            conditions=(
+                f"supplier={supplier['ID']}",
+                common_model.NOTDELETED,
+            ),
+        )
+
+    def Delete(self):
+        """Overwrites the default Delete and sets the dateDeleted datetime instead"""
+        self["dateDeleted"] = str(pytz.utc.localize(datetime.datetime.utcnow()))[0:19]
+        self.Save()
+
 
 class Supplier(model.Record):
     """Provides a model abstraction for the Supplier table"""
@@ -30,12 +45,12 @@ class Supplier(model.Record):
             connection,
             conditions=[common_model.NOTDELETED] + conditions,
             *args,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
-    def Search(cls, connection, query=None, conditions=None, **kwargs):
-        """Returns the articles matching the search
+    def Search(cls, connection, query=None, conditions=None, order=None, **kwargs):
+        """Returns the suppliers matching the search
 
         Arguments:
         @ connection: sqltalk.connection
@@ -45,12 +60,17 @@ class Supplier(model.Record):
         """
         if not conditions:
             conditions = []
+
+        if not order:
+            order = []
+
         return cls.List(
             connection,
-            conditions=['name like "%%%s%%"' % connection.EscapeValues(query)[1:-1]]
+            conditions=conditions
+            + ['name like "%%%s%%"' % connection.EscapeValues(query)[1:-1]]
             + conditions,
-            order=[("ID", True)],
-            **kwargs
+            order=order + [("ID", True)],
+            **kwargs,
         )
 
     @classmethod
@@ -85,10 +105,6 @@ class Supplier(model.Record):
         """Overwrites the default Delete and sets the dateDeleted datetime instead"""
         self["dateDeleted"] = str(pytz.utc.localize(datetime.datetime.utcnow()))[0:19]
         self.Save()
-
-    # def Products(self):
-    #     """List products for this supplier"""
-    #     return self.__children__(Products)
 
     def _PreCreate(self, cursor):
         super()._PreCreate(cursor)

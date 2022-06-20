@@ -55,7 +55,7 @@ class PageMaker(basepages.PageMaker):
         )
 
         if not product_form:
-            product_form = forms.ProductForm()
+            product_form = forms.ProductForm(prefix="product")
         return {
             "supplier": supplier,
             "products": products,
@@ -111,10 +111,10 @@ class PageMaker(basepages.PageMaker):
         )
 
         if not product_form:
-            product_form = forms.ProductForm()
+            product_form = forms.ProductForm(prefix="product")
             product_form.process(data=product)
         if not assemble_form:
-            assemble_form = forms.ProductAssembleFromPartForm()
+            assemble_form = forms.ProductAssembleFromPartForm(prefix="product-part")
             assemble_form.part.choices = helpers.possibleparts_select_list(
                 possibleparts
             )
@@ -147,9 +147,9 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.checkxsrf
     def RequestProductNew(self):
         """Requests the creation of a new product."""
-        form = forms.ProductForm(self.post)
-        form.validate()
-        if form.errors:
+        form = forms.ProductForm(self.post, prefix="product")
+
+        if not form.validate():
             return self.RequestProducts(product_form=form)
 
         try:
@@ -171,10 +171,9 @@ class PageMaker(basepages.PageMaker):
     def RequestProductSave(self, sku):
         """Saves changes to the product"""
         product = model.Product.FromSku(self.connection, sku)
-        form = forms.ProductForm(self.post)
-        form.validate()
+        form = forms.ProductForm(self.post, prefix="product")
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku, product_form=form)
 
         product.update(form.data)
@@ -194,11 +193,10 @@ class PageMaker(basepages.PageMaker):
         possibleparts = model.Product.List(
             self.connection, conditions=[f'ID != {product["ID"]}']
         )
-        form = forms.ProductAssembleFromPartForm(self.post)
+        form = forms.ProductAssembleFromPartForm(self.post, prefix="product-part")
         form.part.choices = helpers.possibleparts_select_list(possibleparts)
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku=sku, assemble_form=form)
 
         try:
@@ -261,9 +259,8 @@ class PageMaker(basepages.PageMaker):
 
         factory = forms.get_stock_factory(self.post)
         form = factory.get_form("stock_form")
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku=sku, stock_form=form)
 
         try:
@@ -291,9 +288,8 @@ class PageMaker(basepages.PageMaker):
 
         factory = forms.get_stock_factory(self.post)
         form = factory.get_form("assemble_from_part")
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku=sku, assemble_from_part_form=form)
 
         try:
@@ -322,9 +318,8 @@ class PageMaker(basepages.PageMaker):
 
         factory = forms.get_stock_factory(self.post)
         form = factory.get_form("disassemble_into_parts")
-        form.validate()
 
-        if form.errors:
+        if not form.validate():
             return self.RequestProduct(sku=sku, disassemble_into_parts_form=form)
 
         try:
@@ -380,7 +375,9 @@ class PageMaker(basepages.PageMaker):
     def RequestProductSuppliers(self, sku):
         product = model.Product.FromSku(self.connection, sku)
 
-        supplier_product_form = forms.SupplierProduct(self.post)
+        supplier_product_form = forms.SupplierProduct(
+            self.post, prefix="supplier-product"
+        )
         supplier_product_form.supplier.choices = helpers.suppliers_select_list(
             supplier_model.Supplier.List(self.connection)
         )
@@ -400,7 +397,11 @@ class PageMaker(basepages.PageMaker):
             supplier_product_form=supplier_product_form,
             suppliers=list(
                 supplier_model.Supplierproduct.List(
-                    self.connection, conditions=(f'product = {product["ID"]}')
+                    self.connection,
+                    conditions=(
+                        f'product = {product["ID"]}',
+                        common_model.NOTDELETED,
+                    ),
                 )
             ),
         )
@@ -420,24 +421,47 @@ class PageMaker(basepages.PageMaker):
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
     @uweb3.decorators.TemplateParser("prices.html")
-    def RequestProductPrices(self, sku):
+    def RequestProductPrices(self, sku, product_vat_form=None):
         product = model.Product.FromSku(self.connection, sku)
-        product_price_form = forms.ProductPriceForm(self.post)
+        product_price_form = forms.ProductPriceForm(self.post, prefix="product-price")
 
-        if self.post and product_price_form.validate():
-            new_product_price = {"product": product["ID"], **product_price_form.data}
+        if not product_vat_form:
+            product_vat_form = forms.ProductVatForm(data=product)
+
+        if self.post and "vat" not in self.post and product_price_form.validate():
+            new_product_price = {
+                "product": product["ID"],
+                **product_price_form.data,
+            }
             model.Productprice.Create(self.connection, new_product_price)
             return self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)
 
         return dict(
             product=product,
             product_price_form=product_price_form,
+            product_vat_form=product_vat_form,
             product_prices=list(
                 model.Productprice.List(
-                    self.connection, conditions=f"product = {product['ID']}"
+                    self.connection,
+                    conditions=f"product = {product['ID']}",
+                    order=[("start_range", False)],
                 )
             ),
         )
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def RequestSetProductVat(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+        product_vat_form = forms.ProductVatForm(self.post)
+
+        if not product_vat_form.validate():
+            return self.RequestProductPrices(sku, product_vat_form=product_vat_form)
+
+        product.update(product_vat_form.data)
+        product.Save()
+        return self.req.Redirect(f'/product/{product["sku"]}/prices', httpcode=303)
 
     @loggedin
     @NotExistsErrorCatcher

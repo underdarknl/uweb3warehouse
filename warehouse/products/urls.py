@@ -19,7 +19,7 @@ urls = [
     ),
     ("/", (products.PageMaker, "RequestProductNew"), "POST"),
     (
-        "/product/([^/]*)/remove",
+        "/product/([^/]*)/delete",
         (products.PageMaker, "RequestProductRemove"),
         "POST",
     ),
@@ -66,6 +66,11 @@ urls = [
         (products.PageMaker, "RequestDeleteProductPrice"),
     ),
     (
+        "/product/([^/]*)/prices/vat",
+        (products.PageMaker, "RequestSetProductVat"),
+        "POST",
+    ),
+    (
         "/api/v1/product/([^/]*)",
         (api.PageMaker, "JsonProduct"),
         "GET",
@@ -85,8 +90,13 @@ urls = [
         "POST",
     ),
     (
-        "/api/v1/products/bulk_stock",
-        (api.PageMaker, "JsonProductStockBulk"),
+        "/api/v1/products/bulk_remove_stock",
+        (api.PageMaker, "JsonProductStockRemove"),
+        "POST",
+    ),
+    (
+        "/api/v1/products/bulk_add",
+        (api.PageMaker, "JsonProductStockBulkAdd"),
         "POST",
     ),
 ]

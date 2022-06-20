@@ -1,5 +1,4 @@
 import os
-from io import StringIO
 
 import uweb3
 
@@ -7,18 +6,20 @@ from warehouse import basepages
 from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
-from warehouse.products import helpers
-from warehouse.products import model as product_model
-from warehouse.suppliers import model
+from warehouse.suppliers import forms, helpers, model
 
 
 class PageMaker(basepages.PageMaker):
     TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
     @loggedin
+    @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("suppliers.html")
-    def RequestSuppliers(self, error=None, success=None):
+    def RequestSuppliers(self, error=None, success=None, supplier_form=None):
         """Returns the suppliers page"""
+        if not supplier_form:
+            supplier_form = forms.SupplierForm()
+
         suppliers = None
         query = ""
         if "query" in self.get and self.get.getfirst("query", False):
@@ -43,7 +44,43 @@ class PageMaker(basepages.PageMaker):
             "query": query,
             "error": error,
             "success": success,
+            "supplier_form": supplier_form,
         }
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.TemplateParser("supplier_products.html")
+    def RequestSupplierProducts(self, supplierID):
+        supplier = model.Supplier.FromPrimary(self.connection, supplierID)
+        supplier_products = list(
+            model.Supplierproduct.Products(self.connection, supplier)
+        )
+        supplier_product_form = helpers.get_supplier_product_form(
+            self.connection, supplier, self.post
+        )
+        if self.post and supplier_product_form.validate():
+            model.Supplierproduct.Create(self.connection, supplier_product_form.data)
+            return self.req.Redirect(f"/supplier/{supplierID}/products", httpcode=301)
+
+        return dict(
+            supplier_products=supplier_products,
+            supplier=supplier,
+            supplier_product_form=supplier_product_form,
+        )
+
+    @loggedin
+    @NotExistsErrorCatcher
+    def RequestSupplierProductDelete(self, supplierID, productID):
+        supplier = model.Supplier.FromPrimary(self.connection, supplierID)
+        product = model.Supplierproduct.FromPrimary(self.connection, productID)
+
+        if product["supplier"] != supplier:
+            return self.Error(
+                "Can not delete this product. The product is from another supplier."
+            )
+
+        product.Delete()
+        return self.req.Redirect(f"/supplier/{supplierID}/products", httpcode=301)
 
     @loggedin
     @NotExistsErrorCatcher
@@ -51,61 +88,62 @@ class PageMaker(basepages.PageMaker):
     def RequestSupplierSave(self, name):
         """Returns the supplier page"""
         supplier = model.Supplier.FromName(self.connection, name)
-        for key in (
-            "name",
-            "website",
-            "telephone",
-            "contact_person",
-            "email_address",
-            "gscode",
-        ):
-            supplier[key] = self.post.getfirst(key, None)
-        supplier.Save()
-        return self.RequestSuppliers(success="Changes saved.")
+        supplier_form = forms.SupplierForm(self.post)
+
+        if not supplier_form.validate():
+            return self.RequestSupplier(name, supplier_form=supplier_form)
+
+        supplier.update(supplier_form.data)
+
+        try:
+            supplier.Save()
+        except self.connection.IntegrityError as error:
+            if error.args[0] == 1062:
+                supplier_form.name.errors = ["Supplier name is already taken."]
+                return self.RequestSupplier(name, supplier_form=supplier_form)
+            else:
+                return self.Error(error)
+
+        return self.req.Redirect(f'/supplier/{supplier["name"]}', httpcode=303)
 
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("supplier.html")
-    def RequestSupplier(self, name):
+    def RequestSupplier(self, name, supplier_stock_form=None, supplier_form=None):
         """Returns the supplier page"""
-        return {"supplier": model.Supplier.FromName(self.connection, name)}
+        supplier = model.Supplier.FromName(self.connection, name)
+
+        if not supplier_form:
+            supplier_form = forms.SupplierForm(data=supplier)
+
+        if not supplier_stock_form:
+            supplier_stock_form = forms.ImportSupplierStock(
+                self.post, prefix=helpers.get_importer_prefix(supplier)
+            )
+
+        return dict(
+            supplier=supplier,
+            supplier_stock_form=supplier_stock_form,
+            supplier_form=supplier_form,
+        )
 
     @loggedin
     @uweb3.decorators.checkxsrf
     def RequestSupplierNew(self):
         """Requests the creation of a new supplier."""
+        supplier_form = forms.SupplierForm(self.post)
+
+        if not supplier_form.validate():
+            return self.RequestSuppliers(supplier_form=supplier_form)
+
         try:
-            supplier = model.Supplier.Create(
-                self.connection,
-                {
-                    "name": self.post.getfirst("name", "").replace(" ", "_"),
-                    "website": self.post.getfirst("website")
-                    if "website" in self.post
-                    else None,
-                    "telephone": self.post.getfirst("telephone")
-                    if "telephone" in self.post
-                    else None,
-                    "contact_person": self.post.getfirst("contact_person")
-                    if "contact_person" in self.post
-                    else None,
-                    "email_address": self.post.getfirst("email_address")
-                    if "email_address" in self.post
-                    else None,
-                    "gscode": self.post.getfirst("gscode")
-                    if "gscode" in self.post
-                    else None,
-                },
-            )
-        except ValueError:
-            return self.RequestInvalidcommand(
-                error="Input error, some fields are wrong."
-            )
+            supplier = model.Supplier.Create(self.connection, supplier_form.data)
         except common_model.InvalidNameError:
             return self.RequestInvalidcommand(
                 error="Please enter a valid name for the supplier."
             )
         except self.connection.IntegrityError:
-            return self.Error("That name was already taken, go back, try again!", 200)
+            return self.Error("Supplier name is already taken.", 200)
         return self.req.Redirect("/supplier/%s" % supplier["name"], httpcode=301)
 
     @loggedin
@@ -121,52 +159,44 @@ class PageMaker(basepages.PageMaker):
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
     @uweb3.decorators.TemplateParser("supplier.html")
-    def UpdateSupplierStock(self, supplier):
-        if not self.files or not self.files.get("fileupload"):
-            return self.Error(error="No file was uploaded.")
+    def UpdateSupplierStock(self, supplierName):
+        supplier = model.Supplier.FromName(self.connection, supplierName)
+        prefix = helpers.get_importer_prefix(supplier)
+        upload_field = f"{prefix}-fileupload"
 
-        column_name_mapping = self.post.getfirst("column_name_mapping", None)
-        column_stock_mapping = self.post.getfirst("column_stock_mapping", None)
+        supplier_stock_form = forms.ImportSupplierStock(self.post, prefix=prefix)
 
-        if not column_name_mapping or not column_stock_mapping:
-            return self.Error(error="Name and stock mapping values must be set.")
+        if not self.files or not self.files.get(upload_field):
+            supplier_stock_form.fileupload.errors = ["No file selected."]
+            return self.RequestSupplier(
+                name=supplierName, supplier_stock_form=supplier_stock_form
+            )
 
-        supplier = model.Supplier.FromName(self.connection, supplier)
-        file = self.files["fileupload"][0]
+        supplier_stock_form.fileupload.data = self.files.get(upload_field)
 
-        parser = helpers.StockParser(
-            file_path=StringIO(file["content"]),
-            columns=(
-                column_name_mapping,
-                column_stock_mapping,
-            ),
-            normalize_columns=(column_name_mapping,),
-        )
+        if not supplier_stock_form.validate():
+            return self.RequestSupplier(
+                name=supplierName, supplier_stock_form=supplier_stock_form
+            )
 
         try:
-            parsed_result = parser.Parse()
-        except KeyError as exception:
-            return self.RequestInvalidcommand(error=exception.args[0])
-
-        products = list(
-            product_model.Product.List(
-                self.connection, conditions=[f'supplier = {supplier["ID"]}']
+            (
+                processed_products,
+                unprocessed_products,
+            ) = helpers.import_stock_from_file(
+                supplier_stock_form, supplier, self.connection
             )
-        )
+        except KeyError as exception:
+            supplier_stock_form.column_name_mapping.errors = [exception.args[0]]
+            supplier_stock_form.column_stock_mapping.errors = [exception.args[0]]
+            return self.RequestSupplier(
+                name=supplierName, supplier_stock_form=supplier_stock_form
+            )
 
-        importer = helpers.StockImporter(
-            self.connection,
-            {
-                "amount": column_stock_mapping,
-                "name": column_name_mapping,
-            },
-        )
-        importer.Import(
-            parsed_result,
-            products,
-        )
         return {
             "supplier": supplier,
-            "processed_products": importer.processed_products,
-            "unprocessed_products": importer.unprocessed_products,
+            "processed_products": processed_products,
+            "unprocessed_products": unprocessed_products,
+            "supplier_stock_form": forms.ImportSupplierStock(),  # Reset the form because the post was successful
+            "supplier_form": forms.SupplierForm(data=supplier),
         }

@@ -1,0 +1,20 @@
+<form action="{{ ifpresent [supplier] }}/supplier/[supplier:name]{{else}}/suppliers{{ endif}}" method="post">
+    <input type="hidden" name="xsrf" value="[xsrf]">
+    {{ for field in [supplier_form] }}
+        <p>[field:description]</p>
+        {{ if [field:errors] }}
+            {{ for error in [field:errors] }}
+                <p class="error">[error]</p>
+            {{ endfor }}
+        {{ endif }}
+        <div>
+            [field:label]
+            [field]
+        </div>
+    {{ endfor }}
+    <div>
+        <div><input type="submit"
+                value="{{ ifpresent [supplier] }}Save changes{{ else }}Create a new supplier.{{ endif }}"
+                class="primary"></div>
+    </div>
+</form>
