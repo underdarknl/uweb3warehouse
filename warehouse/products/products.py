@@ -38,14 +38,15 @@ class PageMaker(basepages.PageMaker):
 
         products_args = {"conditions": conditions, "order": [("ID", True)]}
         query = ""
+
+        products_method = model.Product.List
         if "query" in self.get and self.get.getfirst("query", False):
             query = self.get.getfirst("query", "")
             linkarguments["query"] = query
-            products_method = model.Product.FromEAN
-            products_args["ean"] = query
-            del products_args["order"]
-        else:
-            products_method = model.Product.List
+            products_args["conditions"] += [
+                "ean=%s" % int(query),
+                common_model.NOTDELETED,
+            ]
 
         products = PagedResult(
             self.pagesize,
@@ -354,7 +355,7 @@ class PageMaker(basepages.PageMaker):
             linkarguments["query"] = query
             try:
                 product = model.Product.FromGS1(self.connection, query)
-                return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
+                return self.req.Redirect("/product/%s" % product["sku"], httpcode=301)
             except model.Product.NotExistError:
                 products = []
         else:
@@ -378,25 +379,26 @@ class PageMaker(basepages.PageMaker):
         supplier = None
         conditions = ["(gs1 is not null or ean is not null)"]
         linkarguments = {}
-        if "supplier" in self.get:
-            try:
-                supplier = supplier_model.Supplier.FromPrimary(
-                    self.connection, self.get.getfirst("supplier", None)
-                )
-                conditions.append("supplier = %d" % supplier)
-                linkarguments["supplier"] = int(supplier)
-            except uweb3.model.NotExistError:
-                pass
 
-        products_args = {"conditions": conditions, "order": [("ean", False)]}
+        # if "supplier" in self.get:
+        #     try:
+        #         supplier = supplier_model.Supplier.FromPrimary(
+        #             self.connection, self.get.getfirst("supplier", None)
+        #         )
+        #         conditions.append("supplier = %d" % supplier)
+        #         linkarguments["supplier"] = int(supplier)
+        #     except uweb3.model.NotExistError:
+        #         pass
+
         query = ""
+        products_args = {"conditions": conditions, "order": [("ean", False)]}
+        products_method = model.Product.List
+
         if "query" in self.get and self.get.getfirst("query", False):
             query = self.get.getfirst("query", "")
             linkarguments["query"] = query
             products_method = model.Product.EANSearch
             products_args["ean"] = query
-        else:
-            products_method = model.Product.List
 
         products = PagedResult(
             self.pagesize,

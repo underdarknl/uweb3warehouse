@@ -35,7 +35,7 @@ class Product(model.Record):
     _possiblestock = None
     _parts = None
     _products = None
-    
+
     @classmethod
     def FromGS1(cls, connection, gs1, conditions=[]):
         """Returns the product of the given gs1.
@@ -54,12 +54,12 @@ class Product(model.Record):
         Product: product abstraction class.
         """
         with connection as cursor:
-            product = cursor.Select(table=cls.TableName(),
-                                    conditions=['gs1=%s' % int(gs1),
-                                                common_model.NOTDELETED] + conditions)
+            product = cursor.Select(
+                table=cls.TableName(),
+                conditions=["gs1=%s" % int(gs1), common_model.NOTDELETED] + conditions,
+            )
         if not product:
-            raise cls.NotExistError(
-                'There is no product with gs1 code %r' % gs1)
+            raise cls.NotExistError("There is no product with gs1 code %r" % gs1)
         return cls(connection, product[0])
 
     @classmethod
@@ -80,12 +80,12 @@ class Product(model.Record):
             Product: product abstraction class.
         """
         with connection as cursor:
-            product = cursor.Select(table=cls.TableName(),
-                                    conditions=['ean=%s' % int(ean),
-                                                common_model.NOTDELETED] + conditions)
+            product = cursor.Select(
+                table=cls.TableName(),
+                conditions=["ean=%s" % int(ean), common_model.NOTDELETED] + conditions,
+            )
         if not product:
-            raise cls.NotExistError(
-                'There is no product with ean code %r' % ean)
+            raise cls.NotExistError("There is no product with ean code %r" % ean)
         return cls(connection, product[0])
 
     @classmethod
@@ -100,26 +100,25 @@ class Product(model.Record):
         """
         if not conditions:
             conditions = []
-            
-        queryorder = [('product.dateCreated', True)]
+
+        queryorder = [("product.dateCreated", True)]
         if order:
             queryorder = order + queryorder
 
         return super().List(
-        connection,
-        conditions=["""( ean like "%%%d%%" or
-                        concat(supplier.gscode, LPAD(gs1, 3, 0)) like "%%%d%%") and
-                        product.supplier = supplier.ID and
-                        product.dateDeleted = "%s"
-                    """ %
-            (int(ean),
-            int(ean),
-            common_model.NOTDELETEDDATE)
-        ] + conditions,
-        order=queryorder,
-        tables=('product', 'supplier'),
-        **kwargs)
-    
+            connection,
+            conditions=[
+                """
+                        ean like "%%%d%%"
+                        and product.dateDeleted = "%s"
+                        """
+                % (int(ean), common_model.NOTDELETEDDATE)
+            ]
+            + conditions,
+            order=queryorder,
+            **kwargs,
+        )
+
     @classmethod
     def Create(self, connection, record):
         sku = record.get("sku")
