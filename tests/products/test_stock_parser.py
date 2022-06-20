@@ -59,6 +59,34 @@ class TestStockParser:
                 <tbody>
                     <tr>
                         <td>Product name</td>
+                        <td>Quantity</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Optimizer P700
+                        </td>
+                        <td>
+                            20
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            """
+        )
+        parser = StockParser(file, ("Product name", "Quantity"), ("Product name",))
+        assert [
+            [
+                {"Product name": "Optimizer P700", "Quantity": 20},
+            ]
+        ] == parser.Parse()
+
+    def test_parse_only_wanted_columns(self):
+        file = StringIO(
+            """
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Product name</td>
                         <td>Random column</td>
                         <td>Quantity</td>
                     </tr>
@@ -81,5 +109,43 @@ class TestStockParser:
         assert [
             [
                 {"Product name": "Optimizer P700", "Quantity": 20},
+            ]
+        ] == parser.Parse()
+
+    def test_normalize_target_only(self):
+        file = StringIO(
+            """
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Product name</td>
+                        <td>Random column</td>
+                        <td>Quantity</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Optimizer P700
+                        </td>
+                        <td>
+                            Some/random/column
+                        </td>
+                        <td>
+                            20
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            """
+        )
+        parser = StockParser(
+            file, ("Product name", "Random column", "Quantity"), ("Product name",)
+        )
+        assert [
+            [
+                {
+                    "Product name": "Optimizer P700",
+                    "Random column": "Some/random/column",
+                    "Quantity": 20,
+                },
             ]
         ] == parser.Parse()
