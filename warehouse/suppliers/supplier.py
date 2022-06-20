@@ -176,7 +176,7 @@ class PageMaker(basepages.PageMaker):
 
         if not supplier_stock_form.validate():
             return self.RequestSupplier(
-                name=supplier, supplier_stock_form=supplier_stock_form
+                name=supplierName, supplier_stock_form=supplier_stock_form
             )
 
         try:
@@ -190,7 +190,7 @@ class PageMaker(basepages.PageMaker):
             supplier_stock_form.column_name_mapping.errors = [exception.args[0]]
             supplier_stock_form.column_stock_mapping.errors = [exception.args[0]]
             return self.RequestSupplier(
-                name=supplier, supplier_stock_form=supplier_stock_form
+                name=supplierName, supplier_stock_form=supplier_stock_form
             )
 
         return {
