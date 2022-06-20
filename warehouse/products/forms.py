@@ -22,10 +22,10 @@ class ProductForm(Form):
     )
     name = StringField(
         "name",
-        [validators.Length(min=5, max=255), validators.DataRequired()],
+        [validators.Length(min=5, max=255), validators.InputRequired()],
         description="The name of the product",
     )
-    ean = StringField(
+    ean = IntegerField(
         "ean",
         [validators.Length(min=1, max=13), validators.Optional()],
         description="The ean barcode for each product or part in your warehouse must be unique.",
@@ -68,7 +68,7 @@ class SupplierProduct(Form):
     )
     name = StringField(
         "name",
-        [validators.Length(min=5, max=255), validators.DataRequired()],
+        [validators.Length(min=5, max=255), validators.InputRequired()],
         description="The name that the supplier has for the product",
     )
     lead = IntegerField(
