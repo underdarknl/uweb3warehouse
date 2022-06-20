@@ -92,3 +92,6 @@ form table.products .number input[name$="_vat"] {
     list-style-type: none;
     padding-left: 0;
 }
+input:required {
+  border: 1px solid rgb(29, 3, 3);
+}
