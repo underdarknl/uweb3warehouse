@@ -49,8 +49,8 @@ class Supplier(model.Record):
         )
 
     @classmethod
-    def Search(cls, connection, query=None, conditions=None, **kwargs):
-        """Returns the articles matching the search
+    def Search(cls, connection, query=None, conditions=None, order=None, **kwargs):
+        """Returns the suppliers matching the search
 
         Arguments:
         @ connection: sqltalk.connection
@@ -60,11 +60,16 @@ class Supplier(model.Record):
         """
         if not conditions:
             conditions = []
+
+        if not order:
+            order = []
+
         return cls.List(
             connection,
-            conditions=['name like "%%%s%%"' % connection.EscapeValues(query)[1:-1]]
+            conditions=conditions
+            + ['name like "%%%s%%"' % connection.EscapeValues(query)[1:-1]]
             + conditions,
-            order=[("ID", True)],
+            order=order + [("ID", True)],
             **kwargs,
         )
 
