@@ -1,5 +1,4 @@
 import decimal
-import difflib
 import types
 from typing import Iterable, Iterator, NamedTuple
 
@@ -100,7 +99,6 @@ class StockImporter:
                 For example {"amount": "Op voorraad"} would mean that the amount column in the table is named "Op voorraad".
         """
         self.products = []
-        self.product_names = []
         self.parsed_results = []
 
         self.mapping = mapping
@@ -119,7 +117,6 @@ class StockImporter:
         """
         self.parsed_results = list(parsed_results)
         self.products = list(products)
-        self.product_names = [p["name"] for p in self.products]
 
         for found_product_list in self.parsed_results:
             self._import_parsed_results(found_product_list)
@@ -151,12 +148,12 @@ class StockImporter:
         Returns:
             product (model.Product): The product that was found to be the best match.
         """
-        closest_matches = difflib.get_close_matches(
-            name, self.product_names, n=1, cutoff=0.9
-        )
-        if not closest_matches:
+        product = [p for p in self.products if p["name"] == name]
+
+        if not product:
             return None
-        return next((x for x in self.products if x["name"] == closest_matches[0]), None)
+
+        return product[0]
 
     def _add_to_processed(self, parsed_product, product):
         """Adds the parsed_product from the parsed file and the database product to a tuple
