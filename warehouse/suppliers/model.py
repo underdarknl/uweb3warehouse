@@ -106,10 +106,6 @@ class Supplier(model.Record):
         self["dateDeleted"] = str(pytz.utc.localize(datetime.datetime.utcnow()))[0:19]
         self.Save()
 
-    # def Products(self):
-    #     """List products for this supplier"""
-    #     return self.__children__(Products)
-
     def _PreCreate(self, cursor):
         super()._PreCreate(cursor)
         if self["gscode"]:
