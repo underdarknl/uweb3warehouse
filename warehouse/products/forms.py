@@ -134,21 +134,6 @@ class ProductStockForm(ProductAssemblyForm):
                 )
 
 
-class ProductPriceForm(Form):
-    price = DecimalField(
-        "price",
-        rounding=decimal.ROUND_UP,
-        places=2,
-        validators=[validators.InputRequired(), validators.NumberRange(min=0)],
-        description="The sale price for the product",
-    )
-    start_range = IntegerField(
-        "start_range",
-        [validators.NumberRange(min=1)],
-        description="The amount of products that need to be purchased before the price starts to apply.",
-    )
-
-
 class ProductVatForm(Form):
     vat = DecimalField(
         "vat",
@@ -243,7 +228,7 @@ class ProductPriceForm(Form):
     )
     start_range = IntegerField(
         "start_range",
-        [validators.NumberRange(min=1)],
+        [validators.InputRequired(), validators.NumberRange(min=1)],
         description="The amount of products that need to be purchased before the price starts to apply.",
     )
 
