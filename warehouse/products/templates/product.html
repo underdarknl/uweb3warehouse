@@ -1,0 +1,166 @@
+[header]
+<script src="/js/forms.js"></script>
+<section>
+    <h2>Product: [product:name]</h2>
+    <ul id="manage-products">
+        <li>
+            <a href="/product/[product:sku]/suppliers">Manage suppliers</a>
+        </li>
+        <li>
+            <a href="/product/[product:sku]/prices">Manage product sale price</a>
+        </li>
+    </ul>
+</section>
+
+<section>
+    {{ if [stock] }}
+    {{ inline tables/product_stock.html }}
+    {{ if [stockrows] and len([stock]) < [stockrows] }} <p><a href="?unlimitedstock=true">See all [stockrows] stock
+            mutations.</a></p>{{ endif }}
+        <p class="info">Current stock: [product:currentstock] units</p>
+        {{ if [product:possiblestock:available] }}
+        <p class="info">Possible addition to stock by using up available parts: [product:possiblestock:available] units,
+            limited by <a
+                href="/product/[product:possiblestock:limitedby:part:sku]">[product:possiblestock:limitedby:part:name]</a>
+        </p>{{elif [parts] }}
+        <p class="warning">No new stock can be created, not enough parts available.</p>
+        {{ endif }}
+        {{ endif }}
+</section>
+
+<section>
+    <h2>Change the current stock:</h2>
+    {{ inline forms/stock.html }}
+
+    {{ if [product:possiblestock:available] and [product:parts] }}
+    <h2 id="assembly">Assemble new stock from parts:</h2>
+    {{ inline forms/stock_from_parts.html }}
+    {{ endif }}
+</section>
+
+<section>
+    {{ if [product:currentstock] and [product:parts] }}
+    <h2>Disassemble stock into parts:</h2>
+    {{ inline forms/disassemble_into_parts.html }}
+    {{ endif }}
+</section>
+
+<section>
+    <h2>Edit Product:</h2>
+    {{ inline forms/product.html }}
+</section>
+
+{{ if [product:parts] }}
+<section id="parts">
+    <h2>This product is a combination of other parts:</h2>
+    <form action="/product/[product:sku]/assembly" method="post">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+        <table class="parts">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Cost price</th>
+                    <th>Amount used</th>
+                    <th>Assembly costs</th>
+                    <th>Subtotal</th>
+                    <th>Created</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ for part in [product:parts] }}
+                <tr>
+                    <td><a href="/product/[part:part:sku]">[part:part:name]</a></td>
+                    <td class="number">&euro; [part:part:cost|currency]</td>
+                    <td><input type="number" step="1" min="0" id="amount" name="amount[[part:ID]]"
+                            value="[part:amount]"></td>
+                    <td>
+                        <p>&euro;&nbsp;</p><input type="number" step="0.001" min="0" id="assemblycosts"
+                            name="assemblycosts[[part:ID]]" value="[part:assemblycosts]">
+                    </td>
+                    <td class="number"
+                        title="([part:amount] * &euro; [part:part:cost|currency]) + &euro; [part:assemblycosts|currency]">
+                        &euro; [part:subtotal|currency]</td>
+                    <td title="[part:part:dateCreated]">[part:part:dateCreated|DateOnly]</td>
+                    <td>
+                        <input type="checkbox" value="true" name="delete[[part:ID]]">
+                    </td>
+                </tr>
+                {{ endfor }}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Total</td>
+                    <td class="number">&euro; [partsprice:assembledtotal]</td>
+                    <td class="number">[partsprice:partcount]</td>
+                    <td class="number">&euro; [partsprice:assembly|currency]</td>
+                    <td class="number">&euro; [partsprice:partstotal|currency]</td>
+                    <td></td>
+                    <td>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+        <div><input type="submit" value="Save changes to this assembly"></div>
+    </form>
+</section>
+{{ endif }}
+
+{{ if [assemble_form:part:choices]}}
+    <section>
+        <h2>Assemble product from parts:</h2>
+        {{ inline forms/assemble.html }}
+    </section>
+{{ endif }}
+
+{{ if [product:products] }}
+<section>
+    <h2>This product is used as a part in these other products:</h2>
+    <form action="/product/[product:sku]/assembly" method="post">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+        <table class="parts">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Cost price</th>
+                    <th>Amount used</th>
+                    <th>Assembly costs</th>
+                    <th>Subtotal</th>
+                    <th>Created</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ for part in [product:products] }}
+                <tr>
+                    <td><a href="/product/[part:product:sku]">[part:product:name]</a></td>
+                    <td class="number">&euro; [part:part:cost|currency]</td>
+                    <td><input type="number" step="1" min="0" id="amount" name="amount[[part:ID]]"
+                            value="[part:amount]"></td>
+                    <td><input type="number" step="0.001" min="0" id="assemblycosts" name="assemblycosts[[part:ID]]"
+                            value="[part:assemblycosts]"></td>
+                    <td class="number"
+                        title="([part:amount] * &euro; [part:part:cost|currency]) + &euro; [part:assemblycosts|currency]">
+                        &euro; [part:subtotal|currency]</td>
+                    <td title="[part:product:dateCreated]">[part:product:dateCreated|DateOnly]</td>
+                    <td>
+                        <input type="checkbox" value="true" name="delete[[part:ID]]">
+                    </td>
+                </tr>
+                {{ endfor }}
+            </tbody>
+        </table>
+        <div><input type="submit" value="Update these assemblies"></div>
+    </form>
+</section>
+{{ endif }}
+
+<section>
+    <h2>Delete Product:</h2>
+    <form action="/product/[product:sku]/delete" method="post">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+        <input type="submit" value="Delete product"
+            onclick="return confirm('Are you sure you want to delete this product?');">
+    </form>
+</section>
+[footer]

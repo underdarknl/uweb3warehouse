@@ -4,12 +4,13 @@ Just execute `./serve.py` or `python3 serve.py`
 """
 
 # Application
-import base
+import warehouse
+
 
 def main():
-  app = base.main()
-  app.serve()
+    app = warehouse.main()
+    app.serve()
 
 
-if __name__ == '__main__':
-  main()
+if __name__ == "__main__":
+    main()

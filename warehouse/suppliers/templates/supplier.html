@@ -1,0 +1,102 @@
+[header]
+<script src="/js/forms.js"></script>
+<section>
+    <h2>Edit Supplier: [supplier:name]</h2>
+    <p><a href="/supplier/[supplier:ID]/products">Products by this supplier</a></a>
+    {{ inline forms/supplier.html }}
+</section>
+<section>
+    <h2>Contact Supplier:</h2>
+    <nav>
+        <ul>
+            {{ if [supplier:telephone] }}<li>Call: <a
+                    href="tel:[supplier:telephone|NullString]">[supplier:telephone|NullString]</a></li>{{ endif }}
+            {{ if [supplier:email_address] }}<li>Mail: <a
+                    href="mailto:[supplier:email_address|NullString]">[supplier:email_address|NullString]</a></li>{{
+            endif }}
+            {{ if [supplier:website] }}<li>Visit: <a href="[supplier:website|NullString]"
+                    rel="external">[supplier:website|NullString]</a></li>{{ endif }}
+        </ul>
+    </nav>
+</section>
+<section>
+    <h2>Import stock</h2>
+
+    <form action="/supplier/updatestock/[supplier:name]" method="post" class="supplier" enctype="multipart/form-data">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+        {{ for field in [supplier_stock_form] }}
+            <p>[field:description]</p>
+            {{ if [field:errors] }}
+                {{ for error in [field:errors] }}
+                    <p class="error">[error]</p>
+                {{ endfor }}
+            {{ endif }}
+            <div>
+                [field:label]
+                [field]
+            </div>
+        {{ endfor }}
+        <div>
+            <input type="submit" value="upload" />
+        </div>
+    </form>
+</section>
+
+{{ ifpresent [processed_products] }}
+    {{ if [processed_products] }}
+        <section>
+            <h2>Processed products</h2>
+            <table class="products">
+                <thead>
+                    <tr>
+                        <th>Parsed product</th>
+                        <th>Database match</th>
+                        <th>Added stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ for pair in [processed_products] }}
+                    <tr>
+                        <td>[pair:parsed_product:name]</td>
+                        <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:name]</a></td>
+                        <td>[pair:parsed_product:amount]</td>
+                    </tr>
+                    {{ endfor }}
+                </tbody>
+            </table>
+        </section>
+    {{ endif }}
+{{ endif }}
+
+{{ ifpresent [unprocessed_products] }}
+    {{ if [unprocessed_products] }}
+        <section>
+            <h2>Unprocessed products</h2>
+            <table class="products">
+                <thead>
+                    <tr>
+                        <th>Found product</th>
+                        <th>Stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ for product in [unprocessed_products] }}
+                    <tr>
+                        <td>[product:name]</td>
+                        <td>[product:amount]</td>
+                    </tr>
+                    {{ endfor }}
+                </tbody>
+            </table>
+        </section>
+    {{ endif }}
+{{ endif }}
+
+<section>
+    <h2>Delete Supplier:</h2>
+    <form action="/supplier/[supplier:name]/delete" method="post">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+        <input type="submit" value="Remove" onclick="return confirm('Are you sure you want to delete this supplier?');">
+    </form>
+</section>
+[footer]

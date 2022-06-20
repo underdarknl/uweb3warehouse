@@ -1,0 +1,23 @@
+<table class="stock">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Reference</th>
+            <th>Lot number</th>
+            <th>Piece price</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ for stockchange in [stock] }}
+        <tr>
+            <td title="[stockchange:dateCreated]">[stockchange:dateCreated|DateOnly]</td>
+            <td class="number {{ if [stockchange:amount] > 0}}success{{ else }}error{{ endif }}">
+                [stockchange:amount]</td>
+            <td>[stockchange:reference|NullString]</td>
+            <td>[stockchange:lot|NullString]</td>
+            <td>[stockchange:piece_price|NullString]</td>
+        </tr>
+        {{ endfor }}
+    </tbody>
+</table>
