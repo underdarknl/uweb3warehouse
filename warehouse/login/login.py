@@ -12,17 +12,13 @@ class PageMaker(basepages.PageMaker):
     TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
     @uweb3.decorators.checkxsrf
-    @uweb3.decorators.TemplateParser("logout.html")
     def RequestLogout(self):
         """Handles logouts"""
-        message = "You where already logged out."
         if self.user:
-            message = ""
             if "action" in self.post:
                 session = model.Session(self.connection)
                 session.Delete()
-                message = "Logged out."
-        return {"message": message}
+        return uweb3.Redirect("/login", httpcode=303)
 
     @uweb3.decorators.checkxsrf
     def HandleLogin(self):
