@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from tests.fixtures import product, product_price, product_prices, products
+from tests.products.fixtures import product, product_price, product_prices, products
 from warehouse.products import helpers, model
 
 

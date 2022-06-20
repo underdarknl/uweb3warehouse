@@ -1,8 +1,10 @@
 from decimal import Decimal
+from io import StringIO
 
 import pytest
 
 from warehouse.products import model
+from warehouse.products.helpers import StockParser
 
 
 @pytest.fixture(scope="module")
@@ -91,3 +93,40 @@ def product_prices():
             None, {"ID": 3, "product": 1, "price": Decimal(15), "start_range": 3}, False
         ),
     ]
+
+
+@pytest.fixture(scope="module")
+def basic_file():
+    yield StringIO(
+        """
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Product</td>
+                        <td>Aantal</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Optimizer P700
+                        </td>
+                        <td>
+                            20
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Optimizer P650
+                        </td>
+                        <td>
+                            10
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            """
+    )
+
+
+@pytest.fixture(scope="module")
+def simple_parser(basic_file):
+    yield StockParser(basic_file, ("Product", "Aantal"), ("Product",))
