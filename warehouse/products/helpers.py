@@ -92,31 +92,29 @@ class StockParser:
 
 
 class StockImporter:
-    def __init__(self, connection, mapping, supplier):
+    def __init__(self, mapping: dict[str, str]):
         """Initialize the importer that will import the stock from the passed results.
 
         Args:
-            connection (self.connection): Uweb3 connection object
             mapping (dict): Contains the key value mappings for the columns in the table.
                 For example {"amount": "Op voorraad"} would mean that the amount column in the table is named "Op voorraad".
-            supplier (model.Supplier): The supplier that we want to import the stock for.
         """
-        self.products = None
-        self.product_names = None
-        self.parsed_results = None
+        self.products = []
+        self.product_names = []
+        self.parsed_results = []
 
         self.mapping = mapping
-        self.supplier = supplier
         self._processed_products = []
         self._unprocessed_products = []
-        self.connection = connection
 
-    def Import(self, parsed_results, products):
+    def Import(
+        self, parsed_results: list[list[dict]], products: list[model.Product]
+    ) -> tuple[list[ProductPair], list[dict]]:
         """Attempt to find a database product for each result.
         If a product is found, add the stock to the product.
 
         Args:
-            parsed_results (list[dict]): List of dictionaries that were normalized by the StockParser class
+            parsed_results (list[list[dict]]): List of dictionaries that were normalized by the StockParser class
             products (list[model.Product]): A list of all the products from the supplier that we want to import
         """
         self.parsed_results = list(parsed_results)
@@ -124,28 +122,27 @@ class StockImporter:
         self.product_names = [p["name"] for p in self.products]
 
         for found_product_list in self.parsed_results:
-            self._import_products(found_product_list)
+            self._import_parsed_results(found_product_list)
 
         return self._processed_products, self._unprocessed_products
 
-    def _import_products(self, products):
-        for product in products:
-            self._import_product(product)
+    def _import_parsed_results(self, results: list[dict]):
+        for product in results:
+            self._import_as_supplier_stock(product)
 
-    def _import_product(self, parsed_product):
+    def _import_as_supplier_stock(self, parsed_product: dict):
         # Find corresponding product by mapping the column name to the database field name.
         # This is because every supplier can have a different naming convention.
         name = parsed_product[self.mapping["name"]]
         product = self._find_product(name)
 
         if not product:
-            self._unprocessed_products.append(self._normalize_keys(parsed_product))
-            return
+            return self._add_to_unprocessed(parsed_product)
 
         self._update_stock(product, parsed_product[self.mapping["amount"]])
         self._add_to_processed(parsed_product, product)
 
-    def _find_product(self, name):
+    def _find_product(self, name: str):
         """Attempt to find the closest matching database product for the passed name.
 
         Args:
@@ -173,6 +170,10 @@ class StockImporter:
         """
         normalized_result = self._normalize_keys(parsed_product)
         self._processed_products.append(ProductPair(normalized_result, product))
+
+    def _add_to_unprocessed(self, parsed_product):
+        normalized_result = self._normalize_keys(parsed_product)
+        self._unprocessed_products.append(normalized_result)
 
     def _normalize_keys(self, result):
         """Normalize the keys of the result dictionary so that they match the database field names."""
