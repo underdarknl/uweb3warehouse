@@ -58,7 +58,7 @@ class SupplierForm(Form):
     )
     telephone = StringField(
         "Telephone",
-        [validators.DataRequired(), validators.Length(min=5, max=45)],
+        [validators.Optional(), validators.Length(min=5, max=45)],
         description="The telephone of the supplier.",
     )
     contact_person = StringField(
@@ -68,7 +68,7 @@ class SupplierForm(Form):
     )
     email_address = EmailField(
         "Email address",
-        [validators.DataRequired(), validators.Email()],
+        [validators.Optional()],
         description="The email address of the supplier.",
     )
     gscode = StringField(
