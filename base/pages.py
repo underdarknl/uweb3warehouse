@@ -424,8 +424,9 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin):
     if 'query' in self.get and self.get.getfirst('query', False):
       query = self.get.getfirst('query', '')
       linkarguments['query'] = query
-      products_method = model.Product.Search
-      products_args['query'] = query
+      products_method = model.Product.FromEAN
+      products_args['ean'] = query
+      del(products_args['order'])
     else:
       products_method = model.Product.List
 
@@ -445,25 +446,67 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.LoginMixin):
   @uweb3.decorators.TemplateParser('gs1.html')
   def RequestGS1(self):
     """Returns the gs1 page"""
-    products = PagedResult(self.pagesize,
-                           self.get.getfirst('page', 1),
-                           model.Product.List,
-                           self.connection,
-                           {'conditions': ['gs1 is not null'],
-                            'order': [('gs1', False)]})
-    return {'products': products}
+    linkarguments = {}
+    query = ''
+    if 'query' in self.get and self.get.getfirst('query', False):
+      query = self.get.getfirst('query', '')
+
+      linkarguments['query'] = query
+      try:
+        product = model.Product.FromGS1(self.connection, query)
+        return self.req.Redirect('/product/%s' % product['name'], httpcode=301)
+      except model.Product.NotExistError:
+        products = []
+    else:
+      products = PagedResult(self.pagesize,
+                             self.get.getfirst('page', 1),
+                             model.Product.List,
+                             self.connection,
+                             {'conditions': ['(gs1 is not null)'],
+                                             'order': [('gs1', False)]})
+    return {
+        'products': products,
+        'linkarguments': urllib.parse.urlencode(linkarguments) or '',
+        'query': query}
 
   @uweb3.decorators.loggedin
   @uweb3.decorators.TemplateParser('ean.html')
   def RequestEAN(self):
     """Returns the EAN page"""
+    supplier = None
+    conditions = ['(gs1 is not null or ean is not null)']
+    linkarguments = {}
+    if 'supplier' in self.get:
+      try:
+        supplier = model.Supplier.FromPrimary(self.connection,
+            self.get.getfirst('supplier', None))
+        conditions.append('supplier = %d' % supplier)
+        linkarguments['supplier'] = int(supplier)
+      except model.User.NotExistError:
+        pass
+
+    products_args = {'conditions': conditions,
+                     'order': [('ean', False)]}
+    query = ''
+    if 'query' in self.get and self.get.getfirst('query', False):
+      query = self.get.getfirst('query', '')
+      linkarguments['query'] = query
+      products_method = model.Product.EANSearch
+      products_args['ean'] = query
+    else:
+      products_method = model.Product.List
+
     products = PagedResult(self.pagesize,
                            self.get.getfirst('page', 1),
-                           model.Product.List,
+                           products_method,
                            self.connection,
-                           {'conditions': ['(gs1 is not null or ean is not null)'],
-                            'order': [('ean', False)]})
-    return {'products': products}
+                           products_args)
+    return {
+        'supplier': supplier,
+        'products': products,
+        'linkarguments': urllib.parse.urlencode(linkarguments) or '',
+        'query': query,
+        'suppliers': list(model.Supplier.List(self.connection))}
 
   @uweb3.decorators.loggedin
   @NotExistsErrorCatcher
