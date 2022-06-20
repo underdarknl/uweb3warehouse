@@ -73,11 +73,11 @@ class Product(model.Record):
             The ean code of the product.
 
         Raises:
-        NotExistError:
-            The given product ean code does not exist.
+            NotExistError:
+                The given product ean code does not exist.
 
         Returns:
-        Product: product abstraction class.
+            Product: product abstraction class.
         """
         with connection as cursor:
             product = cursor.Select(table=cls.TableName(),

@@ -38,15 +38,15 @@ class PageMaker(basepages.PageMaker):
 
         products_args = {"conditions": conditions, "order": [("ID", True)]}
         query = ""
-        if 'query' in self.get and self.get.getfirst('query', False):
-            query = self.get.getfirst('query', '')
-            linkarguments['query'] = query
+        if "query" in self.get and self.get.getfirst("query", False):
+            query = self.get.getfirst("query", "")
+            linkarguments["query"] = query
             products_method = model.Product.FromEAN
-            products_args['ean'] = query
-            del(products_args['order'])
+            products_args["ean"] = query
+            del products_args["order"]
         else:
             products_method = model.Product.List
-                
+
         products = PagedResult(
             self.pagesize,
             self.get.getfirst("page", 1),
@@ -57,7 +57,7 @@ class PageMaker(basepages.PageMaker):
 
         if not product_form:
             product_form = forms.ProductForm(prefix="product")
-            
+
         return {
             "supplier": supplier,
             "products": products,
@@ -347,66 +347,71 @@ class PageMaker(basepages.PageMaker):
     def RequestGS1(self):
         """Returns the gs1 page"""
         linkarguments = {}
-        query = ''
-        if 'query' in self.get and self.get.getfirst('query', False):
-            query = self.get.getfirst('query', '')
-            
-            linkarguments['query'] = query
+        query = ""
+        if "query" in self.get and self.get.getfirst("query", False):
+            query = self.get.getfirst("query", "")
+
+            linkarguments["query"] = query
             try:
                 product = model.Product.FromGS1(self.connection, query)
-                return self.req.Redirect('/product/%s' % product['name'], httpcode=301)
+                return self.req.Redirect("/product/%s" % product["name"], httpcode=301)
             except model.Product.NotExistError:
                 products = []
         else:
-            products = PagedResult(self.pagesize,
-                                    self.get.getfirst('page', 1),
-                                    model.Product.List,
-                                    self.connection,
-                                    {'conditions': ['(gs1 is not null)'],
-                                                    'order': [('gs1', False)]})
+            products = PagedResult(
+                self.pagesize,
+                self.get.getfirst("page", 1),
+                model.Product.List,
+                self.connection,
+                {"conditions": ["(gs1 is not null)"], "order": [("gs1", False)]},
+            )
         return {
-            'products': products,
-            'linkarguments': urllib.parse.urlencode(linkarguments) or '',
-            'query': query}
+            "products": products,
+            "linkarguments": urllib.parse.urlencode(linkarguments) or "",
+            "query": query,
+        }
 
     @loggedin
     @uweb3.decorators.TemplateParser("ean.html")
     def RequestEAN(self):
         """Returns the EAN page"""
         supplier = None
-        conditions = ['(gs1 is not null or ean is not null)']
+        conditions = ["(gs1 is not null or ean is not null)"]
         linkarguments = {}
-        if 'supplier' in self.get:
+        if "supplier" in self.get:
             try:
-                supplier = supplier_model.Supplier.FromPrimary(self.connection,
-                    self.get.getfirst('supplier', None))
-                conditions.append('supplier = %d' % supplier)
-                linkarguments['supplier'] = int(supplier)
+                supplier = supplier_model.Supplier.FromPrimary(
+                    self.connection, self.get.getfirst("supplier", None)
+                )
+                conditions.append("supplier = %d" % supplier)
+                linkarguments["supplier"] = int(supplier)
             except uweb3.model.NotExistError:
                 pass
 
-        products_args = {'conditions': conditions,
-                        'order': [('ean', False)]}
-        query = ''
-        if 'query' in self.get and self.get.getfirst('query', False):
-            query = self.get.getfirst('query', '')
-            linkarguments['query'] = query
+        products_args = {"conditions": conditions, "order": [("ean", False)]}
+        query = ""
+        if "query" in self.get and self.get.getfirst("query", False):
+            query = self.get.getfirst("query", "")
+            linkarguments["query"] = query
             products_method = model.Product.EANSearch
-            products_args['ean'] = query
+            products_args["ean"] = query
         else:
             products_method = model.Product.List
 
-        products = PagedResult(self.pagesize,
-                            self.get.getfirst('page', 1),
-                            products_method,
-                            self.connection,
-                            products_args)
+        products = PagedResult(
+            self.pagesize,
+            self.get.getfirst("page", 1),
+            products_method,
+            self.connection,
+            products_args,
+        )
         return {
-            'supplier': supplier,
-            'products': products,
-            'linkarguments': urllib.parse.urlencode(linkarguments) or '',
-            'query': query,
-            'suppliers': list(supplier_model.Supplier.List(self.connection))}
+            "supplier": supplier,
+            "products": products,
+            "linkarguments": urllib.parse.urlencode(linkarguments) or "",
+            "query": query,
+            "suppliers": list(supplier_model.Supplier.List(self.connection)),
+        }
 
     @loggedin
     @NotExistsErrorCatcher
