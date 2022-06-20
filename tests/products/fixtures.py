@@ -7,10 +7,20 @@ from warehouse.products import model
 from warehouse.products.helpers import StockParser
 
 
+class FakeProduct(model.Product):
+    """Class for unittest mocking purposes."""
+
+    def Save(self):
+        pass
+
+    def Refresh(self):
+        return self._record
+
+
 @pytest.fixture(scope="module")
 def products():
     yield [
-        model.Product(
+        FakeProduct(
             None,
             {
                 "ID": 1,
@@ -24,7 +34,7 @@ def products():
             },
             False,
         ),
-        model.Product(
+        FakeProduct(
             None,
             {
                 "ID": 2,
@@ -38,7 +48,7 @@ def products():
             },
             False,
         ),
-        model.Product(
+        FakeProduct(
             None,
             {
                 "ID": 3,
