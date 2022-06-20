@@ -61,9 +61,9 @@
       {{ endif }}
 
     {{ elif [query] }}
-    <p>No products found for &quot;[query]&quot;.</p>
+    <p class="info">No products found for &quot;[query]&quot;.</p>
     {{ elif [supplier] }}
-    <p>No products are sourced from <a href="/supplier/[supplier:name]">[supplier:name]</a>.</p>
+    <p class="info">No products are sourced from <a href="/supplier/[supplier:name]">[supplier:name]</a>.</p>
     {{ endif }}
   {{ else }}
     <p class="info">You have no products just yet. Create one using the form below.</p>

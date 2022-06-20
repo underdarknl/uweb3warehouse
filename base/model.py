@@ -34,6 +34,89 @@ class Product(model.Record):
       *args, **kwargs)
 
   @classmethod
+  def FromGS1(cls, connection, gs1, conditions=[]):
+    """Returns the product of the given gs1.
+
+    Arguments:
+      @ connection: sqltalk.connection
+        Database connection to use.
+      @ gs1: str
+        The gs1 code of the product.
+
+    Raises:
+      NotExistError:
+        The given product gs1 code does not exist.
+
+    Returns:
+      Product: product abstraction class.
+    """
+    with connection as cursor:
+      product = cursor.Select(table=cls.TableName(),
+                              conditions=['gs1=%s' % int(gs1),
+                                          NOTDELETED] + conditions)
+    if not product:
+      raise cls.NotExistError(
+          'There is no product with gs1 code %r' % gs1)
+    return cls(connection, product[0])
+
+  @classmethod
+  def FromEAN(cls, connection, ean, conditions=[]):
+    """Returns the product of the given ean.
+
+    Arguments:
+      @ connection: sqltalk.connection
+        Database connection to use.
+      @ ean: str
+        The ean code of the product.
+
+    Raises:
+      NotExistError:
+        The given product ean code does not exist.
+
+    Returns:
+      Product: product abstraction class.
+    """
+    with connection as cursor:
+      product = cursor.Select(table=cls.TableName(),
+                              conditions=['ean=%s' % int(ean),
+                                          NOTDELETED] + conditions)
+    if not product:
+      raise cls.NotExistError(
+          'There is no product with ean code %r' % ean)
+    return cls(connection, product[0])
+
+  @classmethod
+  def EANSearch(cls, connection, ean=None, order=None, conditions=None, **kwargs):
+    """Returns the products matching the searched (partial) EAN
+
+      Arguments:
+      @ connection: sqltalk.connection
+        Database connection to use.
+      % ean: str
+        Filters on ean or part of
+    """
+    if not conditions:
+      conditions = []
+    queryorder = [('product.dateCreated', True)]
+    if order:
+      queryorder = order + queryorder
+
+    return super().List(
+      connection,
+      conditions=["""( ean like "%%%d%%" or
+                       concat(supplier.gscode, LPAD(gs1, 3, 0)) like "%%%d%%") and
+                       product.supplier = supplier.ID and
+                       product.dateDeleted = "%s"
+                  """ %
+        (int(ean),
+         int(ean),
+         NOTDELETEDDATE)
+      ] + conditions,
+      order=queryorder,
+      tables=('product', 'supplier'),
+      **kwargs)
+
+  @classmethod
   def Search(cls, connection, query=None, order=None, conditions=None, **kwargs):
     """Returns the products matching the search
 
