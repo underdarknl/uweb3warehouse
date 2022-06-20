@@ -22,7 +22,7 @@ def import_stock_from_file(supplier_stock_form, supplier, connection):
     """
     parsed_data = _parse_file(supplier_stock_form)
     products = model.Supplierproduct.Products(connection, supplier)
-    importer = _setup_importer(connection, supplier_stock_form, supplier)
+    importer = _setup_importer(supplier_stock_form)
     return importer.Import(
         parsed_data,
         products,
@@ -43,14 +43,12 @@ def _parse_file(supplier_stock_form):
     return parser.Parse()
 
 
-def _setup_importer(connection, supplier_stock_form, supplier):
+def _setup_importer(supplier_stock_form):
     return product_helpers.StockImporter(
-        connection,
         {
             "name": supplier_stock_form.column_name_mapping.data,
             "amount": supplier_stock_form.column_stock_mapping.data,
         },
-        supplier,
     )
 
 
