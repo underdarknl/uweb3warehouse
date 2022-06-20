@@ -1,14 +1,26 @@
 [header]
 
 <section>
-    <h2>Your Products with an EAN barcode:</h2>
-
+    <h2>Your Products with an EAN barcode {{ if [supplier] }} sourced from [supplier:name]{{ endif }}:</h2>
+    {{ if len([products:items]) > 0 or [query] or [supplier] }}
+    <form action="/ean" method="get" class="lineform">
+        <div><label for="query">Search</label><input id="query" type="text" name="query"
+                value="{{ if [query] }}[query]{{ endif}}" placeholder="Search for (partial) ean."></div>
+        <div><label for="query">Supplier</label><select name="supplier" id="filter_supplier">
+                <option value="">All</option>
+                {{ for filtersupplier in [suppliers] }}
+                <option value="[filtersupplier:ID]" {{ if [supplier] and [filtersupplier:ID]==[supplier:ID]}}selected{{
+                    endif }}>[filtersupplier:name]</option>
+                {{ endfor }}
+            </select></div>
+        <div><a class="button" href="/ean">Clear</a> <input id="query" type="submit" value="Filter"></div>
+    </form>
     {{ if len([products:items]) }}
     <table class="products">
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Suppliers</th>
+                <th>Supplier</th>
                 <th>EAN</th>
                 <th>Created</th>
             </tr>
@@ -16,8 +28,8 @@
         <tbody>
             {{ for product in [products] }}
             <tr>
-                <td><a href="/product/[product:sku]">[product:name]</a></td>
-                <td><a href="/product/[product:sku]/suppliers">Suppliers</a></td>
+                <td><a href="/product/[product:name]">[product:name]</a></td>
+                <td><a href="/supplier/[product:supplier:name]">[product:supplier:name]</a></td>
                 <td>[product:Eancode]</td>
                 <td title="[product:dateCreated]">[product:dateCreated|DateOnly]</td>
             </tr>
@@ -55,6 +67,13 @@
     </nav>
     {{ endif }}
 
+    {{ elif [query] }}
+    <p class="info">No products with an ean code found for &quot;[query]&quot; {{ if [supplier] }} sourced from
+        [supplier:name]{{ endif }}.</p>
+    {{ elif [supplier] }}
+    <p class="info">No products with an ean-code are sourced from <a
+            href="/supplier/[supplier:name]">[supplier:name]</a>.</p>
+    {{ endif }}
     {{ else }}
     <p class="info">You have no products with an EAN code yet.</p>
     {{ endif }}
