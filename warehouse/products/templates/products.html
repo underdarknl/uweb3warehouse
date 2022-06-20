@@ -2,17 +2,22 @@
 <section>
     <h2>Your Products {{ if [supplier] }} sourced from [supplier:name]{{ endif }}:</h2>
     {{ if len([products:items]) > 0 or [query] or [supplier] }}
-    <form action="/" method="get" class="lineform">
-        <div><label for="query">Search</label><input id="query" type="text" name="query"
-                value="{{ if [query] }}[query]{{ endif}}" placeholder="Filter your products"></div>
-        <div><label for="query">Supplier</label><select name="supplier" id="filter_supplier">
+    <form action="/products" method="get" class="lineform">
+        <div>
+            <label for="query">Search</label>
+            <input id="query" type="text" name="query" value="{{ if [query] }}[query]{{ endif}}" placeholder="Filter your products"></div>
+        <div>
+            <label for="query">Supplier</label><select name="supplier" id="filter_supplier">
                 <option value="">All</option>
                 {{ for filtersupplier in [suppliers] }}
                 <option value="[filtersupplier:ID]" {{ if [supplier] and [filtersupplier:ID]==[supplier:ID]}}selected{{
                     endif }}>[filtersupplier:name]</option>
                 {{ endfor }}
-            </select></div>
-        <div><a class="button" href="/">Clear</a> <input id="query" type="submit" value="Filter"></div>
+            </select>
+        </div>
+        <div>
+            <a class="button" href="/">Clear</a> <input id="query" type="submit" value="Filter">
+        </div>
     </form>
     {{ if [products] }}
     <table class="products">
