@@ -63,44 +63,6 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser
-    def JsonProductStock(self, sku):
-        """Updates the stock for a product, assembling if needed
-
-        Send negative amount to Sell a product, positive amount to put product back
-        into stock"""
-        raise Exception("Not implemented yet")
-        # product = model.Product.FromSku(self.connection, sku)
-        # amount = int(self.post.get("amount", -1))
-        # currentstock = product.currentstock
-        # if (
-        #     amount < 0 and abs(amount) > currentstock  # only assemble when we sell
-        # ):  # only assemble when we have not enough stock
-        #     try:
-        #         product.Assemble(
-        #             abs(amount)
-        #             - currentstock,  # only assemble what is missing for this sale
-        #             "Assembly for %s" % self.post.get("reference")
-        #             if "reference" in self.post
-        #             else None,
-        #         )
-        #     except model.AssemblyError as error:
-        #         raise ValueError(error.args[0])
-
-        # # by now we should have enough products in stock, one way or another
-        # model.Stock.Create(
-        #     self.connection,
-        #     {
-        #         "product": product,
-        #         "amount": amount,
-        #         "reference": self.post.get("reference", ""),
-        #     },
-        # )
-        # model.Product.commit(self.connection)
-        # return {"stock": product.currentstock, "possible_stock": product.possiblestock}
-
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
     def JsonProductStockRemove(self):
         data = schemas.BulkStockSchema().load(self.post)
 
