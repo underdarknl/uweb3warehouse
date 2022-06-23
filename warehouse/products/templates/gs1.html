@@ -6,7 +6,7 @@
     <form action="/gs1" method="get" class="lineform">
         <div>
             <label for="query">Search</label>
-            <input id="query" type="text" name="query" value="{{ if [query] }}[query]{{ endif}}" placeholder="Go to product with gs1 code">
+            <input id="query" type="number" name="query" value="{{ if [query] }}[query]{{ endif}}" placeholder="Go to product with gs1 code">
         </div>
         <div>
             <a class="button" href="/gs1">Clear</a> <input id="query" type="submit" value="Filter"></div>

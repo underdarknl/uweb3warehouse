@@ -4,8 +4,8 @@
     <h2>Your Products with an EAN barcode {{ if [supplier] }} sourced from [supplier:name]{{ endif }}:</h2>
     {{ if len([products:items]) > 0 or [query] or [supplier] }}
     <form action="/ean" method="get" class="lineform">
-        <div><label for="query">Search</label><input id="query" type="text" name="query"
-                value="{{ if [query] }}[query]{{ endif}}" placeholder="Search for (partial) ean."></div>
+        <div><label for="query">Search</label>
+            <input id="query" type="number" name="query" value="{{ if [query] }}[query]{{ endif}}" placeholder="Search for (partial) ean."></div>
         <div><a class="button" href="/ean">Clear</a> <input id="query" type="submit" value="Filter"></div>
     </form>
     {{ if len([products:items]) }}
