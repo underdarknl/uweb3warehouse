@@ -18,7 +18,7 @@ class PageMaker(basepages.PageMaker):
             if "action" in self.post:
                 session = model.Session(self.connection)
                 session.Delete()
-        return uweb3.Redirect("/login", httpcode=303)
+        return self.req.Redirect("/login", httpcode=303)
 
     @uweb3.decorators.checkxsrf
     def HandleLogin(self):
