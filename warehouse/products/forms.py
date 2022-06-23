@@ -27,7 +27,7 @@ class ProductForm(Form):
     )
     ean = IntegerField(
         "ean",
-        [validators.Length(min=1, max=13), validators.Optional()],
+        [validators.NumberRange(max=9999999999999, message="Ean code must have at most 13 characters"), validators.Optional()],
         description="The ean barcode for each product or part in your warehouse must be unique.",
     )
     gs1 = IntegerField(
