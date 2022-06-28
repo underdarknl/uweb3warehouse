@@ -109,7 +109,15 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("supplier.html")
-    def RequestSupplier(self, name, supplier_stock_form=None, supplier_form=None):
+    def RequestSupplier(
+        self,
+        name,
+        supplier_stock_form=None,
+        supplier_form=None,
+        custom_import_form=None,
+        processed_products=None,
+        unprocessed_products=None,
+    ):
         """Returns the supplier page"""
         supplier = model.Supplier.FromName(self.connection, name)
 
@@ -121,10 +129,16 @@ class PageMaker(basepages.PageMaker):
                 self.post, prefix=helpers.get_importer_prefix(supplier)
             )
 
+        if not custom_import_form:
+            custom_import_form = forms.CustomImporters(self.post)
+
         return dict(
             supplier=supplier,
             supplier_stock_form=supplier_stock_form,
             supplier_form=supplier_form,
+            custom_import_form=custom_import_form,
+            processed_products=processed_products,
+            unprocessed_products=unprocessed_products,
         )
 
     @loggedin
@@ -158,23 +172,18 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    @uweb3.decorators.TemplateParser("supplier.html")
+    # @uweb3.decorators.TemplateParser("supplier.html")
     def UpdateSupplierStock(self, supplierName):
         supplier = model.Supplier.FromName(self.connection, supplierName)
         prefix = helpers.get_importer_prefix(supplier)
         upload_field = f"{prefix}-fileupload"
 
         supplier_stock_form = forms.ImportSupplierStock(self.post, prefix=prefix)
-
-        if not self.files or not self.files.get(upload_field):
-            supplier_stock_form.fileupload.errors = ["No file selected."]
-            return self.RequestSupplier(
-                name=supplierName, supplier_stock_form=supplier_stock_form
-            )
-
         supplier_stock_form.fileupload.data = self.files.get(upload_field)
 
-        if not supplier_stock_form.validate():
+        if not self.files or not supplier_stock_form.validate():
+            if not self.files:
+                supplier_stock_form.fileupload.errors = ["No file selected."]
             return self.RequestSupplier(
                 name=supplierName, supplier_stock_form=supplier_stock_form
             )
@@ -192,11 +201,26 @@ class PageMaker(basepages.PageMaker):
             return self.RequestSupplier(
                 name=supplierName, supplier_stock_form=supplier_stock_form
             )
+        return self.RequestSupplier(
+            name=supplierName,
+            supplier_form=forms.SupplierForm(data=supplier),
+            supplier_stock_form=forms.ImportSupplierStock(),
+            processed_products=processed_products,
+            unprocessed_products=unprocessed_products,
+        )
 
-        return {
-            "supplier": supplier,
-            "processed_products": processed_products,
-            "unprocessed_products": unprocessed_products,
-            "supplier_stock_form": forms.ImportSupplierStock(),  # Reset the form because the post was successful
-            "supplier_form": forms.SupplierForm(data=supplier),
-        }
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def CustomUpdateSupplierStock(self, supplierName):
+        supplier = model.Supplier.FromName(self.connection, supplierName)
+        custom_import_form = forms.CustomImporters(self.post)
+        custom_import_form.custom_fileupload.data = self.files.get("custom_fileupload")
+
+        if not self.files or not custom_import_form.validate():
+            custom_import_form.custom_fileupload.errors = ["No file selected."]
+            return self.RequestSupplier(
+                name=supplierName, custom_import_form=custom_import_form
+            )
+
+        return self.RequestSupplier(name=supplierName)
