@@ -5,6 +5,9 @@ from warehouse.suppliers import model as supplier_model
 
 
 class ABCImporter(ABC):
+    """Abstract base class to indicate which methods should be implemented
+    to be considered an importer class."""
+
     @abstractmethod
     def Import(self):
         pass
@@ -15,6 +18,10 @@ class IncompleteImporterMapping(KeyError):
 
 
 class ProductPair(NamedTuple):
+    """Maps a Supplierproduct to a parsed product for displaying purposes.
+    This allows the user to see which imported product mapped to which
+    database entry."""
+
     parsed_product: dict
     supplier_product: supplier_model.Supplierproduct
 
@@ -28,7 +35,7 @@ class StockImporter(ABCImporter):
                 For example {"amount": "Op voorraad"} would mean that the amount column in the table is named "Op voorraad".
         """
         self._required_keys = ("name", "amount")
-        self.products = []
+        self.supplier_products = []
         self.parsed_results = []
 
         self.mapping = mapping
@@ -36,18 +43,20 @@ class StockImporter(ABCImporter):
         self._unprocessed_products = []
 
     def Import(
-        self, parsed_results: list[list[dict]], products: list[supplier_model.Supplierproduct]
+        self,
+        parsed_results: list[list[dict]],
+        supplier_products: list[supplier_model.Supplierproduct],
     ) -> tuple[list[ProductPair], list[dict]]:
         """Attempt to find a database product for each result.
         If a product is found, add the stock to the product.
 
         Args:
             parsed_results (list[list[dict]]): List of dictionaries that were normalized by the StockParser class
-            products (list[model.Product]): A list of all the products from the supplier that we want to import
+            products (list[model.Supplierproduct]): A list of all the products from the supplier that we want to import
         """
         self._validate_mapping()
         self.parsed_results = list(parsed_results)
-        self.products = list(products)
+        self.supplier_products = list(supplier_products)
 
         for found_product_list in self.parsed_results:
             self._import_parsed_results(found_product_list)
@@ -86,7 +95,7 @@ class StockImporter(ABCImporter):
         Returns:
             product (model.Product): The product that was found to be the best match.
         """
-        product = [p for p in self.products if p["name"] == name]
+        product = [p for p in self.supplier_products if p["name"] == name]
 
         if not product:
             return None
@@ -142,6 +151,6 @@ class CsvImporter(StockImporter):
         """
         self._validate_mapping()
         self.parsed_results = list(parsed_results)
-        self.products = list(products)
+        self.supplier_products = list(products)
         self._import_parsed_results(self.parsed_results)
         return self._processed_products, self._unprocessed_products
