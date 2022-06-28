@@ -93,6 +93,27 @@
 {{ endif }}
 
 <section>
+    <h2>Custom importers</h2>
+    <form action="/supplier/custom/updatestock/[supplier:name]" method="post" class="supplier" enctype="multipart/form-data">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+        {{ for field in [custom_import_form] }}
+            <p>[field:description]</p>
+            {{ if [field:errors] }}
+                {{ for error in [field:errors] }}
+                    <p class="error">[error]</p>
+                {{ endfor }}
+            {{ endif }}
+            <div>
+                [field:label]
+                [field]
+            </div>
+        {{ endfor }}
+        <div>
+            <input type="submit" value="upload" />
+        </div>
+    </form>
+</section>
+<section>
     <h2>Delete Supplier:</h2>
     <form action="/supplier/[supplier:name]/delete" method="post">
         <input type="hidden" name="xsrf" value="[xsrf]">
