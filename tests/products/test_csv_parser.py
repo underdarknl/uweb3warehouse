@@ -1,7 +1,7 @@
 import pytest
 from io import StringIO
 from tests.products.fixtures import products
-from warehouse.products.helpers import csv_parser, CsvImporter
+from warehouse.products.helpers import CSVParser, CsvImporter
 
 
 @pytest.fixture(scope="function")
@@ -55,7 +55,7 @@ class TestCsvImporter:
         ],
     )
     def test_found_columns(self, fake_file, columns, retrieved_data):
-        data = csv_parser(fake_file, columns)
+        data = CSVParser(fake_file, columns).Parse()
 
         # Make sure that the data returned matches the expected retrieved data.
         # retrieved_data contains the expected columns and their values
@@ -75,7 +75,7 @@ class TestCsvImporter:
         ],
     )
     def test_import(self, fake_file, products, columns, expected):
-        data = csv_parser(fake_file, columns)
+        data = CSVParser(fake_file, columns).Parse()
 
         importer = CsvImporter({"name": "name", "amount": "brand"})
         processed, unprocessed = importer.Import(data, products)
