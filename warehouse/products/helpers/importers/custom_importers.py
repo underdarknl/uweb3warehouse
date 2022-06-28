@@ -140,7 +140,7 @@ class CustomImporters(BaseFactory):
 
     def get_registered_item(
         self, key, *args, **kwargs
-    ) -> Callable[[Any], CustomImporter]:
+    ) -> Callable[[Any], ABCCustomImporter]:
         return super().get_registered_item(key, *args, **kwargs)
 
     def register_base_classes(self):
