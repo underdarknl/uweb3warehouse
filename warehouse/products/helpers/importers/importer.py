@@ -1,7 +1,13 @@
 from typing import NamedTuple
-
+from abc import ABC, abstractmethod
 from warehouse.products import model
 from warehouse.suppliers import model as supplier_model
+
+
+class ABCImporter(ABC):
+    @abstractmethod
+    def Import(self):
+        pass
 
 
 class IncompleteImporterMapping(KeyError):
@@ -13,7 +19,7 @@ class ProductPair(NamedTuple):
     supplier_product: supplier_model.Supplierproduct
 
 
-class StockImporter:
+class StockImporter(ABCImporter):
     def __init__(self, mapping: dict[str, str]):
         """Initialize the importer that will import the stock from the passed results.
 
@@ -30,7 +36,7 @@ class StockImporter:
         self._unprocessed_products = []
 
     def Import(
-        self, parsed_results: list[list[dict]], products: list[model.Product]
+        self, parsed_results: list[list[dict]], products: list[supplier_model.Supplierproduct]
     ) -> tuple[list[ProductPair], list[dict]]:
         """Attempt to find a database product for each result.
         If a product is found, add the stock to the product.
@@ -125,7 +131,7 @@ class StockImporter:
 
 class CsvImporter(StockImporter):
     def Import(
-        self, parsed_results: list[dict], products: list[model.Product]
+        self, parsed_results: list[dict], products: list[supplier_model.Supplierproduct]
     ) -> tuple[list[ProductPair], list[dict]]:
         """Attempt to find a database product for each result.
         If a product is found, add the stock to the product.

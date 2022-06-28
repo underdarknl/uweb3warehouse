@@ -1,7 +1,14 @@
 import pandas
+from abc import ABC, abstractmethod
 
 
-class StockParser:
+class ABCParser(ABC):
+    @abstractmethod
+    def Parse(self):
+        pass
+
+
+class StockParser(ABCParser):
     def __init__(self, file_path, columns, normalize_columns):
         """Attempts to find the columns and values from a passed html file object.
 
@@ -77,7 +84,14 @@ class StockParser:
         return copy
 
 
-def csv_parser(file, interested_columns: tuple):
-    data = pandas.read_csv(file, skip_blank_lines=True, usecols=interested_columns)
-    data.dropna(how="all", inplace=True)
-    return data.to_dict("records")
+class CSVParser(ABCParser):
+    def __init__(self, file_path, columns: tuple):
+        self.file_path = file_path
+        self.columns = columns
+
+    def Parse(self):
+        data = pandas.read_csv(
+            self.file_path, skip_blank_lines=True, usecols=self.columns
+        )
+        data.dropna(how="all", inplace=True)
+        return data.to_dict("records")
