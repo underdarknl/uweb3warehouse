@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from numbers import Number
 import os
 from uweb3.templateparser import Parser
 import decimal
@@ -98,13 +99,20 @@ class SolarCity(CustomRenderedMixin, ABCCustomImporter):
         return supplier_product.Refresh()
 
 
-def to_decimal(csv_value: str) -> decimal.Decimal:
-    if "€" in csv_value:
-        csv_value = csv_value.split("€")[1]
+def to_decimal(csv_value: str | int) -> decimal.Decimal:
+    # TODO handle edge cases
+    match csv_value:
+        case Number():
+            return decimal.Decimal(csv_value)
+        case str():
+            if "€" in csv_value:
+                csv_value = csv_value.split("€")[1]
 
-    csv_value = csv_value.replace(",", ".")
-    csv_value = csv_value.strip()
-    return decimal.Decimal(csv_value)
+            csv_value = csv_value.replace(",", ".")
+            csv_value = csv_value.strip()
+            return decimal.Decimal(csv_value)
+        case _:
+            raise ValueError(f"Unsupported currency value {csv_value}")
 
 
 class SolarCityServiceBuilder:
