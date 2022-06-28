@@ -35,7 +35,7 @@ class TestStockImporter:
         assert len(unprocessed) == 0
 
         assert expected["name"] == processed[0].parsed_product["name"]
-        assert expected['supplier_sku'] == processed[0].supplier_product['supplier_sku']
+        assert expected["supplier_sku"] == processed[0].supplier_product["supplier_sku"]
         assert expected["amount"] == processed[0].parsed_product["amount"]
 
     @pytest.mark.parametrize(
