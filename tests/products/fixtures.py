@@ -5,9 +5,20 @@ import pytest
 
 from warehouse.products import model
 from warehouse.products.helpers import StockParser
+from warehouse.suppliers.model import Supplierproduct
 
 
 class FakeProduct(model.Product):
+    """Class for unittest mocking purposes."""
+
+    def Save(self):
+        pass
+
+    def Refresh(self):
+        return self._record
+
+
+class FakeSupplierProduct(Supplierproduct):
     """Class for unittest mocking purposes."""
 
     def Save(self):
@@ -59,6 +70,45 @@ def products():
                 "ean": "ean-3",
                 "description": "description-3",
                 "assemblycosts": Decimal(1),
+            },
+            False,
+        ),
+    ]
+
+
+@pytest.fixture(scope="module")
+def supplier_products():
+    yield [
+        FakeSupplierProduct(
+            None,
+            {
+                "ID": 1,
+                "name": "Product 1",
+                "supplier_sku": "sku-1",
+                "vat": Decimal(20.5),
+                "cost": (100.25),
+            },
+            False,
+        ),
+        FakeSupplierProduct(
+            None,
+            {
+                "ID": 2,
+                "name": "Product 2",
+                "supplier_sku": "sku-2",
+                "vat": Decimal(20.5),
+                "cost": (100.25),
+            },
+            False,
+        ),
+        FakeSupplierProduct(
+            None,
+            {
+                "ID": 3,
+                "name": "Product 3",
+                "supplier_sku": "sku-3",
+                "vat": Decimal(20.5),
+                "cost": (100.25),
             },
             False,
         ),
