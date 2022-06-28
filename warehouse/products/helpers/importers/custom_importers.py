@@ -12,7 +12,7 @@ from warehouse.products.helpers.importers.importer import ABCImporter, ProductPa
 from warehouse.suppliers import model as supplier_model
 
 
-class CustomImporter(ABCImporter):
+class ABCCustomImporter(ABCImporter):
     @abstractmethod
     def Import(
         self, products: list[supplier_model.Supplierproduct]
@@ -45,7 +45,7 @@ class CustomRenderedMixin:
         )
 
 
-class SolarCity(CustomRenderedMixin, CustomImporter):
+class SolarCity(CustomRenderedMixin, ABCCustomImporter):
     def __init__(self, parser: ABCParser):
         self.filename = "solarcity.html"
         self.parser = parser
