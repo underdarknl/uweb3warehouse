@@ -108,7 +108,7 @@ def to_decimal(csv_value: str) -> decimal.Decimal:
 
 
 class SolarCityServiceBuilder:
-    def __call__(self, file, *args, **kwargs) -> CustomImporter:
+    def __call__(self, file, *args, **kwargs) -> ABCCustomImporter:
         parser = CSVParser(
             file_path=file,
             columns=(
@@ -126,8 +126,8 @@ class SolarCityServiceBuilder:
 class CustomImporters(BaseFactory):
     """Factory class to keep track of all supported parsers"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.register_base_classes()
 
     def get_registered_item(
