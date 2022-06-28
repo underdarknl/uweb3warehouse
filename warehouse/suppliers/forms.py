@@ -20,7 +20,7 @@ class ImportSupplierStock(Form):
 
 
 class CustomImporters(Form):
-    importer = SelectField("Importer", choices=["SolarCity"])
+    importer = SelectField("Importer")
     custom_fileupload = FileField("Select file")
 
 

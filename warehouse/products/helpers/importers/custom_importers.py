@@ -26,6 +26,7 @@ class CustomImporter(ABCImporter):
 
 class CustomRenderedMixin:
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.filename = ""
 
     @property
@@ -135,4 +136,7 @@ class CustomImporters(BaseFactory):
         return super().get_registered_item(key, *args, **kwargs)
 
     def register_base_classes(self):
-        self.register("solar_city", SolarCityServiceBuilder)
+        self.register("Solarcity", SolarCityServiceBuilder)
+
+    def list_all(self):
+        return self._registered_items.keys()

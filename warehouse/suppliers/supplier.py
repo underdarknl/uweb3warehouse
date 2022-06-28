@@ -134,7 +134,9 @@ class PageMaker(basepages.PageMaker):
             )
 
         if not custom_import_form:
+            factory = custom_importers.CustomImporters()
             custom_import_form = forms.CustomImporters(self.post)
+            custom_import_form.importer.choices = list(factory.list_all())
 
         return dict(
             supplier=supplier,
@@ -219,7 +221,11 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.checkxsrf
     def CustomUpdateSupplierStock(self, supplierName):
         supplier = model.Supplier.FromName(self.connection, supplierName)
+
+        factory = custom_importers.CustomImporters()
+        
         custom_import_form = forms.CustomImporters(self.post)
+        custom_import_form.importer.choices = list(factory.list_all())
         custom_import_form.custom_fileupload.data = self.files.get("custom_fileupload")
 
         if not self.files or not custom_import_form.validate():
@@ -227,7 +233,7 @@ class PageMaker(basepages.PageMaker):
             return self.RequestSupplier(
                 name=supplierName, custom_import_form=custom_import_form
             )
-        builder = custom_importers.CustomImporters().get_registered_item("solar_city")
+        builder = factory.get_registered_item(custom_import_form.importer.data)
         importer = builder(
             StringIO(custom_import_form.custom_fileupload.data[0]["content"])
         )
