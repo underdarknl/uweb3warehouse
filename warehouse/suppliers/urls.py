@@ -12,6 +12,11 @@ urls = [
         "POST",
     ),
     (
+        "/supplier/custom/updatestock/([^/]*)",
+        (supplier.PageMaker, "CustomUpdateSupplierStock"),
+        "POST",
+    ),
+    (
         "/suppliers",
         (supplier.PageMaker, "RequestSuppliers"),
     ),
