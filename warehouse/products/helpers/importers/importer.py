@@ -140,17 +140,17 @@ class StockImporter(ABCImporter):
 
 class CsvImporter(StockImporter):
     def Import(
-        self, parsed_results: list[dict], products: list[supplier_model.Supplierproduct]
+        self, parsed_results: list[dict], supplier_products: list[supplier_model.Supplierproduct]
     ) -> tuple[list[ProductPair], list[dict]]:
         """Attempt to find a database product for each result.
         If a product is found, add the stock to the product.
 
         Args:
             parsed_results (list[dict]): List of dictionaries that were normalized by the StockParser class
-            products (list[model.Product]): A list of all the products from the supplier that we want to import
+            supplier_products (list[model.Supplierproduct]): A list of all the products from the supplier that we want to import
         """
         self._validate_mapping()
         self.parsed_results = list(parsed_results)
-        self.supplier_products = list(products)
+        self.supplier_products = list(supplier_products)
         self._import_parsed_results(self.parsed_results)
         return self._processed_products, self._unprocessed_products
