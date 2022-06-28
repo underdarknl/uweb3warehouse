@@ -11,3 +11,4 @@ from warehouse.products.helpers.utils import (
 )
 from warehouse.products.helpers.importers.importer import ProductPair, StockImporter, CsvImporter
 from warehouse.products.helpers.importers.parser import StockParser, CSVParser
+from warehouse.products.helpers.importers.custom_importers import SolarCity, SolarCityServiceBuilder, CustomImporters, CustomRenderedMixin
