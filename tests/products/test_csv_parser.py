@@ -1,7 +1,7 @@
 import pytest
-from tests.products.fixtures import products
 from io import StringIO
-from warehouse.products.helpers.importers import csv_parser, CsvImporter
+from tests.products.fixtures import products
+from warehouse.products.helpers import csv_parser, CsvImporter
 
 
 @pytest.fixture(scope="function")

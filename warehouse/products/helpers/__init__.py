@@ -9,4 +9,5 @@ from warehouse.products.helpers.utils import (
     possibleparts_select_list,
     suppliers_select_list,
 )
-from warehouse.products.helpers.importers import ProductPair, StockImporter, StockParser
+from warehouse.products.helpers.importers.importer import ProductPair, StockImporter, CsvImporter
+from warehouse.products.helpers.importers.parser import StockParser, csv_parser
