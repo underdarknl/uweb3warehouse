@@ -6,26 +6,25 @@ import pytest
 from warehouse.products import model
 from warehouse.products.helpers import StockParser
 from warehouse.suppliers.model import Supplierproduct
+import uweb3
 
 
-class FakeProduct(model.Product):
-    """Class for unittest mocking purposes."""
-
+class MockRecord(uweb3.model.Record):
     def Save(self):
-        pass
+        difference = self._Changes()
+        if difference:
+            self._record.update(difference)
 
     def Refresh(self):
         return self._record
 
 
-class FakeSupplierProduct(Supplierproduct):
+class FakeProduct(model.Product, MockRecord):
     """Class for unittest mocking purposes."""
 
-    def Save(self):
-        pass
 
-    def Refresh(self):
-        return self._record
+class FakeSupplierProduct(Supplierproduct, MockRecord):
+    """Class for unittest mocking purposes."""
 
 
 @pytest.fixture(scope="module")
