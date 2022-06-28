@@ -1,12 +1,15 @@
+from io import StringIO
 import os
 
 import uweb3
 
 from warehouse import basepages
 from warehouse.common import model as common_model
+from warehouse.products import model as product_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
 from warehouse.suppliers import forms, helpers, model
+from warehouse.products.helpers.importers import custom_importers
 
 
 class PageMaker(basepages.PageMaker):
@@ -117,6 +120,7 @@ class PageMaker(basepages.PageMaker):
         custom_import_form=None,
         processed_products=None,
         unprocessed_products=None,
+        custom_importer=None
     ):
         """Returns the supplier page"""
         supplier = model.Supplier.FromName(self.connection, name)
@@ -139,6 +143,7 @@ class PageMaker(basepages.PageMaker):
             custom_import_form=custom_import_form,
             processed_products=processed_products,
             unprocessed_products=unprocessed_products,
+            custom_importer=custom_importer
         )
 
     @loggedin
@@ -222,5 +227,9 @@ class PageMaker(basepages.PageMaker):
             return self.RequestSupplier(
                 name=supplierName, custom_import_form=custom_import_form
             )
-
-        return self.RequestSupplier(name=supplierName)
+        builder = custom_importers.CustomImporters().get_registered_item("solar_city")
+        importer = builder(
+            StringIO(custom_import_form.custom_fileupload.data[0]["content"])
+        )
+        importer.Import(model.Supplierproduct.Products(self.connection, supplier))
+        return self.RequestSupplier(name=supplierName, custom_importer=importer)
