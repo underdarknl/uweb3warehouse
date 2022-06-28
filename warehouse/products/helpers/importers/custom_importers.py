@@ -26,12 +26,16 @@ class ABCCustomImporter(ABCImporter):
 
 
 class CustomRenderedMixin:
+    """Mixin class that allows a custom importer/parser to be rendered in a
+    template file."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filename = ""
 
     @property
     def render_results(self):
+        """Render the template for the custom importer class."""
         return Parser(
             path=os.path.join(os.path.dirname(__file__), "custom_template"),
             templates=(
@@ -48,6 +52,13 @@ class CustomRenderedMixin:
 
 class SolarCity(CustomRenderedMixin, ABCCustomImporter):
     def __init__(self, parser: ABCParser):
+        """Importer/parser combination class for custom imports for Solarcity.
+
+        Args:
+            parser (ABCParser): The parser that retrieves all data from
+                the posted supplier csv file.
+        """
+        # The filename of the template for this custom importer.
         self.filename = "solarcity.html"
         self.parser = parser
         self.products = []
@@ -55,14 +66,38 @@ class SolarCity(CustomRenderedMixin, ABCCustomImporter):
         self._unprocessed_products = []
 
     def Import(
-        self, products: list[supplier_model.Supplierproduct]
+        self, supplier_products: list[supplier_model.Supplierproduct]
     ) -> tuple[list[ProductPair], list[dict]]:
-        self.products = list(products)
+        """Parse csv file and import found results into the corresponding
+        Supplierproduct record in the database.
+
+        Args:
+            supplier_products (list[supplier_model.Supplierproduct]): A list
+                of Supplierproducts for the given supplier that we are importing
+                products for.
+
+        Returns:
+            tuple[list[ProductPair], list[dict]]: processed, unprocessed
+                the processed list contains pairs that map a Supplierproduct
+                to the found record from the csv.
+                The unprocessed list contains raw dictionaries for which
+                no results could be found.
+
+        """
+        self.products = list(supplier_products)
         data = self.parser.Parse()
         self._process(data)
         return self._processed_products, self._unprocessed_products
 
     def _process(self, data):
+        """Process csv data and update the Supplierproduct record.
+
+        Currently there is no support for bulk price reductions so we only save
+        the piece price for each Supplierproduct.
+
+        Args:
+            data (list[dict]): List of dictionaries containing all the suppliers products
+        """
         single_products = [
             record for record in data if record["items_per_packing_unit"] == 1
         ]
