@@ -1,17 +1,19 @@
 import pytest
 from io import StringIO
-from tests.products.fixtures import products
+from tests.products.fixtures import supplier_products
 from warehouse.products.helpers import CSVParser, CsvImporter
+import inspect
 
 
 @pytest.fixture(scope="function")
-def fake_file():
-    string = """name,product,brand,reference
-Product 1,test_product,test_brand,test_reference
-    """
-    f = StringIO(string)
-    f.seek(0)
-    yield f
+def simple_file():
+    string = inspect.cleandoc(
+        """
+        name,product,brand,reference
+        Product 1,test_product,test_brand,test_reference
+        """
+    )
+    yield StringIO(string)
 
 
 class TestCsvImporter:
@@ -35,7 +37,10 @@ class TestCsvImporter:
                 [{"reference": "test_reference"}],
             ),
             (
-                ("name", "reference",),
+                (
+                    "name",
+                    "reference",
+                ),
                 [{"name": "Product 1", "reference": "test_reference"}],
             ),
             (
@@ -54,8 +59,8 @@ class TestCsvImporter:
             ),
         ],
     )
-    def test_found_columns(self, fake_file, columns, retrieved_data):
-        data = CSVParser(fake_file, columns).Parse()
+    def test_found_columns(self, simple_file, columns, retrieved_data):
+        data = CSVParser(simple_file, columns).Parse()
 
         # Make sure that the data returned matches the expected retrieved data.
         # retrieved_data contains the expected columns and their values
@@ -74,11 +79,11 @@ class TestCsvImporter:
             ),
         ],
     )
-    def test_import(self, fake_file, products, columns, expected):
-        data = CSVParser(fake_file, columns).Parse()
+    def test_import(self, simple_file, supplier_products, columns, expected):
+        data = CSVParser(simple_file, columns).Parse()
 
         importer = CsvImporter({"name": "name", "amount": "brand"})
-        processed, unprocessed = importer.Import(data, products)
+        processed, unprocessed = importer.Import(data, supplier_products)
 
         assert len(processed) == 1
         assert processed[0].parsed_product == expected
