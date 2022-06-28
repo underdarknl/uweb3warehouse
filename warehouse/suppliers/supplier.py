@@ -120,7 +120,8 @@ class PageMaker(basepages.PageMaker):
         custom_import_form=None,
         processed_products=None,
         unprocessed_products=None,
-        custom_importer=None
+        custom_importer=None,
+        anchor=None,
     ):
         """Returns the supplier page"""
         supplier = model.Supplier.FromName(self.connection, name)
@@ -139,13 +140,14 @@ class PageMaker(basepages.PageMaker):
             custom_import_form.importer.choices = list(factory.list_all())
 
         return dict(
+            anchor=anchor,
             supplier=supplier,
             supplier_stock_form=supplier_stock_form,
             supplier_form=supplier_form,
             custom_import_form=custom_import_form,
             processed_products=processed_products,
             unprocessed_products=unprocessed_products,
-            custom_importer=custom_importer
+            custom_importer=custom_importer,
         )
 
     @loggedin
@@ -179,7 +181,6 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
-    # @uweb3.decorators.TemplateParser("supplier.html")
     def UpdateSupplierStock(self, supplierName):
         supplier = model.Supplier.FromName(self.connection, supplierName)
         prefix = helpers.get_importer_prefix(supplier)
@@ -192,7 +193,9 @@ class PageMaker(basepages.PageMaker):
             if not self.files:
                 supplier_stock_form.fileupload.errors = ["No file selected."]
             return self.RequestSupplier(
-                name=supplierName, supplier_stock_form=supplier_stock_form
+                name=supplierName,
+                supplier_stock_form=supplier_stock_form,
+                anchor="import-stock",
             )
 
         try:
@@ -206,9 +209,12 @@ class PageMaker(basepages.PageMaker):
             supplier_stock_form.column_name_mapping.errors = [exception.args[0]]
             supplier_stock_form.column_stock_mapping.errors = [exception.args[0]]
             return self.RequestSupplier(
-                name=supplierName, supplier_stock_form=supplier_stock_form
+                name=supplierName,
+                supplier_stock_form=supplier_stock_form,
+                anchor="import-stock",
             )
         return self.RequestSupplier(
+            anchor="import-stock",
             name=supplierName,
             supplier_form=forms.SupplierForm(data=supplier),
             supplier_stock_form=forms.ImportSupplierStock(),
@@ -223,7 +229,7 @@ class PageMaker(basepages.PageMaker):
         supplier = model.Supplier.FromName(self.connection, supplierName)
 
         factory = custom_importers.CustomImporters()
-        
+
         custom_import_form = forms.CustomImporters(self.post)
         custom_import_form.importer.choices = list(factory.list_all())
         custom_import_form.custom_fileupload.data = self.files.get("custom_fileupload")
@@ -231,11 +237,16 @@ class PageMaker(basepages.PageMaker):
         if not self.files or not custom_import_form.validate():
             custom_import_form.custom_fileupload.errors = ["No file selected."]
             return self.RequestSupplier(
-                name=supplierName, custom_import_form=custom_import_form
+                name=supplierName,
+                custom_import_form=custom_import_form,
+                anchor="custom-importers",
             )
+
         builder = factory.get_registered_item(custom_import_form.importer.data)
         importer = builder(
             StringIO(custom_import_form.custom_fileupload.data[0]["content"])
         )
         importer.Import(model.Supplierproduct.Products(self.connection, supplier))
-        return self.RequestSupplier(name=supplierName, custom_importer=importer)
+        return self.RequestSupplier(
+            name=supplierName, custom_importer=importer, anchor="custom-importers"
+        )
