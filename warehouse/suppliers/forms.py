@@ -19,6 +19,11 @@ class ImportSupplierStock(Form):
     fileupload = FileField("Select files")
 
 
+class CustomImporters(Form):
+    importer = SelectField("Importer", choices=["SolarCity"])
+    custom_fileupload = FileField("Select file")
+
+
 class SupplierAddProductForm(SupplierProduct):
     """This is the form that is used when a supplier wants to add a product.
 
