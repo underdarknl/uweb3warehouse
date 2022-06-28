@@ -1,0 +1,44 @@
+{{ if [__processed] }}
+<section>
+    <h2>Processed products</h2>
+    <table class="products">
+        <thead>
+            <tr>
+                <th>Article number</th>
+                <th>Parsed product</th>
+                <th>Database match</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ for pair in [__processed] }}
+            <tr>
+                <td>[pair:parsed_product:article_number]</td>
+                <td>[pair:parsed_product:article_name]</td>
+                <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:name]</a></td>
+                <td>[pair:parsed_product:gross]</td>
+            </tr>
+            {{ endfor }}
+        </tbody>
+    </table>
+</section>
+{{ endif }}
+{{ if [__unprocessed] }}
+<section>
+    <h2>Unprocessed products</h2>
+    <table class="products">
+        <thead>
+            <tr>
+                <th>Found product</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ for product in [__unprocessed] }}
+            <tr>
+                <td>[product:article_name]</td>
+            </tr>
+            {{ endfor }}
+        </tbody>
+    </table>
+</section>
+{{ endif }}
