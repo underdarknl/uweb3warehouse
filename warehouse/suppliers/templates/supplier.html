@@ -113,6 +113,12 @@
         </div>
     </form>
 </section>
+
+{{ ifpresent [custom_importer] }}
+    {{ if [custom_importer] }}
+        [custom_importer:render_results]
+    {{ endif }}
+{{ endif }}
 <section>
     <h2>Delete Supplier:</h2>
     <form action="/supplier/[supplier:name]/delete" method="post">
