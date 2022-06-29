@@ -102,7 +102,8 @@ def json_error_wrapper(func):
 
 
 def loggedin(f):
-    """Decorator that checks if the user requesting the page is logged in based on set cookie."""
+    """Decorator that checks if the user requesting the page is logged
+    in based on set cookie."""
 
     def wrapper(pagemaker, *args, **kwargs):
         if not pagemaker.user:

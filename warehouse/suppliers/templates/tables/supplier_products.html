@@ -6,6 +6,7 @@
                 <th>Our product</th>
                 <th>Supplier sku</th>
                 <th>Supplier stock</th>
+                <th>Price</th>
                 <th>Lead</th>
                 <th>Delete</th>
             </tr>
@@ -17,6 +18,7 @@
                 <td><a href="/product/[supplier_product:product:sku]">[supplier_product:product:name]</a></td>
                 <td>[supplier_product:supplier_sku]</td>
                 <td>[supplier_product:supplier_stock]</td>
+                <td>[supplier_product:cost]</td>
                 <td>[supplier_product:lead]</td>
                 <td>
                     <form action="/supplier/[supplier:ID]/products/[supplier_product:ID]/delete" method="post">

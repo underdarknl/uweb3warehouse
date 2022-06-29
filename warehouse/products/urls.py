@@ -85,11 +85,6 @@ urls = [
         (api.PageMaker, "JsonProductSearch"),
     ),
     (
-        "/api/v1/product/([^/]*)/stock",
-        (api.PageMaker, "JsonProductStock"),
-        "POST",
-    ),
-    (
         "/api/v1/products/bulk_remove_stock",
         (api.PageMaker, "JsonProductStockRemove"),
         "POST",

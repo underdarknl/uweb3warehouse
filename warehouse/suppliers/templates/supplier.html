@@ -1,4 +1,11 @@
 [header]
+{{ ifpresent [anchor] }}
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+                document.getElementById("[anchor]").scrollIntoView();
+            });
+    </script>
+{{ endif }}
 <script src="/js/forms.js"></script>
 <section>
     <h2>Edit Supplier: [supplier:name]</h2>
@@ -20,8 +27,7 @@
     </nav>
 </section>
 <section>
-    <h2>Import stock</h2>
-
+    <h2 id="import-stock">Import stock</h2>
     <form action="/supplier/updatestock/[supplier:name]" method="post" class="supplier" enctype="multipart/form-data">
         <input type="hidden" name="xsrf" value="[xsrf]">
         {{ for field in [supplier_stock_form] }}
@@ -58,7 +64,7 @@
                     {{ for pair in [processed_products] }}
                     <tr>
                         <td>[pair:parsed_product:name]</td>
-                        <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:name]</a></td>
+                        <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a></td>
                         <td>[pair:parsed_product:amount]</td>
                     </tr>
                     {{ endfor }}
@@ -92,6 +98,35 @@
     {{ endif }}
 {{ endif }}
 
+{{ if [is_underdark] == 'True' }}
+    <section>
+        <h2 id="custom-importers">Custom importers</h2>
+        <form action="/supplier/custom/updatestock/[supplier:name]" method="post" class="supplier" enctype="multipart/form-data">
+            <input type="hidden" name="xsrf" value="[xsrf]">
+            {{ for field in [custom_import_form] }}
+                <p>[field:description]</p>
+                {{ if [field:errors] }}
+                    {{ for error in [field:errors] }}
+                        <p class="error">[error]</p>
+                    {{ endfor }}
+                {{ endif }}
+                <div>
+                    [field:label]
+                    [field]
+                </div>
+            {{ endfor }}
+            <div>
+                <input type="submit" value="upload" />
+            </div>
+        </form>
+    </section>
+
+    {{ ifpresent [custom_importer] }}
+        {{ if [custom_importer] }}
+            [custom_importer:render_results]
+        {{ endif }}
+    {{ endif }}
+{{ endif }}
 <section>
     <h2>Delete Supplier:</h2>
     <form action="/supplier/[supplier:name]/delete" method="post">

@@ -19,7 +19,7 @@ class BulkRefundSchema(Schema):
         unknown = EXCLUDE
 
     products = fields.Nested(ProductSchema, many=True, required=True)
-    reference = fields.Str(max=45, missing="")
+    reference = fields.Str(max=45, load_default="")
 
 
 class BulkStockSchema(BulkRefundSchema):

@@ -18,7 +18,8 @@ class ProductForm(Form):
         "sku",
         [validators.Length(min=1, max=45), validators.InputRequired()],
         description="""The name for each sku in your warehouse must be unique,
-                      only products that can be ordered by end customers should have an easily recognizable sku.""",
+                    only products that can be ordered by end customers
+                    should have an easily recognizable sku.""",
     )
     name = StringField(
         "name",
@@ -27,13 +28,21 @@ class ProductForm(Form):
     )
     ean = IntegerField(
         "ean",
-        [validators.NumberRange(max=9999999999999, message="Ean code must have at most 13 characters"), validators.Optional()],
-        description="The ean barcode for each product or part in your warehouse must be unique.",
+        [
+            validators.NumberRange(
+                max=9999999999999,
+                message="Ean code must have at most " + "13 characters",
+            ),
+            validators.Optional(),
+        ],
+        description="The ean barcode for each product or part in "
+        + "your warehouse must be unique.",
     )
     gs1 = IntegerField(
         "gs1",
         [validators.NumberRange(min=1, max=32767), validators.Optional()],
-        description="The gs1 for each product or part in your warehouse must be unique.",
+        description="The gs1 for each product or part in "
+        + "your warehouse must be unique.",
     )
     description = TextAreaField("description", validators=[validators.Optional()])
     assemblycosts = DecimalField(
@@ -41,7 +50,8 @@ class ProductForm(Form):
         rounding=decimal.ROUND_UP,
         places=2,
         validators=[validators.InputRequired(), validators.NumberRange(min=0)],
-        description="What does it cost to use this part in a bifer product? A sticker needs to be applied, a jar needs to be filled.",
+        description="What does it cost to use this part in a bifer product? "
+        + "A sticker needs to be applied, a jar needs to be filled.",
     )
 
 
@@ -74,7 +84,8 @@ class SupplierProduct(Form):
     lead = IntegerField(
         "lead",
         [validators.NumberRange(min=0), validators.Optional()],
-        description="The amount of days that it takes to ship the product from the supplier to us.",
+        description="The amount of days that it takes to ship the product from "
+        + "the supplier to us.",
     )
     supplier_sku = StringField(
         "sku",
@@ -84,7 +95,8 @@ class SupplierProduct(Form):
     supplier_stock = IntegerField(
         "supplier_stock",
         [validators.NumberRange(min=0), validators.Optional()],
-        description="The amount of stock that the supplier currently has for this product.",
+        description="The amount of stock that the supplier currently has for"
+        + "this product.",
     )
 
 
@@ -93,14 +105,17 @@ class ProductAssembleFromPartForm(Form):
     amount = IntegerField(
         "amount",
         [validators.NumberRange(min=1, max=65535)],
-        description="How many of the selected product are used as parts in the current product?",
+        description="How many of the selected product are used as "
+        + "parts in the current product?",
     )
     assemblycosts = DecimalField(
         "assemblycosts",
         rounding=decimal.ROUND_UP,
         places=2,
         validators=[validators.InputRequired(), validators.NumberRange(min=0)],
-        description="What does it cost to use the selected product as a part in the current product? A sticker needs to be applied, a jar needs to be filled.",
+        description="What does it cost to use the selected product as a "
+        + "part in the current product? A sticker needs to be applied, "
+        + "a jar needs to be filled.",
     )
 
 
@@ -123,7 +138,7 @@ class ProductStockForm(ProductAssemblyForm):
         "piece price",
         rounding=decimal.ROUND_UP,
         places=2,
-        description="How much did you pay for each individual piece from the supplier?.",
+        description="How much did you pay for each individual piece from the supplier?",
     )
 
     def validate_piece_price(self, field):
@@ -164,10 +179,12 @@ class StockMutationFactory:
 
 
 def get_stock_factory(postdata=None):
-    """Factory used to create forms that are similar to the stock mutation form but have different descriptions.
+    """Factory used to create forms that are similar to the stock mutation
+    form but have different descriptions.
 
     Args:
-        postdata (dict, optional): The PageMaker.post data from the request. Defaults to None.
+        postdata (dict, optional): The PageMaker.post data from the request.
+        Defaults to None.
 
     Returns:
         wtfforms.Form: The form used for the stock mutation.
@@ -214,7 +231,7 @@ def _register_default_forms(factory, postdata):
         if self.amount is not None:
             if self.amount.data >= 0 and field.data is None:
                 raise ValidationError(
-                    "If you are adding stock, you must also specify a piece price."
+                    "If you are adding stock, you must also " + "specify a piece price."
                 )
 
 
@@ -229,55 +246,6 @@ class ProductPriceForm(Form):
     start_range = IntegerField(
         "start_range",
         [validators.InputRequired(), validators.NumberRange(min=1)],
-        description="The amount of products that need to be purchased before the price starts to apply.",
+        description="The amount of products that need to be purchased before "
+        + "the price starts to apply.",
     )
-
-
-class StockMutationFactory:
-    def __init__(self):
-        self._forms = {}
-
-    def register_form(self, name, form):
-        self._forms[name] = form
-
-    def get_form(self, name):
-        form = self._forms.get(name)
-        if not form:
-            raise ValueError(
-                f"Form {name} could not be found because it was not registered."
-            )
-        return form
-
-
-def get_stock_factory(postdata=None):
-    """Factory used to create forms that are similar to the stock mutation form but have different descriptions.
-
-    Args:
-        postdata (dict, optional): The PageMaker.post data from the request. Defaults to None.
-
-    Returns:
-        wtfforms.Form: The form used for the stock mutation.
-    """
-    factory = StockMutationFactory()
-
-    assemble_from_part = ProductAssemblyForm(postdata)
-    assemble_from_part.amount.description = "How many were assembled"
-    assemble_from_part.reference.description = "Optional reference for this assembly"
-    assemble_from_part.lot.description = (
-        "The lot number for these newly assembled products"
-    )
-
-    disassemble_into_parts = ProductAssemblyForm(postdata)
-    disassemble_into_parts.amount.description = "How many were disassembled"
-    disassemble_into_parts.reference.description = (
-        "The invoice ID from the supplier, or the customer"
-    )
-    disassemble_into_parts.lot.description = (
-        "The lot number of the disassembled products"
-    )
-
-    factory.register_form("stock_form", ProductStockForm(postdata))
-    factory.register_form("assemble_from_part", assemble_from_part)
-    factory.register_form("disassemble_into_parts", disassemble_into_parts)
-
-    return factory

@@ -12,6 +12,11 @@ urls = [
         "POST",
     ),
     (
+        "/supplier/custom/updatestock/([^/]*)",
+        (supplier.PageMaker, "CustomUpdateSupplierStock"),
+        "POST",
+    ),
+    (
         "/suppliers",
         (supplier.PageMaker, "RequestSuppliers"),
     ),
@@ -28,7 +33,6 @@ urls = [
     (
         "/supplier/([^/]*)/products",
         (supplier.PageMaker, "RequestSupplierProducts"),
-        "GET",
     ),
     (
         "/supplier/([^/]*)/products/([0-9]+)/delete",

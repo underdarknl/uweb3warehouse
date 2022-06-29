@@ -26,11 +26,12 @@ class SortTable:
         linkarguments=None,
     ):
 
-        if (
-            connection and type(modelCall.__self__) is type
-        ):  # is this in unbound method?, ifso it needs a connection argument
+        if connection and type(modelCall.__self__) is type:
+            # is this in unbound method?, ifso it needs a connection argument
             self.items = modelCall(connection, **modelargs)
-        else:  # is a bound method of a model object that already has a connection reference
+        else:
+            # is a bound method of a model object that already has a
+            # connection reference
             self.items = modelCall(**modelargs)
 
         self.linkbase = linkbase or ""
@@ -79,11 +80,12 @@ class PagedResult:
         self.offset = modelargs["offset"] = self.pagesize * (self.current - 1)
         modelargs["yield_unlimited_total_first"] = True
         modelargs["limit"] = self.pagesize
-        if (
-            connection and type(modelCall.__self__) is type
-        ):  # is this in unbound method?, ifso it needs a connection argument
+        if connection and type(modelCall.__self__) is type:
+            # is this in unbound method?, ifso it needs a connection argument
             items = list(modelCall(connection, **modelargs))
-        else:  # is a bound method of a model object that already has a connection reference
+        else:
+            # is a bound method of a model object that already has a
+            # connection reference
             items = list(modelCall(**modelargs))
         self.totalcount = itemcount = items[0]
         self.items = items[1:]
@@ -122,20 +124,22 @@ class BaseFactory:
         Args:
             key (str): The name of the service.
             builder: The builder class for the given service.
-                    The builder class is used to supply the Service class with the correct
-                    attributes on call. The builder class must have a __call__ method
-                    that supplies the service with the provided arguments.
+                    The builder class is used to supply the Service class with the
+                    correct attributes on call. The builder class must have a
+                    __call__ method that supplies the service with the
+                    provided arguments.
         """
         self._registered_items[key] = builder
 
-    def get_registered_item(self, key, **kwargs):
+    def get_registered_item(self, key, *args, **kwargs):
         """Retrieve a service by name.
 
         Args:
             key (str): The name of the service by which it was registered.
 
         Raises:
-            ValueError: Raised when the service could not be found in the registered services.
+            ValueError: Raised when the service could not be found in the
+            registered services.
 
         Returns:
             _type_: An authentication service.
