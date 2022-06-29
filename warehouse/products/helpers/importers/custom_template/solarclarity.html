@@ -15,7 +15,11 @@
             <tr>
                 <td>[pair:parsed_product:article_number]</td>
                 <td>[pair:parsed_product:article_name]</td>
-                <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a></td>
+                {{ if [pair:supplier_product:product] }} 
+                    <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a></td>
+                {{ else }}
+                    <td>No product attached</td>
+                {{ endif }}
                 <td>[pair:parsed_product:gross]</td>
             </tr>
             {{ endfor }}
@@ -23,6 +27,28 @@
     </table>
 </section>
 {{ endif }}
+{{ if [__new_imports] }}
+<section>
+    <h2>New imports</h2>
+    <table class="products">
+        <thead>
+            <tr>
+                <th>Supplier sku</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ for product in [__new_imports] }}
+            <tr>
+                <td>[product:supplier_sku]</td>
+                <td><a href="/product/[product:supplier_sku]">[product:name]</a></td>
+            </tr>
+            {{ endfor }}
+        </tbody>
+    </table>
+</section>
+{{ endif }}
+
 {{ if [__unprocessed] }}
 <section>
     <h2>Unprocessed products</h2>

@@ -26,7 +26,9 @@ def solar_file():
 @pytest.fixture(scope="function")
 def importer(solar_file):
     factory = CustomImporters()
-    importer = factory.get_registered_item("SolarClarity", file=solar_file)
+    importer = factory.get_registered_item(
+        "Solarclarity", file=solar_file, connection=None, supplierID=None
+    )
     yield importer
 
 
