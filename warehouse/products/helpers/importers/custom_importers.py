@@ -1,15 +1,14 @@
-from abc import abstractmethod
-from numbers import Number
-import os
-from uweb3.templateparser import Parser
 import decimal
-from typing import Any, Callable
+import os
+from abc import ABC, abstractmethod
+from numbers import Number
+from typing import Any
+
+from uweb3.templateparser import Parser
+
 from warehouse.common.helpers import BaseFactory
-from warehouse.products.helpers.importers.parser import (
-    ABCParser,
-    CSVParser,
-)
 from warehouse.products.helpers.importers.importer import ABCImporter, ProductPair
+from warehouse.products.helpers.importers.parser import ABCParser, CSVParser
 from warehouse.suppliers import model as supplier_model
 
 
@@ -22,6 +21,12 @@ class ABCCustomImporter(ABCImporter):
 
     @abstractmethod
     def render_results(self):
+        pass
+
+
+class ABCServiceBuilder(ABC):
+    @abstractmethod
+    def __call__(self):
         pass
 
 
@@ -150,19 +155,22 @@ def to_decimal(csv_value: str | int) -> decimal.Decimal:
             raise ValueError(f"Unsupported currency value {csv_value}")
 
 
-class SolarCityServiceBuilder:
-    def __call__(self, file, *args, **kwargs) -> ABCCustomImporter:
-        parser = CSVParser(
-            file_path=file,
-            columns=(
-                "article_number",
-                "article_name",
-                "product_reference",
-                "packing_unit",
-                "items_per_packing_unit",
-                "gross",
-            ),
-        )
+class SolarCityServiceBuilder(ABCServiceBuilder):
+    def __init__(
+        self,
+        columns=(
+            "article_number",
+            "article_name",
+            "product_reference",
+            "packing_unit",
+            "items_per_packing_unit",
+            "gross",
+        ),
+    ):
+        self.columns = columns
+
+    def __call__(self, file, *_, **__):
+        parser = CSVParser(file_path=file, columns=self.columns)
         return SolarCity(parser=parser)
 
 
@@ -173,13 +181,21 @@ class CustomImporters(BaseFactory):
         super().__init__()
         self.register_base_classes()
 
-    def get_registered_item(
-        self, key, *args, **kwargs
-    ) -> Callable[[Any], ABCCustomImporter]:
+    def get_registered_item(self, key, *args, **kwargs) -> ABCCustomImporter:
+        """Retrieves a registered importer from the factory.
+
+        Args:
+            key (str): The name of the importer
+
+        Returns:
+            ABCCustomImporter: The importer class implementing
+                the ABCCustomImporter base class.
+        """
+
         return super().get_registered_item(key, *args, **kwargs)
 
     def register_base_classes(self):
-        self.register("Solarcity", SolarCityServiceBuilder)
+        self.register("Solarcity", SolarCityServiceBuilder())
 
     def list_all(self):
         return self._registered_items.keys()
