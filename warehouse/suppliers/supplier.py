@@ -1,15 +1,14 @@
-from io import StringIO
 import os
+from io import StringIO
 
 import uweb3
 
 from warehouse import basepages
 from warehouse.common import model as common_model
-from warehouse.products import model as product_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
+from warehouse.products.helpers import CustomImporters
 from warehouse.suppliers import forms, helpers, model
-from warehouse.products.helpers.importers import custom_importers
 
 
 class PageMaker(basepages.PageMaker):
@@ -135,7 +134,7 @@ class PageMaker(basepages.PageMaker):
             )
 
         if not custom_import_form:
-            factory = custom_importers.CustomImporters()
+            factory = CustomImporters()
             custom_import_form = forms.CustomImporters(self.post)
             custom_import_form.importer.choices = list(factory.list_all())
 
@@ -228,7 +227,7 @@ class PageMaker(basepages.PageMaker):
     def CustomUpdateSupplierStock(self, supplierName):
         supplier = model.Supplier.FromName(self.connection, supplierName)
 
-        factory = custom_importers.CustomImporters()
+        factory = CustomImporters()
 
         custom_import_form = forms.CustomImporters(self.post)
         custom_import_form.importer.choices = list(factory.list_all())
@@ -242,9 +241,9 @@ class PageMaker(basepages.PageMaker):
                 anchor="custom-importers",
             )
 
-        builder = factory.get_registered_item(custom_import_form.importer.data)
-        importer = builder(
-            StringIO(custom_import_form.custom_fileupload.data[0]["content"])
+        importer = factory.get_registered_item(
+            custom_import_form.importer.data,
+            file=StringIO(custom_import_form.custom_fileupload.data[0]["content"]),
         )
         importer.Import(model.Supplierproduct.Products(self.connection, supplier))
         return self.RequestSupplier(
