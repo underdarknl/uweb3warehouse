@@ -64,7 +64,7 @@
                     {{ for pair in [processed_products] }}
                     <tr>
                         <td>[pair:parsed_product:name]</td>
-                        <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:name]</a></td>
+                        <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a></td>
                         <td>[pair:parsed_product:amount]</td>
                     </tr>
                     {{ endfor }}
