@@ -5,7 +5,7 @@ from io import StringIO
 import pytest
 
 from tests.products.fixtures import supplier_products
-from warehouse.products.helpers import CustomImporters, SolarCity
+from warehouse.products.helpers import CustomImporters, SolarClarity
 from warehouse.products.helpers.importers.custom_importers import to_decimal
 
 
@@ -26,12 +26,12 @@ def solar_file():
 @pytest.fixture(scope="function")
 def importer(solar_file):
     factory = CustomImporters()
-    importer = factory.get_registered_item("Solarcity", file=solar_file)
+    importer = factory.get_registered_item("SolarClarity", file=solar_file)
     yield importer
 
 
-class TestSolarCityCustomImporter:
-    def test_importing(self, importer: SolarCity, supplier_products):
+class TestSolarClarityCustomImporter:
+    def test_importing(self, importer: SolarClarity, supplier_products):
         """Test to stk values are imported.
         Currently there is no support for SupplierProduct prices
         based on quantity purchased."""
@@ -41,7 +41,7 @@ class TestSolarCityCustomImporter:
             assert 1 == pair.parsed_product["items_per_packing_unit"]
             assert True is isinstance(pair.supplier_product["cost"], decimal.Decimal)
 
-    def test_solarcity(self, importer: SolarCity, supplier_products):
+    def test_SolarClarity(self, importer: SolarClarity, supplier_products):
         """Ensure the correct results are found"""
         processed, unprocessed = importer.Import(supplier_products)
 

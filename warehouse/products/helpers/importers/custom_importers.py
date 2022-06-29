@@ -54,16 +54,16 @@ class CustomRenderedMixin:
         )
 
 
-class SolarCity(CustomRenderedMixin, ABCCustomImporter):
+class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
     def __init__(self, parser: ABCParser):
-        """Importer/parser combination class for custom imports for Solarcity.
+        """Importer/parser combination class for custom imports for SolarClarity.
 
         Args:
             parser (ABCParser): The parser that retrieves all data from
                 the posted supplier csv file.
         """
         # The filename of the template for this custom importer.
-        self.filename = "solarcity.html"
+        self.filename = "solarclarity.html"
         self.parser = parser
         self.products = []
         self._processed_products = []
@@ -155,7 +155,7 @@ def to_decimal(csv_value: str | int) -> decimal.Decimal:
             raise ValueError(f"Unsupported currency value {csv_value}")
 
 
-class SolarCityServiceBuilder(ABCServiceBuilder):
+class SolarClarityServiceBuilder(ABCServiceBuilder):
     def __init__(
         self,
         columns=(
@@ -171,7 +171,7 @@ class SolarCityServiceBuilder(ABCServiceBuilder):
 
     def __call__(self, file, *_, **__):
         parser = CSVParser(file_path=file, columns=self.columns)
-        return SolarCity(parser=parser)
+        return SolarClarity(parser=parser)
 
 
 class CustomImporters(BaseFactory):
@@ -195,7 +195,7 @@ class CustomImporters(BaseFactory):
         return super().get_registered_item(key, *args, **kwargs)
 
     def register_base_classes(self):
-        self.register("Solarcity", SolarCityServiceBuilder())
+        self.register("SolarClarity", SolarClarityServiceBuilder())
 
     def list_all(self):
         return self._registered_items.keys()

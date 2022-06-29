@@ -1,8 +1,8 @@
 from warehouse.products.helpers.importers.custom_importers import (
     CustomImporters,
     CustomRenderedMixin,
-    SolarCity,
-    SolarCityServiceBuilder,
+    SolarClarity,
+    SolarClarityServiceBuilder,
 )
 from warehouse.products.helpers.importers.importer import (
     CsvImporter,
