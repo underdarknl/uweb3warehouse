@@ -2,7 +2,6 @@ import decimal
 import types
 from typing import Iterable, Iterator, NamedTuple
 
-
 from warehouse.common import helpers as common_helpers
 from warehouse.products import model
 

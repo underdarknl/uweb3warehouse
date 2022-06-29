@@ -1,14 +1,23 @@
+from warehouse.products.helpers.importers.custom_importers import (
+    CustomImporters,
+    CustomRenderedMixin,
+    SolarCity,
+    SolarCityServiceBuilder,
+)
+from warehouse.products.helpers.importers.importer import (
+    CsvImporter,
+    ProductPair,
+    StockImporter,
+)
+from warehouse.products.helpers.importers.parser import CSVParser, StockParser
 from warehouse.products.helpers.utils import (
-    ProductDTO,
-    ProductPriceDTO,
-    ProductDTOService,
-    ProductPriceDTOService,
     DtoManager,
-    remove_stock,
+    ProductDTO,
+    ProductDTOService,
+    ProductPriceDTO,
+    ProductPriceDTOService,
     add_stock,
     possibleparts_select_list,
+    remove_stock,
     suppliers_select_list,
 )
-from warehouse.products.helpers.importers.importer import ProductPair, StockImporter, CsvImporter
-from warehouse.products.helpers.importers.parser import StockParser, CSVParser
-from warehouse.products.helpers.importers.custom_importers import SolarCity, SolarCityServiceBuilder, CustomImporters, CustomRenderedMixin

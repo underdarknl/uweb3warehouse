@@ -1,5 +1,6 @@
-from typing import NamedTuple
 from abc import ABC, abstractmethod
+from typing import NamedTuple
+
 from warehouse.products import model
 from warehouse.suppliers import model as supplier_model
 
@@ -140,7 +141,9 @@ class StockImporter(ABCImporter):
 
 class CsvImporter(StockImporter):
     def Import(
-        self, parsed_results: list[dict], supplier_products: list[supplier_model.Supplierproduct]
+        self,
+        parsed_results: list[dict],
+        supplier_products: list[supplier_model.Supplierproduct],
     ) -> tuple[list[ProductPair], list[dict]]:
         """Attempt to find a database product for each result.
         If a product is found, add the stock to the product.

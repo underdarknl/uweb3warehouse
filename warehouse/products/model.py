@@ -12,7 +12,6 @@ import math
 from dataclasses import dataclass
 
 import pytz
-
 import uweb3.helpers
 from uweb3 import model
 

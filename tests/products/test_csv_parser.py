@@ -1,8 +1,10 @@
-import pytest
-from io import StringIO
-from tests.products.fixtures import supplier_products
-from warehouse.products.helpers import CSVParser, CsvImporter
 import inspect
+from io import StringIO
+
+import pytest
+
+from tests.products.fixtures import supplier_products
+from warehouse.products.helpers import CsvImporter, CSVParser
 
 
 @pytest.fixture(scope="function")

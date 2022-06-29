@@ -1,5 +1,6 @@
-import pandas
 from abc import ABC, abstractmethod
+
+import pandas
 
 
 class ABCParser(ABC):

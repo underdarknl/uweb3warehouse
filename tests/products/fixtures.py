@@ -2,11 +2,11 @@ from decimal import Decimal
 from io import StringIO
 
 import pytest
+import uweb3
 
 from warehouse.products import model
 from warehouse.products.helpers import StockParser
 from warehouse.suppliers.model import Supplierproduct
-import uweb3
 
 
 class MockRecord(uweb3.model.Record):
