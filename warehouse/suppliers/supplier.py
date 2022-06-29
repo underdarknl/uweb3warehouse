@@ -246,7 +246,7 @@ class PageMaker(basepages.PageMaker):
                 custom_import_form.importer.data,
                 file=StringIO(custom_import_form.custom_fileupload.data[0]["content"]),
                 connection=self.connection,
-                supplierID=supplier['ID']
+                supplierID=supplier["ID"],
             )
             importer.Import(model.Supplierproduct.Products(self.connection, supplier))
         except ImporterException as exc:
