@@ -9,13 +9,16 @@ def import_stock_from_file(supplier_stock_form, supplier, connection):
     """Attempts to import the stock from the file that was uploaded.
 
     Args:
-        supplier_stock_form (forms.ImportSupplierStock): The form used to upload the file and specify the column names
+        supplier_stock_form (forms.ImportSupplierStock): The form used
+            to upload the file and specify the column names
         supplier (model.Supplier): The supplier object
-        connection (PageMaker.connection): Connection object to access the database
+            connection (PageMaker.connection): Connection object to access
+            the database
 
     Returns:
-        (list(Product), list(ProductPair)): List containing the processed Products and
-            a list containing the ProductPairs of unprocessed products.
+        (list(Product), list(ProductPair)): List containing the processed
+            Products and a list containing the ProductPairs of
+            unprocessed products.
 
     Raises:
         KeyError: If the column names are not found in the file.

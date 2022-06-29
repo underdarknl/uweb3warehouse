@@ -177,7 +177,7 @@ class PageMaker(
                             user.UpdatePassword(values["userpassword"][userid].strip())
                         except ValueError:
                             return {
-                                "usererror": "Password too short, 8 characters minimal.",
+                                "usererror": "Password too short, 8 characters minimal.",  # noqa E501
                                 "users": currentusers,
                             }
                     user.Save()
@@ -207,12 +207,13 @@ class PageMaker(
                 users.append(newuser)
             except common_model.InvalidNameError:
                 return {
-                    "usererror": "Provide a valid email address for the new user.",
+                    "usererror": "Provide a valid email address for " + "the new user.",
                     "users": users,
                 }
             except self.connection.IntegrityError:
                 return {
-                    "usererror": "That email address was already used for another user.",
+                    "usererror": "That email address was already used "
+                    + "for another user.",
                     "users": users,
                 }
             else:
@@ -230,7 +231,8 @@ class PageMaker(
                 except mail.SMTPConnectError:
                     if not self.debug:
                         return self.Error(
-                            "Mail could not be send due to server error, please contact support."
+                            "Mail could not be send due to server error, "
+                            + "please contact support."
                         )
             return {"usersucces": "Your new user was added", "users": users}
         return {"users": users}
@@ -296,7 +298,8 @@ class PageMaker(
                 except mail.SMTPConnectError:
                     if not self.debug:
                         return self.Error(
-                            "Mail could not be send due to server error, please contact support."
+                            "Mail could not be send due to server error, "
+                            + "please contact support."
                         )
             return {"succes": "Password has been updated.", "keys": keys}
 

@@ -254,21 +254,41 @@ class Product(model.Record):
 
     @property
     def product_stock_prices(self):
-        """Returns the piece_price and the amount of leftovers of the stock for that price."""
-        # TODO: Handle negative stock, how do we determine the price?
+        """Returns the piece_price and the amount of leftovers of the stock
+        for that price."""
         with self.connection as cursor:
             results = cursor.Execute(
                 f"""
                 SELECT
                     parent.piece_price,
                     parent.amount,
-                    (select sum(test.amount) from warehouse.stock as test where product={self['ID']} and piece_price is not null and test.ID <= parent.ID) +
-                    (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) as actual_leftover_stock
+                    (
+                        SELECT sum(test.amount)
+                        FROM warehouse.stock as test
+                        WHERE product={self['ID']}
+                        AND piece_price IS not null
+                        AND test.ID <= parent.ID) +
+                    (
+                        SELECT coalesce(sum(test.amount), 0)
+                        FROM warehouse.stock as test
+                        WHERE product={self['ID']}
+                        AND piece_price IS null
+                    ) as actual_leftover_stock
                 FROM warehouse.stock as parent
                 WHERE product={self['ID']}
-                AND piece_price is not null
-                AND (select sum(test.amount) from warehouse.stock as test where product={self['ID']} and piece_price is not null and test.ID <= parent.ID) +
-                (select coalesce(sum(test.amount), 0) from warehouse.stock as test where product={self['ID']} and piece_price is null) >= 1;
+                AND piece_price IS NOT NULL
+                AND (
+                    SELECT sum(test.amount)
+                    FROM warehouse.stock as test
+                    WHERE product={self['ID']}
+                    AND piece_price IS NOT NULL
+                    AND test.ID <= parent.ID) +
+                (
+                    SELECT coalesce(sum(test.amount), 0)
+                    FROM warehouse.stock as test
+                    WHERE product={self['ID']}
+                    AND piece_price IS NULL
+                ) >= 1;
                 """
             )
         prv = 0
@@ -285,8 +305,11 @@ class Product(model.Record):
     @property
     def possiblestock(
         self,
-    ):  # XXX: This is actually not the possiblestock, this is the possible addition to the stock. currentstock + possiblestock['available'] = possiblestock.
+    ):
         """Returns the possible stock when using up currently available parts"""
+        # XXX: This is actually not the possiblestock, this is the possible
+        # addition to the stock.
+        # currentstock + possiblestock['available'] = possiblestock.
         if self._possiblestock:
             return self._possiblestock
 
@@ -387,31 +410,33 @@ class Product(model.Record):
             {
                 "product": part["part"]["ID"],
                 "amount": amount * part["amount"],
-                "reference": f"Disassembly: {part['product']['name']}, amount: {amount}",
+                "reference": f"Disassembly: {part['product']['name']}, amount: {amount}",  # noqa E501
                 "piece_price": piece_price,
             },
         )
 
     def _CalculateDisassemblyPrice(self, part):
         """Retrieve the most recent piece price for this part.
-        If no price could be found because there is no stock present for a given product
-        the piece price is returned as decimal 0.
+        If no price could be found because there is no stock present for a
+        given product the piece price is returned as decimal 0.
 
         Args:
             part (model.Product): The ProductPart record to disassemble from.
 
         Raises:
-            AssemblyError: Raised when no recent product price could be found from the stock.
+            AssemblyError: Raised when no recent product price could be
+            found from the stock.
 
         Returns:
-            decimal.Decimal: The piece price for each part, or decimal 0 if no price is found.
+            decimal.Decimal: The piece price for each part, or decimal 0
+            if no price is found.
         """
         latest_price = list(
             Stock.List(
                 self.connection,
                 conditions=(
                     f'product={part["ID"]}',
-                    "piece_price is not null",
+                    "piece_price is NOT NULL",
                 ),
                 limit=1,
                 order=[("ID", True)],
@@ -422,7 +447,8 @@ class Product(model.Record):
         return latest_price[0]["piece_price"]
 
     def Assemble(self, amount=1, reference="Assembled from parts", lot=None):
-        """Tries to use up this products parts and assembles them, mutating stock on all products involved."""
+        """Tries to use up this products parts and assembles them,
+        mutating stock on all products involved."""
         parts = self.AssemblyPossible(amount)
         # Mutate parts one by one
         price = decimal.Decimal(0)
@@ -442,13 +468,14 @@ class Product(model.Record):
             )
 
     def _ManageAssemblyFromParts(self, amount, part):
-        """Assembles a part from stock, using the piece prices of the stock to determine how much
-        an assembled part cost.
+        """Assembles a part from stock, using the piece prices of the stock to
+            determine how much an assembled part cost.
 
         Args:
-            amount (int): The amount of parts to assemble, this is not the amount of pieces in the assembled product.
-                            For example, if you have a product with 3 parts and you want to assemble 2 of them,
-                            amount will be 2.
+            amount (int): The amount of parts to assemble, this is not the
+                amount of pieces in the assembled product.
+                            For example, if you have a product with 3 parts
+                            and you want to assemble 2 of them, amount will be 2.
             part (model.Productpart): The ProductPart that we want to assemble.
 
         Returns:
@@ -460,7 +487,8 @@ class Product(model.Record):
         return price
 
     def _CalculateAssemblyPrice(self, amount, part):
-        """Calculate the total price of assembly for a part based on the current stock, and the prices the stock was bought at.
+        """Calculate the total price of assembly for a part based on the
+            current stock, and the prices the stock was bought at.
 
         Args:
             part (model.Productpart): The ProductPart that we want to assemble.
@@ -527,8 +555,9 @@ class Product(model.Record):
 
     @property
     def cost(self):
-        """Returns the current cost of a single product, this price is dynamic and depends on the
-        currently available stock. This is the price that is used when the product is sold.
+        """Returns the current cost of a single product, this price is dynamic
+        and depends on the currently available stock. This is the price
+        that is used when the product is sold.
 
         Returns:
             decimal.Decimal: The current price for a single product depending on stock

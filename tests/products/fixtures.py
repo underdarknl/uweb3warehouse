@@ -143,13 +143,19 @@ def product_price():
 def product_prices():
     yield [
         model.Productprice(
-            None, {"ID": 1, "product": 1, "price": Decimal(25), "start_range": 1}, False
+            None,
+            {"ID": 1, "product": 1, "price": Decimal(25), "start_range": 1},
+            False,
         ),
         model.Productprice(
-            None, {"ID": 2, "product": 1, "price": Decimal(20), "start_range": 2}, False
+            None,
+            {"ID": 2, "product": 1, "price": Decimal(20), "start_range": 2},
+            False,
         ),
         model.Productprice(
-            None, {"ID": 3, "product": 1, "price": Decimal(15), "start_range": 3}, False
+            None,
+            {"ID": 3, "product": 1, "price": Decimal(15), "start_range": 3},
+            False,
         ),
     ]
 

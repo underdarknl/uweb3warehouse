@@ -11,23 +11,27 @@ class LoginService:
             connection (PageMaker.connection): The connection to the database.
         """
         self._user = None
-        self._auth_failed = False  # Used to prevent attempting to authenticate a failed user multiple times.
+        # Used to prevent attempting to authenticate a failed user multiple times.
+        self._auth_failed = False
         self.connection = connection
         self.session = model.Session(self.connection)
 
     def authenticate(self):
         """Authenticate the user based on the session cookie.
 
-        Attempts to find a userID in the cookie object, if a userID is found then attempt
-        to retrieve the user from the database. When no user is found, or the cookie is invalid
-        throw a ValueError.
+        Attempts to find a userID in the cookie object, if a userID is
+        found then attempt
+        to retrieve the user from the database. When no user is found,
+        or the cookie is invalid throw a ValueError.
 
         After failing authentication, the session cookie is deleted.
-        On successful authentication, remember the user and prevent accessing the database again.
-        Since this Service is not persistent between requests the user is only authenticated for the current request.
+        On successful authentication, remember the user and prevent accessing the
+        database again. Since this Service is not persistent between requests the
+        user is only authenticated for the current request.
 
         Raises:
-            ValueError: When no user is found, or the cookie is invalid a ValueError is raised.
+            ValueError: When no user is found, or the cookie is invalid a
+            ValueError is raised.
 
         Returns:
             model.User: A user object.
@@ -50,7 +54,8 @@ class LoginService:
         """Gets the userID from the cookie.
 
         Attempts to read the cookie and convert the stored userID to an integer.
-        When the cookie is invalid or the userID is not an integer a ValueError is raised and the cookie is deleted.
+        When the cookie is invalid or the userID is not an integer a ValueError is
+        raised and the cookie is deleted.
 
         Raises:
             ValueError: When the cookie is invalid or the userID is not an integer.
@@ -83,7 +88,8 @@ class LoginService:
         return None
 
     def _fail_authentication(self):
-        """When something goes wrong during authentication, delete the cookie and set the auth_failed flag to true."""
+        """When something goes wrong during authentication, delete the cookie and set
+        the auth_failed flag to true."""
         self._auth_failed = True
         self.session.Delete()
 
@@ -93,10 +99,12 @@ class LoginServiceBuilder:
         self._instance = None
 
     def __call__(self, connection, **ignored):
-        """Setup the LoginService when no instance exists, otherwise return the existing instance
+        """Setup the LoginService when no instance exists, otherwise return the
+        existing instance
 
         Args:
-            connection (PageMaker.connection): The connection object that the service uses.
+            connection (PageMaker.connection): The connection object that the
+            service uses.
 
         Returns:
             LoginService: The LoginService instance
@@ -135,11 +143,14 @@ class ApiUserServiceBuilder:
         self._instance = None
 
     def __call__(self, connection, apikey, **ignored):
-        """Setup for the ApiUserService when no instance exists, otherwise return the existing instance.
+        """Setup for the ApiUserService when no instance exists, otherwise return
+        the existing instance.
 
         Args:
-            connection (PageMaker.connection): The connection object that the service uses.
-            apikey (str): The apikey provided by the user attempting to gain access to the API.
+            connection (PageMaker.connection): The connection object that the
+            service uses.
+            apikey (str): The apikey provided by the user attempting to gain
+            access to the API.
 
         Returns:
             ApiUserService: The ApiUserService instance.
@@ -167,9 +178,10 @@ class AuthFactory:
         Args:
             key (str): The name of the authentication service.
             builder: The builder class for the given authentication service.
-                    The builder class is used to supply the Service class with the correct
-                    attributes on call. The builder class must have a __call__ method
-                    that supplies the service with the provided arguments.
+                    The builder class is used to supply the Service class with
+                    the correct attributes on call. The builder class must have
+                    a __call__ method that supplies the service with the
+                    provided arguments.
         """
         self._authenticators[key] = builder
 
@@ -180,7 +192,8 @@ class AuthFactory:
             key (str): The name of the service by which it was registered.
 
         Raises:
-            ValueError: Raised when the service could not be found in the registered authenticators.
+            ValueError: Raised when the service could not be found in the
+            registered authenticators.
 
         Returns:
             _type_: An authentication service.
@@ -195,13 +208,15 @@ class AuthFactory:
 
 class AuthMixin:
     def __init__(self, *args, **kwargs):
-        """PageMaker mixin that behaves like uweb3.LoginMixin but allows registration of authentication services."""
+        """PageMaker mixin that behaves like uweb3.LoginMixin but allows
+        registration of authentication services."""
         self._user = None
         self.auth_services = AuthFactory()
 
     @property
     def user(self):
-        """Returns the current user or false if no user is logged in, or the user validation failed.
+        """Returns the current user or false if no user is logged in, or the
+        user validation failed.
 
         Uses the login authentication service to validate the user.
 
@@ -209,7 +224,9 @@ class AuthMixin:
             model.User: User object containing all relevant user data.
         """
         if not self._user:
-            authenticator = self.auth_services.get_authenticator("login", connection=self.connection)  # type: ignore
+            authenticator = self.auth_services.get_authenticator(
+                "login", connection=self.connection  # type: ignore
+            )
             try:
                 self._user = authenticator.authenticate()
             except ValueError:

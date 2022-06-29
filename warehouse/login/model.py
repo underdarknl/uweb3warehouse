@@ -139,7 +139,7 @@ class Apiuser(model.Record):
             self["active"] = "true"
         self["active"] = "true" if self["active"] == "true" else "false"
         self["name"] = re.search(
-            "([\w\-_\.,]+)", self["name"].replace(" ", "_")
+            "([\w\-_\.,]+)", self["name"].replace(" ", "_")  # noqa W605
         ).groups()[0][:45]
         if not self["name"]:
             raise common_model.InvalidNameError("Provide a valid name")
@@ -148,7 +148,7 @@ class Apiuser(model.Record):
         super()._PreSave(cursor)
 
         self["name"] = re.search(
-            "([\w\-_\.,]+)", self["name"].replace(" ", "_")
+            "([\w\-_\.,]+)", self["name"].replace(" ", "_")  # noqa W605
         ).groups()[0][:45]
         self["active"] = "true" if self["active"] == "true" else "false"
         if not self["name"]:
