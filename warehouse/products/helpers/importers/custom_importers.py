@@ -33,9 +33,11 @@ class CustomRenderedMixin:
     """Mixin class that allows a custom importer/parser to be rendered in a
     template file."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
         self.filename = ""
+        self._processed_products = []
+        self._unprocessed_products = []
+        self._new_imports = []
 
     @property
     def render_results(self):
@@ -51,23 +53,49 @@ class CustomRenderedMixin:
             self.filename,
             __processed=self._processed_products,  # type: ignore
             __unprocessed=self._unprocessed_products,  # type: ignore
+            __new_imports=self._new_imports,
+        )
+
+
+class SolarClarityMissingImporter:
+    def __init__(self, connection, supplierID):
+        self.connection = connection
+        self.supplierID = supplierID
+
+    def Import(self, record: dict):
+        return supplier_model.Supplierproduct.Create(
+            self.connection,
+            {
+                "supplier": self.supplierID,
+                "name": record["article_name"],
+                "vat": "21",
+                "supplier_sku": record["article_number"],
+            },
         )
 
 
 class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
-    def __init__(self, parser: ABCParser):
+    def __init__(
+        self,
+        parser: ABCParser,
+        missing_supplier_product_handler=None,
+    ):
         """Importer/parser combination class for custom imports for SolarClarity.
 
         Args:
             parser (ABCParser): The parser that retrieves all data from
                 the posted supplier csv file.
+            missing_supplier_product_handler: The importer that should
+                be called whenever a missing product is encountered.
+                If no importer is supplied this product will be added
+                to the unprocessed list.
         """
+        super().__init__()
         # The filename of the template for this custom importer.
         self.filename = "solarclarity.html"
+        self.missing_supplier_product_handler = missing_supplier_product_handler
         self.parser = parser
         self.products = []
-        self._processed_products = []
-        self._unprocessed_products = []
 
     def Import(
         self, supplier_products: list[supplier_model.Supplierproduct]
@@ -109,14 +137,18 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
 
         for record in single_products:
             product = self._find_product(record)
-
-            if product:
-                result = self._import_as_supplier_stock(product, record)
-                self._processed_products.append(
-                    ProductPair(parsed_product=record, supplier_product=result)
-                )
-            else:
-                self._unprocessed_products.append(record)
+            match product:
+                case supplier_model.Supplierproduct():
+                    result = self._import_as_supplier_stock(product, record)
+                    self._processed_products.append(
+                        ProductPair(parsed_product=record, supplier_product=result)
+                    )
+                case None if self.missing_supplier_product_handler:
+                    self._new_imports.append(
+                        self.missing_supplier_product_handler.Import(record)
+                    )
+                case _:
+                    self._unprocessed_products.append(record)
 
     def _find_product(self, record) -> None | supplier_model.Supplierproduct:
         products = [p for p in self.products if p["name"] == record["article_name"]]
@@ -128,12 +160,12 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
         self, supplier_product: supplier_model.Supplierproduct, record: dict
     ):
         try:
-            price = to_decimal(record["gross"])
+            supplier_product["cost"] = to_decimal(record["gross"])
         except Exception:
-            price = record["cost"]
+            if price := record.get("cost"):
+                supplier_product["cost"] = price
 
         supplier_product["supplier_sku"] = record["article_number"]
-        supplier_product["cost"] = price
         supplier_product.update()
         supplier_product.Save()
         return supplier_product.Refresh()
@@ -166,12 +198,22 @@ class SolarClarityServiceBuilder(ABCServiceBuilder):
             "items_per_packing_unit",
             "gross",
         ),
+        import_missing=False,
     ):
         self.columns = columns
+        self.import_missing = import_missing
 
-    def __call__(self, file, *_, **__):
+    def __call__(self, file, connection, supplierID, *_, **__):
         parser = CSVParser(file_path=file, columns=self.columns)
-        return SolarClarity(parser=parser)
+
+        importer = None
+        if self.import_missing:
+            importer = SolarClarityMissingImporter(connection, supplierID)
+
+        return SolarClarity(
+            parser=parser,
+            missing_supplier_product_handler=importer,
+        )
 
 
 class CustomImporters(BaseFactory):
@@ -195,7 +237,11 @@ class CustomImporters(BaseFactory):
         return super().get_registered_item(key, *args, **kwargs)
 
     def register_base_classes(self):
-        self.register("SolarClarity", SolarClarityServiceBuilder())
+        self.register("Solarclarity", SolarClarityServiceBuilder())
+        self.register(
+            "Solarclarity (import missing products)",
+            SolarClarityServiceBuilder(import_missing=True),
+        )
 
     def list_all(self):
         return self._registered_items.keys()
