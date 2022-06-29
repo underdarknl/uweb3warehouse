@@ -5,8 +5,8 @@ from io import StringIO
 import pytest
 
 from tests.products.fixtures import supplier_products
-from warehouse.products.helpers import CustomImporters
-from warehouse.products.helpers.importers.custom_importers import SolarCity, to_decimal
+from warehouse.products.helpers import CustomImporters, SolarCity
+from warehouse.products.helpers.importers.custom_importers import to_decimal
 
 
 @pytest.fixture(scope="function")
@@ -23,11 +23,10 @@ def solar_file():
     yield StringIO(string)
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def importer(solar_file):
     factory = CustomImporters()
-    builder = factory.get_registered_item("Solarcity")
-    importer = builder(solar_file)
+    importer = factory.get_registered_item("Solarcity", file=solar_file)
     yield importer
 
 
