@@ -128,7 +128,7 @@ class BaseFactory:
         """
         self._registered_items[key] = builder
 
-    def get_registered_item(self, key, **kwargs):
+    def get_registered_item(self, key, *args, **kwargs):
         """Retrieve a service by name.
 
         Args:
