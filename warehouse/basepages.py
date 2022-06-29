@@ -43,6 +43,9 @@ class PageMaker(
 
         self.parser.RegisterTag("scripts", None)
         self.parser.RegisterTag("year", time.strftime("%Y"))
+        self.parser.RegisterTag(
+            "is_underdark", self.options.get("general", {}).get("underdark", False)
+        )
         self.parser.RegisterFunction("CentRound", CentRound)
         self.parser.RegisterFunction("ToID", lambda x: x.replace(" ", ""))
         self.parser.RegisterFunction("NullString", lambda x: "" if x is None else x)
