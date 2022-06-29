@@ -78,20 +78,22 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
     def __init__(
         self,
         parser: ABCParser,
-        import_missing: bool,
-        missing_importer=None,
+        missing_supplier_product_handler=None,
     ):
         """Importer/parser combination class for custom imports for SolarClarity.
 
         Args:
             parser (ABCParser): The parser that retrieves all data from
                 the posted supplier csv file.
+            missing_supplier_product_handler: The importer that should
+                be called whenever a missing product is encountered.
+                If no importer is supplied this product will be added
+                to the unprocessed list.
         """
         super().__init__()
         # The filename of the template for this custom importer.
         self.filename = "solarclarity.html"
-        self.missing_importer = missing_importer
-        self.import_missing = import_missing
+        self.missing_supplier_product_handler = missing_supplier_product_handler
         self.parser = parser
         self.products = []
 
@@ -141,8 +143,10 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
                     self._processed_products.append(
                         ProductPair(parsed_product=record, supplier_product=result)
                     )
-                case None if self.import_missing and self.missing_importer:
-                    self._new_imports.append(self.missing_importer.Import(record))
+                case None if self.missing_supplier_product_handler:
+                    self._new_imports.append(
+                        self.missing_supplier_product_handler.Import(record)
+                    )
                 case _:
                     self._unprocessed_products.append(record)
 
@@ -201,13 +205,14 @@ class SolarClarityServiceBuilder(ABCServiceBuilder):
 
     def __call__(self, file, connection, supplierID, *_, **__):
         parser = CSVParser(file_path=file, columns=self.columns)
-        missing_importer = None
+
+        importer = None
         if self.import_missing:
-            missing_importer = SolarClarityMissingImporter(connection, supplierID)
+            importer = SolarClarityMissingImporter(connection, supplierID)
+
         return SolarClarity(
             parser=parser,
-            import_missing=self.import_missing,
-            missing_importer=missing_importer,
+            missing_supplier_product_handler=importer,
         )
 
 
