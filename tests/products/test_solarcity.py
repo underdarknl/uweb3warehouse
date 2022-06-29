@@ -22,6 +22,7 @@ def solar_file():
     )
     yield StringIO(string)
 
+# TODO: Add unittests for SolarCity importer which imports missing products
 
 @pytest.fixture(scope="function")
 def importer(solar_file):
