@@ -23,7 +23,8 @@ def CentRound(monies):
 
 
 class PageMaker(
-    uweb3.DebuggingPageMaker,
+    # uweb3.DebuggingPageMaker,
+    uweb3.PageMaker,
     login_helpers.AuthMixin,
 ):
     """Holds all the request handlers for the application"""
@@ -398,8 +399,10 @@ class PageMaker(
         uweb3.logging.warning("Bad json page %r requested", command)
         return uweb3.Response(content={"error": command}, httpcode=httpcode)
 
-    def Error(self, error="", httpcode=500, link=None):
+    def Error(self, error="", httpcode=500, link=None, log_error=True):
         """Returns a generic error page based on the given parameters."""
-        uweb3.logging.error("Error page triggered: %r", error)
+        if log_error:
+            self.logger.error("Error page triggered: %r", error)
+            
         page_data = self.parser.Parse("parts/error.html", error=error, link=link)
         return uweb3.Response(content=page_data, httpcode=httpcode)
