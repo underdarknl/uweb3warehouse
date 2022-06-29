@@ -14,9 +14,11 @@ class StockParser(ABCParser):
         """Attempts to find the columns and values from a passed html file object.
 
         Args:
-            file_path (StringIO): The StringIO object containing the HTML with the table.
+            file_path (StringIO): The StringIO object containing the HTML with
+                the table.
             columns (tuple[str]): The columns that we are interested in
-            normalize_columns (tuple[str]): The column containing the product name that should be normalized to match the database value.
+            normalize_columns (tuple[str]): The column containing the product
+                name that should be normalized to match the database value.
         """
         self.columns = columns
         self.normalize_columns = normalize_columns
@@ -35,12 +37,14 @@ class StockParser(ABCParser):
         """Process the list of dataframes containing table elements.
 
         Args:
-            dataframes (list[DataFrame]): List with dataframes found by pandas.read_html
+            dataframes (list[DataFrame]): List with dataframes found by
+                pandas read_html
 
         Returns:
             list[dict]: Returns the list with the matches.
         """
-        # Because multiple tables can be present in a page we can have multiple dataframes.
+        # Because multiple tables can be present in a page we can have
+        # multiple dataframes.
         return [
             self._process_dataframe(dataframe.to_dict("record"))
             for dataframe in dataframes
@@ -69,7 +73,8 @@ class StockParser(ABCParser):
         return results
 
     def _normalize(self, result):
-        """Normalize only the columns which are of interest. This should be the column containing the product name."""
+        """Normalize only the columns which are of interest.
+        This should be the column containing the product name."""
         clean_result = self._remove_unwanted_keys(result)
 
         for column in self.normalize_columns:
@@ -77,7 +82,8 @@ class StockParser(ABCParser):
         return clean_result
 
     def _remove_unwanted_keys(self, result):
-        """Create a copy of the result and mutate the object by removing keys that are not sought after."""
+        """Create a copy of the result and mutate the object by removing
+        keys that are not sought after."""
         copy = dict(result)
         for key in result.keys():
             if key not in self.columns:
