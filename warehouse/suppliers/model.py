@@ -112,7 +112,7 @@ class Supplier(model.Record):
             self["gscode"] = self["gscode"][:10]
         if self["name"]:
             self["name"] = re.search(
-                "([\w\-_\.,]+)", self["name"].replace(" ", "_")
+                "([\w\-_\.,]+)", self["name"].replace(" ", "_")  # noqa W605
             ).groups()[0][:45]
         if not self["name"]:
             raise common_model.InvalidNameError("Provide a valid name")
@@ -123,7 +123,7 @@ class Supplier(model.Record):
             self["gscode"] = self["gscode"][:10]
         if self["name"]:
             self["name"] = re.search(
-                "([\w\-_\.,]+)", self["name"].replace(" ", "_")
+                "([\w\-_\.,]+)", self["name"].replace(" ", "_")  # noqa W605
             ).groups()[0][:45]
         if not self["name"]:
             raise common_model.InvalidNameError("Provide a valid name")

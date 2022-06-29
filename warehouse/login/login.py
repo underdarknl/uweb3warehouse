@@ -37,8 +37,8 @@ class PageMaker(basepages.PageMaker):
                 self.post.getfirst("password"),
             )
             model.Session.Create(self.connection, int(self.user), path="/")
-            print("login successful.", self.post.getfirst("email"))
-            # redirect 303 to make sure we GET the next page, not post again to avoid leaking login details.
+            # redirect 303 to make sure we GET the next page, not post again
+            # to avoid leaking login details.
             return self.req.Redirect(url, httpcode=303)
         except uweb3.model.NotExistError as error:
             self.parser.RegisterTag("loginerror", "%s" % error)
@@ -78,12 +78,16 @@ class PageMaker(basepages.PageMaker):
                 except mail.SMTPConnectError:
                     if not self.debug:
                         return self.Error(
-                            "Mail could not be send due to server error, please contact support."
+                            "Mail could not be send due to server error, "
+                            + "please contact support."
                         )
                 if self.debug:
                     print("Password reset for %s:" % user["email"], content)
 
-            message = "If that was an email address that we know, a mail with reset instructions will be in your mailbox soon."
+            message = (
+                "If that was an email address that we know, a mail with"
+                + " reset instructions will be in your mailbox soon."
+            )
             return self.parser.Parse("reset.html", message=message)
         try:
             user = model.User.FromEmail(self.connection, email)
@@ -152,6 +156,7 @@ class PageMaker(basepages.PageMaker):
                 except mail.SMTPConnectError:
                     if not self.debug:
                         return self.Error(
-                            "Mail could not be send due to server error, please contact support."
+                            "Mail could not be send due to server error, "
+                            + "please contact support."
                         )
             return {"succes": "Password has been updated."}

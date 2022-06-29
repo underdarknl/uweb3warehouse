@@ -18,7 +18,7 @@ def solar_file():
         5678,Product 1,brand,product_reference,packing_unit,10,net,1,quantity_step,datasheet_url_nl,datasheet_url_en,warranty_years
         9123,Product 2,brand,product_reference,packing_unit,1,net,1,quantity_step,datasheet_url_nl,datasheet_url_en,warranty_years
         9124,Product 3,brand,product_reference,packing_unit,1,net,1.25,quantity_step,datasheet_url_nl,datasheet_url_en,warranty_years
-    """
+    """  # noqa E501
     )
     yield StringIO(string)
 
@@ -34,7 +34,8 @@ def importer(solar_file):
 class TestSolarCityCustomImporter:
     def test_importing(self, importer: SolarCity, supplier_products):
         """Test to stk values are imported.
-        Currently there is no support for SupplierProduct prices based on quantity purchased."""
+        Currently there is no support for SupplierProduct prices
+        based on quantity purchased."""
         processed, _ = importer.Import(supplier_products)
 
         for pair in processed:

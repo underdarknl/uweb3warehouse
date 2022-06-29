@@ -9,12 +9,14 @@ class ImportSupplierStock(Form):
     column_name_mapping = StringField(
         "Product column name",
         [validators.DataRequired()],
-        description="The column name in the file that contains the product name.",
+        description="""The column name in the file that
+        contains the product name.""",
     )
     column_stock_mapping = StringField(
         "Stock column name",
         [validators.DataRequired()],
-        description="The column name in the file that contains the stock amount.",
+        description="""The column name in the file that contains
+        the stock amount.""",
     )
     fileupload = FileField("Select files")
 
@@ -27,7 +29,8 @@ class CustomImporters(Form):
 class SupplierAddProductForm(SupplierProduct):
     """This is the form that is used when a supplier wants to add a product.
 
-    The only difference with SupplierProduct is that it contains a list of all available products in the warehouse.
+    The only difference with SupplierProduct is that it contains a list of
+    all available products in the warehouse.
     """
 
     product = SelectField("product")
@@ -37,7 +40,8 @@ class SupplierAddProductForm(SupplierProduct):
     def __iter__(self):
         """Allows setting the order for fields.
 
-        this is needed because inheriting from a super class will mess with the ordering.
+        this is needed because inheriting from a super class will
+        mess with the ordering.
         """
         ordered_fields = collections.OrderedDict()
 

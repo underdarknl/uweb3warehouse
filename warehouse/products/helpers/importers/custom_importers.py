@@ -2,7 +2,6 @@ import decimal
 import os
 from abc import ABC, abstractmethod
 from numbers import Number
-from typing import Any
 
 from uweb3.templateparser import Parser
 
@@ -101,7 +100,8 @@ class SolarCity(CustomRenderedMixin, ABCCustomImporter):
         the piece price for each Supplierproduct.
 
         Args:
-            data (list[dict]): List of dictionaries containing all the suppliers products
+            data (list[dict]): List of dictionaries containing all the
+            suppliers products
         """
         single_products = [
             record for record in data if record["items_per_packing_unit"] == 1
