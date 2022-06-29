@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import NamedTuple
 
 from warehouse.suppliers import model as supplier_model
+from warehouse.products.helpers.importers.exceptions import IncompleteImporterMapping
 
 
 class ABCImporter(ABC):
@@ -11,10 +12,6 @@ class ABCImporter(ABC):
     @abstractmethod
     def Import(self):
         pass
-
-
-class IncompleteImporterMapping(KeyError):
-    """Error that is raised when the mapping for an importer is incomplete"""
 
 
 class ProductPair(NamedTuple):

@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
 import pandas
+from pandas import errors as pandas_errors
+from warehouse.products.helpers.importers.exceptions import ImporterException
 
 
 class ABCParser(ABC):
@@ -97,8 +99,11 @@ class CSVParser(ABCParser):
         self.columns = columns
 
     def Parse(self):
-        data = pandas.read_csv(
-            self.file_path, skip_blank_lines=True, usecols=self.columns
-        )
-        data.dropna(how="all", inplace=True)
+        try:
+            data = pandas.read_csv(
+                self.file_path, skip_blank_lines=True, usecols=self.columns
+            )
+            data.dropna(how="all", inplace=True)
+        except (pandas_errors.ParserError, Exception) as exc:
+            raise ImporterException(exc.args) from exc
         return data.to_dict("records")

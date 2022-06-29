@@ -7,7 +7,7 @@ from warehouse import basepages
 from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
-from warehouse.products.helpers import CustomImporters
+from warehouse.products.helpers import CustomImporters, ImporterException
 from warehouse.suppliers import forms, helpers, model
 
 
@@ -241,11 +241,14 @@ class PageMaker(basepages.PageMaker):
                 anchor="custom-importers",
             )
 
-        importer = factory.get_registered_item(
-            custom_import_form.importer.data,
-            file=StringIO(custom_import_form.custom_fileupload.data[0]["content"]),
-        )
-        importer.Import(model.Supplierproduct.Products(self.connection, supplier))
+        try:
+            importer = factory.get_registered_item(
+                custom_import_form.importer.data,
+                file=StringIO(custom_import_form.custom_fileupload.data[0]["content"]),
+            )
+            importer.Import(model.Supplierproduct.Products(self.connection, supplier))
+        except ImporterException as exc:
+            return self.Error("Something went wrong during importing", httpcode=500)
         return self.RequestSupplier(
             name=supplierName, custom_importer=importer, anchor="custom-importers"
         )
