@@ -71,6 +71,11 @@ urls = [
         "POST",
     ),
     (
+        "/product/([^/]*)/couple_products",
+        (products.PageMaker, "AttachProductToSupplierProduct"),
+        "POST",
+    ),
+    (
         "/api/v1/product/([^/]*)",
         (api.PageMaker, "JsonProduct"),
         "GET",

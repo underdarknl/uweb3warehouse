@@ -414,9 +414,10 @@ class PageMaker(basepages.PageMaker):
         supplier_product_form = forms.SupplierProduct(
             self.post, prefix="supplier-product"
         )
-        supplier_product_form.supplier.choices = helpers.suppliers_select_list(
+        supplier_select_list = helpers.suppliers_select_list(
             supplier_model.Supplier.List(self.connection)
         )
+        supplier_product_form.supplier.choices = supplier_select_list
 
         if self.post and supplier_product_form.validate():
             supplier_product = {
@@ -427,10 +428,13 @@ class PageMaker(basepages.PageMaker):
             return self.req.Redirect(
                 f"/product/{product['sku']}/suppliers", httpcode=301
             )
-
+        couple_form = forms.CoupleSupplierProductForm()
+        couple_form.selected_supplier.choices = supplier_select_list
+        
         return dict(
             product=product,
             supplier_product_form=supplier_product_form,
+            couple_form=couple_form,
             suppliers=list(
                 supplier_model.Supplierproduct.List(
                     self.connection,
@@ -508,3 +512,17 @@ class PageMaker(basepages.PageMaker):
         )
         product_price.Delete()
         return self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def AttachProductToSupplierProduct(self, sku):
+        self.logger.debug(self.post)
+        
+        couple_form = forms.CoupleSupplierProductForm(self.post)
+        couple_form.selected_supplier.choices = helpers.suppliers_select_list(
+            supplier_model.Supplier.List(self.connection)
+        )
+        if couple_form.validate():
+            print('test')
+        return self.RequestProductSuppliers(sku)
