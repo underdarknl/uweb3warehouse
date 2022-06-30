@@ -12,20 +12,43 @@ from warehouse.suppliers import model as supplier_model
 
 
 class ABCCustomImporter(ABCImporter):
+    """Abstract base class that a custom importer should implement."""
+
     @abstractmethod
     def Import(
-        self, products: list[supplier_model.Supplierproduct]
+        self,
+        products: list[supplier_model.Supplierproduct],
     ) -> tuple[list[ProductPair], list[dict]]:
         pass
 
     @abstractmethod
     def render_results(self):
+        """Render data to the user to see what has been processed and/or what
+        has failed."""
         pass
 
 
 class ABCServiceBuilder(ABC):
+    """Abstract base class for a service builder."""
+
     @abstractmethod
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
+        pass
+
+
+class ABCDatabaseImporter(ABC):
+    """Abstract base class for a database importer.
+    These importers can be used for bulk actions such as importing
+    thousands of new products, or updating them."""
+
+    @abstractmethod
+    def add(self, record: dict):
+        """Adds a record to the list of data that should be handled in bulk."""
+        pass
+
+    @abstractmethod
+    def import_all(self):
+        """Process all records and execute one bulk action to the database."""
         pass
 
 
