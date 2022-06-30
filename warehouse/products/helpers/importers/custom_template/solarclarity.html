@@ -1,26 +1,16 @@
-{{ if [__processed] }}
+{{ if [__unprocessed] }}
 <section>
-    <h2>Processed products</h2>
+    <h2>Unprocessed products</h2>
     <table class="products">
         <thead>
             <tr>
-                <th>Article number</th>
-                <th>Parsed product</th>
-                <th>Database match</th>
-                <th>Price</th>
+                <th>Found product</th>
             </tr>
         </thead>
         <tbody>
-            {{ for pair in [__processed] }}
+            {{ for product in [__unprocessed] }}
             <tr>
-                <td>[pair:parsed_product:article_number]</td>
-                <td>[pair:parsed_product:article_name]</td>
-                {{ if [pair:supplier_product:product] }} 
-                    <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a></td>
-                {{ else }}
-                    <td>No product attached</td>
-                {{ endif }}
-                <td>[pair:parsed_product:gross]</td>
+                <td>[product:article_name]</td>
             </tr>
             {{ endfor }}
         </tbody>
@@ -41,7 +31,7 @@
             {{ for product in [__new_imports] }}
             <tr>
                 <td>[product:supplier_sku]</td>
-                <td><a href="/product/[product:supplier_sku]">[product:name]</a></td>
+                <td>[product:name]</td>
             </tr>
             {{ endfor }}
         </tbody>
@@ -49,19 +39,29 @@
 </section>
 {{ endif }}
 
-{{ if [__unprocessed] }}
+{{ if [__processed] }}
 <section>
-    <h2>Unprocessed products</h2>
+    <h2>Processed products</h2>
     <table class="products">
         <thead>
             <tr>
-                <th>Found product</th>
+                <th>Article number</th>
+                <th>Parsed product</th>
+                <th>Database match</th>
+                <th>Price</th>
             </tr>
         </thead>
         <tbody>
-            {{ for product in [__unprocessed] }}
+            {{ for pair in [__processed] }}
             <tr>
-                <td>[product:article_name]</td>
+                <td>[pair:parsed_product:article_number]</td>
+                <td>[pair:parsed_product:article_name]</td>
+                {{ if [pair:supplier_product:product] }}
+                    <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a></td>
+                {{ else }}
+                    <td>No product attached</td>
+                {{ endif }}
+                <td>[pair:parsed_product:gross]</td>
             </tr>
             {{ endfor }}
         </tbody>
