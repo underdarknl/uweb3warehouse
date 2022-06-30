@@ -13,6 +13,33 @@ from warehouse.products.helpers.importers.parser import ABCParser, CSVParser
 from warehouse.suppliers import model as supplier_model
 
 
+def refined_search(record: dict, products: list):
+    sought_article_number = record["article_number"]
+    sought_name = record["article_name"]
+
+    for match in products:
+        match match:
+            case {"supplier_sku": article_number, "name": name} if str(
+                article_number
+            ) == str(sought_article_number) and name == sought_name:
+                return match
+            case {"name": name} if name == sought_name:
+                return match
+            case _:
+                pass
+    return None
+
+
+def find_match(record: dict, products: list):
+    if "article_number" in record:
+        return refined_search(record, products)
+
+    try:
+        return next(p for p in products if p["name"] == record["article_name"])
+    except StopIteration:
+        return None
+
+
 class ABCCustomImporter(ABCImporter):
     """Abstract base class that a custom importer should implement."""
 
@@ -100,6 +127,7 @@ class SolarClarityMissingImporter(ABCDatabaseImporter):
             (
                 self.supplierID,
                 record["article_name"],
+                to_decimal(record['gross']),
                 21,
                 record["article_number"],
             )
@@ -116,8 +144,8 @@ class SolarClarityMissingImporter(ABCDatabaseImporter):
         loading times on mysql insert."""
         with self.connection as cursor:
             cursor.executemany(
-                """INSERT INTO supplierproduct(supplier, name, vat, supplier_sku)
-                VALUES (%s, %s, %s, %s);""",
+                """INSERT INTO supplierproduct(supplier, name, cost, vat, supplier_sku)
+                VALUES (%s, %s, %s, %s, %s);""",
                 self.insert_list,
             )
 
