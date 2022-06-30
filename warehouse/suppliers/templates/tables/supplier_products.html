@@ -23,7 +23,11 @@
             {{ endif }}
             <td>[supplier_product:supplier_sku|NullString]</td>
             <td>[supplier_product:supplier_stock|NullString]</td>
-            <td>&euro;[supplier_product:cost]</td>
+            <td>
+                {{ if [supplier_product:cost] }}
+                    &euro;[supplier_product:cost]
+                {{ endif }}
+            </td>
             <td>[supplier_product:vat]%</td>
             <td>[supplier_product:lead|NullString]</td>
             <td>
