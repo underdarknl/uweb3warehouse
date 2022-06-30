@@ -58,7 +58,11 @@ class CustomRenderedMixin:
 
 
 class SolarClarityMissingImporter:
-    def __init__(self, connection, supplierID):
+    def __init__(
+        self,
+        connection,
+        supplierID,
+    ):
         self.connection = connection
         self.supplierID = supplierID
 
@@ -98,7 +102,8 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
         self.products = []
 
     def Import(
-        self, supplier_products: list[supplier_model.Supplierproduct]
+        self,
+        supplier_products: list[supplier_model.Supplierproduct],
     ) -> tuple[list[ProductPair], list[dict]]:
         """Parse csv file and import found results into the corresponding
         Supplierproduct record in the database.
@@ -157,7 +162,9 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
         return None
 
     def _import_as_supplier_stock(
-        self, supplier_product: supplier_model.Supplierproduct, record: dict
+        self,
+        supplier_product: supplier_model.Supplierproduct,
+        record: dict,
     ):
         try:
             supplier_product["cost"] = to_decimal(record["gross"])
@@ -203,16 +210,25 @@ class SolarClarityServiceBuilder(ABCServiceBuilder):
         self.columns = columns
         self.import_missing = import_missing
 
-    def __call__(self, file, connection, supplierID, *_, **__):
+    def __call__(
+        self,
+        file,
+        connection,
+        supplierID,
+        *_,
+        importer=SolarClarityMissingImporter,
+        **__,
+    ):
         parser = CSVParser(file_path=file, columns=self.columns)
 
-        importer = None
         if self.import_missing:
-            importer = SolarClarityMissingImporter(connection, supplierID)
-
+            importer = importer(connection, supplierID)
+            return SolarClarity(
+                parser=parser,
+                missing_supplier_product_handler=importer,
+            )
         return SolarClarity(
             parser=parser,
-            missing_supplier_product_handler=importer,
         )
 
 
