@@ -3,7 +3,7 @@ from warehouse.suppliers import api
 
 api_urls = [
     (
-        "/api/v1/supplier/test",
+        "/api/v1/supplier/findproduct",
         (api.PageMaker, "find_supplier_product"),
     ),
 ]
