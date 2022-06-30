@@ -7,12 +7,13 @@
         constructor() {
             this.timer = null;
             this.supplierProducts = [];
-            this.selectedSupplier = document.getElementById("selected_supplier")
+            this.selectedSupplier =
+                document.getElementById("selected_supplier");
             this.inputField = document.getElementById("supplier_product_input");
             this.datalist = document.getElementById(
                 "supplier_products_datalist"
             );
-            
+
             this.inputField.addEventListener("input", (e) => {
                 clearTimeout(this.timer);
                 if (this.inputField.value) {
@@ -25,7 +26,9 @@
         }
 
         populate() {
-            fetch(`/api/v1/supplier/test?supplier=${this.selectedSupplier.value}&name=${this.inputField.value}`)
+            fetch(
+                `/api/v1/supplier/findproduct?supplier=${this.selectedSupplier.value}&name=${this.inputField.value}`
+            )
                 .then((response) => response.json())
                 .then((data) => {
                     this.supplierProducts = data;
@@ -44,8 +47,11 @@
                 option.value = element?.name;
                 this.datalist.appendChild(option);
             });
+
             this.inputField.setAttribute("list", "supplier_products_datalist");
         }
+
+        
     }
     new InputHandler();
 })();
