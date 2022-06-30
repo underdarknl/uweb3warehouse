@@ -46,6 +46,7 @@ class Supplierproduct(model.Record):
             conditions=[
                 "supplier = %s" % connection.EscapeValues(supplierID),
                 "name like %s" % connection.EscapeValues(name),
+                "product is null",
             ],
             fields=("ID", "name"),
             limit=10,
