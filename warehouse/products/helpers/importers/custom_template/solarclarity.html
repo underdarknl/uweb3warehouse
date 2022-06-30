@@ -1,6 +1,6 @@
 {{ if [__unprocessed] }}
 <section>
-    <h2>Unprocessed products</h2>
+    <h2>Unprocessed products: [__unprocessed|len]</h2>
     <table class="products">
         <thead>
             <tr>
@@ -19,7 +19,7 @@
 {{ endif }}
 {{ if [__new_imports] }}
 <section>
-    <h2>New imports</h2>
+    <h2>New imports: [__new_imports|len]</h2>
     <table class="products">
         <thead>
             <tr>
@@ -41,7 +41,7 @@
 
 {{ if [__processed] }}
 <section>
-    <h2>Processed products</h2>
+    <h2>Processed products: [__processed|len]</h2>
     <table class="products">
         <thead>
             <tr>

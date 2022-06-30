@@ -99,9 +99,9 @@ class SolarClarityMissingImporter(ABCDatabaseImporter):
         self.insert_list.append(
             (
                 self.supplierID,
-                self.connection.escape_string(record["article_name"]),
+                record["article_name"],
                 21,
-                self.connection.escape_string(record["article_number"]),
+                record["article_number"],
             )
         )
         return {
@@ -117,7 +117,7 @@ class SolarClarityMissingImporter(ABCDatabaseImporter):
         with self.connection as cursor:
             cursor.executemany(
                 """INSERT INTO supplierproduct(supplier, name, vat, supplier_sku)
-                VALUES (%s, %s, %s, %s)""",
+                VALUES (%s, %s, %s, %s);""",
                 self.insert_list,
             )
 
@@ -212,9 +212,8 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
             suppliers products
         """
         single_products = [
-            record for record in data if record["items_per_packing_unit"] == 1
+            record for record in data if int(record["items_per_packing_unit"]) == 1
         ]
-
         for record in single_products:
             product = self._find_product(record)
             match product:
