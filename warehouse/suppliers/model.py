@@ -39,12 +39,16 @@ class Supplierproduct(model.Record):
         )
 
     @classmethod
-    def NameLike(self, connection, name):
+    def NameLike(self, connection, supplierID, name):
         name = f"%{str(name)}%"
         return self.List(
             connection,
-            conditions=["name like %s" % connection.EscapeValues(name)],
+            conditions=[
+                "supplier = %s" % connection.EscapeValues(supplierID),
+                "name like %s" % connection.EscapeValues(name),
+            ],
             fields=("ID", "name"),
+            limit=10,
         )
 
     def Delete(self):
