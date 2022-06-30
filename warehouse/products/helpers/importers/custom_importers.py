@@ -82,32 +82,81 @@ class CustomRenderedMixin:
         )
 
 
-class SolarClarityMissingImporter:
+class SolarClarityMissingImporter(ABCDatabaseImporter):
+    """Handles bulk insertion of Supplierrecords for SolarClarity import."""
+
     def __init__(
         self,
-        connection,
-        supplierID,
+        connection: mysql.connection.Connection,
+        supplierID: int,
     ):
         self.connection = connection
         self.supplierID = supplierID
+        self.insert_list = []
 
-    def Import(self, record: dict):
-        return supplier_model.Supplierproduct.Create(
-            self.connection,
-            {
-                "supplier": self.supplierID,
-                "name": record["article_name"],
-                "vat": "21",
-                "supplier_sku": record["article_number"],
-            },
+    def add(self, record: dict):
+        """Add a record to the list of values that should be inserted."""
+        self.insert_list.append(
+            (
+                self.supplierID,
+                self.connection.escape_string(record["article_name"]),
+                21,
+                self.connection.escape_string(record["article_number"]),
+            )
         )
+        return {
+            "supplier": self.supplierID,
+            "name": record["article_name"],
+            "vat": "21",
+            "supplier_sku": record["article_number"],
+        }
+
+    def import_all(self):
+        """Import all records in the insert_list in bulk to prevent long
+        loading times on mysql insert."""
+        with self.connection as cursor:
+            cursor.executemany(
+                """INSERT INTO supplierproduct(supplier, name, vat, supplier_sku)
+                VALUES (%s, %s, %s, %s)""",
+                self.insert_list,
+            )
+
+
+class SolarClarityRecordUpdate(ABCDatabaseImporter):
+    """Handle bulk record update for SolarClarity importer."""
+
+    def __init__(self, connection: mysql.connection.Connection):
+        self.connection = connection
+        self.update_list = []
+
+    def add(self, record: dict):
+        self.update_list.append(
+            (
+                record["name"],
+                record["vat"],
+                record["cost"],
+                record["supplier_sku"],
+                record["ID"],
+            )
+        )
+        return record
+
+    def import_all(self):
+        with self.connection as cursor:
+            cursor.executemany(
+                """UPDATE supplierproduct
+                SET name=%s, vat=%s, cost=%s, supplier_sku=%s
+                WHERE ID=%s""",
+                self.update_list,
+            )
 
 
 class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
     def __init__(
         self,
         parser: ABCParser,
-        missing_supplier_product_handler=None,
+        supplier_product_updater: ABCDatabaseImporter,
+        missing_supplier_product_handler: ABCDatabaseImporter | None = None,
     ):
         """Importer/parser combination class for custom imports for SolarClarity.
 
@@ -122,7 +171,8 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
         super().__init__()
         # The filename of the template for this custom importer.
         self.filename = "solarclarity.html"
-        self.missing_supplier_product_handler = missing_supplier_product_handler
+        self.updater = supplier_product_updater
+        self.missing_importer = missing_supplier_product_handler
         self.parser = parser
         self.products = []
 
@@ -169,16 +219,18 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
             product = self._find_product(record)
             match product:
                 case supplier_model.Supplierproduct():
-                    result = self._import_as_supplier_stock(product, record)
+                    result = self._update_record(product, record)
                     self._processed_products.append(
                         ProductPair(parsed_product=record, supplier_product=result)
                     )
-                case None if self.missing_supplier_product_handler:
-                    self._new_imports.append(
-                        self.missing_supplier_product_handler.Import(record)
-                    )
+                case None if self.missing_importer:
+                    self._new_imports.append(self.missing_importer.add(record))
                 case _:
                     self._unprocessed_products.append(record)
+
+        if self._new_imports and self.missing_importer:
+            self.missing_importer.import_all()
+        self.updater.import_all()
 
     def _find_product(self, record) -> None | supplier_model.Supplierproduct:
         products = [p for p in self.products if p["name"] == record["article_name"]]
@@ -186,11 +238,14 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
             return products[0]
         return None
 
-    def _import_as_supplier_stock(
+    def _update_record(
         self,
         supplier_product: supplier_model.Supplierproduct,
         record: dict,
     ):
+        """Prepare a record to update the existing supplier product.
+        Find the values that we are interested in and pass them to
+        the database bulk update handler."""
         try:
             supplier_product["cost"] = to_decimal(record["gross"])
         except Exception:
@@ -198,13 +253,10 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
                 supplier_product["cost"] = price
 
         supplier_product["supplier_sku"] = record["article_number"]
-        supplier_product.update()
-        supplier_product.Save()
-        return supplier_product.Refresh()
+        return self.updater.add(supplier_product)
 
 
 def to_decimal(csv_value: str | int) -> decimal.Decimal:
-    # TODO handle edge cases
     match csv_value:
         case Number():
             return decimal.Decimal(csv_value)
@@ -237,22 +289,30 @@ class SolarClarityServiceBuilder(ABCServiceBuilder):
 
     def __call__(
         self,
-        file,
-        connection,
-        supplierID,
+        file: StringIO,
+        connection: mysql.connection.Connection,
+        supplierID: int,
         *_,
         importer=SolarClarityMissingImporter,
+        record_updater=SolarClarityRecordUpdate,
         **__,
     ):
+        """Setup a SolarClarity importer with all required parameters.
+
+        Supports a regular importer and an importer that adds
+        missing Supplierproducts to the database as new records with
+        the data that is available from Solarclarity."""
         parser = CSVParser(file_path=file, columns=self.columns)
 
         if self.import_missing:
             importer = importer(connection, supplierID)
             return SolarClarity(
                 parser=parser,
+                supplier_product_updater=record_updater(connection),
                 missing_supplier_product_handler=importer,
             )
         return SolarClarity(
+            supplier_product_updater=record_updater(connection),
             parser=parser,
         )
 
