@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import NamedTuple
 
-from warehouse.suppliers import model as supplier_model
 from warehouse.products.helpers.importers.exceptions import IncompleteImporterMapping
+from warehouse.suppliers import model as supplier_model
 
 
 class ABCImporter(ABC):

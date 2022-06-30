@@ -4,6 +4,11 @@ from warehouse.products.helpers.importers.custom_importers import (
     SolarClarity,
     SolarClarityServiceBuilder,
 )
+from warehouse.products.helpers.importers.exceptions import (
+    ImporterException,
+    IncompleteImporterMapping,
+    MissingColumnException,
+)
 from warehouse.products.helpers.importers.importer import (
     CsvImporter,
     ProductPair,
@@ -20,9 +25,4 @@ from warehouse.products.helpers.utils import (
     possibleparts_select_list,
     remove_stock,
     suppliers_select_list,
-)
-from warehouse.products.helpers.importers.exceptions import (
-    ImporterException,
-    IncompleteImporterMapping,
-    MissingColumnException
 )
