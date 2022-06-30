@@ -6,16 +6,33 @@ import pytest
 
 from tests.products.fixtures import supplier_products
 from warehouse.products.helpers import CustomImporters, SolarClarity
-from warehouse.products.helpers.importers.custom_importers import to_decimal
+from warehouse.products.helpers.importers.custom_importers import (
+    ABCDatabaseImporter,
+    to_decimal,
+)
 
 
-class MockMissingImporter:
+class MockMissingImporter(ABCDatabaseImporter):
     def __init__(self, connection, supplierID):
         self.connection = connection
         self.supplierID = supplierID
 
-    def Import(self, record: dict):
+    def add(self, record: dict):
         return record
+
+    def import_all(self):
+        pass
+
+
+class MockRecordUpdater(ABCDatabaseImporter):
+    def __init__(self, connection):
+        self.connection = connection
+
+    def add(self, record: dict):
+        return record
+
+    def import_all(self):
+        pass
 
 
 @pytest.fixture(scope="function")
@@ -40,6 +57,7 @@ def importer(solar_file):
         file=solar_file,
         connection=None,
         supplierID=None,
+        record_updater=MockRecordUpdater,
     )
     yield importer
 
@@ -53,6 +71,7 @@ def importer_missing(solar_file):
         connection=None,
         supplierID=None,
         importer=MockMissingImporter,
+        record_updater=MockRecordUpdater,
     )
     yield importer
 
