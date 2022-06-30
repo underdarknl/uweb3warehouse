@@ -84,7 +84,7 @@ class TestSolarClarityCustomImporter:
         processed, _ = importer.Import(supplier_products)
 
         for pair in processed:
-            assert 1 == pair.parsed_product["items_per_packing_unit"]
+            assert "1" == pair.parsed_product["items_per_packing_unit"]
             assert True is isinstance(pair.supplier_product["cost"], decimal.Decimal)
 
     def test_SolarClarity(self, importer: SolarClarity, supplier_products):
@@ -92,28 +92,28 @@ class TestSolarClarityCustomImporter:
         processed, unprocessed = importer.Import(supplier_products)
 
         assert processed[0].parsed_product == {
-            "article_number": 1234,
+            "article_number": '1234',
             "article_name": "Product 1",
             "product_reference": "product_reference",
             "packing_unit": "packing_unit",
-            "items_per_packing_unit": 1,
-            "gross": 1.0,
+            "items_per_packing_unit": "1",
+            "gross": '1',
         }
         assert processed[1].parsed_product == {
-            "article_number": 9123,
+            "article_number": '9123',
             "article_name": "Product 2",
             "product_reference": "product_reference",
             "packing_unit": "packing_unit",
-            "items_per_packing_unit": 1,
-            "gross": 1.0,
+            "items_per_packing_unit": "1",
+            "gross": '1',
         }
         assert processed[2].parsed_product == {
-            "article_number": 9124,
+            "article_number": '9124',
             "article_name": "Product 3",
             "product_reference": "product_reference",
             "packing_unit": "packing_unit",
-            "items_per_packing_unit": 1,
-            "gross": 1.25,
+            "items_per_packing_unit": "1",
+            "gross": '1.25',
         }
         assert len(processed) == 3
 
