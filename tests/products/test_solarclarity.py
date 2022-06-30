@@ -129,6 +129,9 @@ class TestSolarClarityCustomImporter:
             ("€20", decimal.Decimal(20)),
             ("€20.25", decimal.Decimal(20.25)),
             ("€20,25", decimal.Decimal(20.25)),
+            ("1.059.50", decimal.Decimal(1059.50)),
+            ("€1.059.50", decimal.Decimal(1059.50)),
+            ("€1,059,50", decimal.Decimal(1059.50)),
         ],
     )
     def test_to_decimal(self, input, expected):
