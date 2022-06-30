@@ -20,13 +20,31 @@ class Supplierproduct(model.Record):
     """Used for mapping a product to a supplier product."""
 
     @classmethod
+    def List(cls, connection, conditions=[], *args, **kwargs):
+        """Returns the Suppliers filterd on not deleted"""
+        return super().List(
+            connection,
+            conditions=[common_model.NOTDELETED] + conditions,
+            *args,
+            **kwargs,
+        )
+
+    @classmethod
     def Products(self, connection, supplier):
         return self.List(
             connection,
-            conditions=(
+            conditions=[
                 f"supplier={supplier['ID']}",
-                common_model.NOTDELETED,
-            ),
+            ],
+        )
+
+    @classmethod
+    def NameLike(self, connection, name):
+        name = f"%{str(name)}%"
+        return self.List(
+            connection,
+            conditions=["name like %s" % connection.EscapeValues(name)],
+            fields=("ID", "name"),
         )
 
     def Delete(self):
