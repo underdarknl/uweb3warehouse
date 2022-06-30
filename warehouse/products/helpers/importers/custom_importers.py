@@ -215,7 +215,7 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
             record for record in data if int(record["items_per_packing_unit"]) == 1
         ]
         for record in single_products:
-            product = self._find_product(record)
+            product = find_match(record, self.products)
             match product:
                 case supplier_model.Supplierproduct():
                     result = self._update_record(product, record)
@@ -231,12 +231,6 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
             self.missing_importer.import_all()
         self.updater.import_all()
 
-    def _find_product(self, record) -> None | supplier_model.Supplierproduct:
-        products = [p for p in self.products if p["name"] == record["article_name"]]
-        if products:
-            return products[0]
-        return None
-
     def _update_record(
         self,
         supplier_product: supplier_model.Supplierproduct,
@@ -250,7 +244,6 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
         except Exception:
             if price := record.get("cost"):
                 supplier_product["cost"] = price
-
         supplier_product["supplier_sku"] = record["article_number"]
         return self.updater.add(supplier_product)
 
@@ -258,14 +251,19 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
 def to_decimal(csv_value: str | int) -> decimal.Decimal:
     match csv_value:
         case Number():
-            return decimal.Decimal(csv_value)
+            return decimal.Decimal(csv_value).quantize(
+                decimal.Decimal(".01"), rounding=decimal.ROUND_UP
+            )
         case str():
             if "€" in csv_value:
                 csv_value = csv_value.split("€")[1]
 
             csv_value = csv_value.replace(",", ".")
+            csv_value = csv_value.replace(".", "", (csv_value.count(".") - 1))
             csv_value = csv_value.strip()
-            return decimal.Decimal(csv_value)
+            return decimal.Decimal(csv_value).quantize(
+                decimal.Decimal(".01"), rounding=decimal.ROUND_UP
+            )
         case _:
             raise ValueError(f"Unsupported currency value {csv_value}")
 
