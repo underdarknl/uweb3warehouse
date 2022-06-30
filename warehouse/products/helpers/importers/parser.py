@@ -102,7 +102,10 @@ class CSVParser(ABCParser):
     def Parse(self):
         try:
             data = pandas.read_csv(
-                self.file_path, skip_blank_lines=True, usecols=self.columns
+                self.file_path,
+                dtype=str,
+                skip_blank_lines=True,
+                usecols=self.columns,
             )
             data.dropna(how="all", inplace=True)
         except (pandas_errors.ParserError, Exception) as exc:
