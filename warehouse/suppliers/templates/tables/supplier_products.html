@@ -16,11 +16,11 @@
         {{ for supplier_product in [supplier_products] }}
         <tr>
             <td>[supplier_product:name]</td>
-            {{ if [supplier_product:product] }}
-            <td><a href="/product/[supplier_product:product:sku]">[supplier_product:product:name]</a></td>
-            {{ else }}
-            <td>No product attached</td>
-            {{ endif }}
+            <td>
+                {{ if [supplier_product:product] }}
+                <a href="/product/[supplier_product:product:sku]">[supplier_product:product:name]</a>
+                {{ endif }}
+            </td>
             <td>[supplier_product:supplier_sku|NullString]</td>
             <td>[supplier_product:supplier_stock|NullString]</td>
             <td>
