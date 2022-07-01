@@ -30,8 +30,8 @@ class Supplierproduct(model.Record):
         )
 
     @classmethod
-    def Products(self, connection, supplier):
-        return self.List(
+    def Products(cls, connection, supplier):
+        return cls.List(
             connection,
             conditions=[
                 f"supplier={supplier['ID']}",
@@ -39,18 +39,44 @@ class Supplierproduct(model.Record):
         )
 
     @classmethod
-    def NameLike(self, connection, supplierID, name):
+    def NameLike(cls, connection, supplierID, name):
         name = f"%{str(name)}%"
-        return self.List(
+        return cls.List(
             connection,
             conditions=[
                 "supplier = %s" % connection.EscapeValues(supplierID),
                 "name like %s" % connection.EscapeValues(name),
                 "product is null",
             ],
-            fields=("ID", "name"),
+            fields=(
+                "ID",
+                "name",
+                "supplier_sku",
+            ),
             limit=10,
         )
+
+    @classmethod
+    def FromSupplierByNameAndSku(
+        cls, connection, supplierID, product_sku, product_name
+    ):
+        with connection as cursor:
+            result = cursor.Execute(
+                """SELECT *
+                FROM supplierproduct
+                WHERE supplier=%s
+                AND supplier_sku=%s
+                AND name=%s
+                LIMIT 1"""
+                % (
+                    connection.EscapeValues(supplierID),
+                    connection.EscapeValues(product_sku),
+                    connection.EscapeValues(product_name),
+                )
+            )
+        if result:
+            return cls(connection, result[0])
+        return None
 
     def Delete(self):
         """Overwrites the default Delete and sets the dateDeleted datetime instead"""
