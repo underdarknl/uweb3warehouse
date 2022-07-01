@@ -430,7 +430,7 @@ class PageMaker(basepages.PageMaker):
             )
         couple_form = forms.CoupleSupplierProductForm()
         couple_form.selected_supplier.choices = supplier_select_list
-        
+
         return dict(
             product=product,
             supplier_product_form=supplier_product_form,
@@ -517,12 +517,34 @@ class PageMaker(basepages.PageMaker):
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
     def AttachProductToSupplierProduct(self, sku):
-        self.logger.debug(self.post)
-        
+        product = model.Product.FromSku(self.connection, sku)
+
         couple_form = forms.CoupleSupplierProductForm(self.post)
         couple_form.selected_supplier.choices = helpers.suppliers_select_list(
             supplier_model.Supplier.List(self.connection)
         )
         if couple_form.validate():
-            print('test')
+            supplier = supplier_model.Supplier.FromPrimary(
+                self.connection, couple_form.selected_supplier.data
+            )
+            if couple_form.sup_product.data and couple_form.sup_sku.data:
+                supplier_product = supplier_model.Supplierproduct.FromSupplierByNameAndSku(
+                    self.connection,
+                    int(supplier),
+                    couple_form.sup_sku.data,
+                    couple_form.sup_product.data,
+                )
+                supplier_product['product'] = int(product)
+                supplier_product.Save()
+            # products = list(
+            #     supplier_model.Supplierproduct.NameLike(
+            #         self.connection,
+            #         couple_form.selected_supplier.data,
+            #         couple_form.supplier_product.data,
+            #     )
+            # )
+            # if products:
+            #     supplier_product = products[0]
+            #     supplier_product["product"] = int(product)
+            #     supplier_product.Save()
         return self.RequestProductSuppliers(sku)
