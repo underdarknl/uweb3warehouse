@@ -127,7 +127,7 @@ class SolarClarityMissingImporter(ABCDatabaseImporter):
             (
                 self.supplierID,
                 record["article_name"],
-                to_decimal(record['gross']),
+                to_decimal(record["gross"]),
                 21,
                 record["article_number"],
             )
@@ -170,11 +170,13 @@ class SolarClarityRecordUpdate(ABCDatabaseImporter):
         return record
 
     def import_all(self):
+        # XXX: Updating is very slow, is there another way for this?
         with self.connection as cursor:
             cursor.executemany(
                 """UPDATE supplierproduct
                 SET name=%s, vat=%s, cost=%s, supplier_sku=%s
-                WHERE ID=%s""",
+                WHERE ID=%s
+                """,
                 self.update_list,
             )
 
@@ -277,6 +279,18 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
 
 
 def to_decimal(csv_value: str | int) -> decimal.Decimal:
+    """Attempt to parse found value to decimal value.
+
+    Handles values like:
+        10.25
+        10,25
+        €10
+        €10.25
+        €10,25
+        1.059.50
+        €1.059.50
+        €1,059,50
+    """
     match csv_value:
         case Number():
             return decimal.Decimal(csv_value).quantize(
