@@ -15,8 +15,11 @@ class PageMaker(basepages.PageMaker):
 
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
-    # @apiuser
+    @apiuser
     def find_supplier_product(self):
         name = self.get.getfirst('name')
-        result = list(model.Supplierproduct.NameLike(self.connection, name))
-        return result
+        supplier = self.get.getfirst('supplier')
+        result = list(model.Supplierproduct.NameLike(self.connection, supplier, name))
+        if result:
+            return result
+        return []
