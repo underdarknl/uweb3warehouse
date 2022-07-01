@@ -14,6 +14,14 @@
     <form action="/product/[product:sku]/couple_products" method="post">
         <input type="hidden" name="xsrf" value="[xsrf]">
         <div>
+            [couple_form:sup_sku:label]
+            [couple_form:sup_sku]
+        </div>
+        <div>
+            [couple_form:sup_product:label]
+            [couple_form:sup_product]
+        </div>
+        <div>
             {{ if [couple_form:selected_supplier:errors] }}
                 [couple_form:selected_supplier:errors]
             {{ endif }}
@@ -22,7 +30,7 @@
         </div>
         <div style="width: 100%">
             <label for="supplier_product_input">Supplier product</label>
-            <input id="supplier_product_input" list="supplier_products_datalist" name="supplier_product" autocomplete="off"
+            <input list="supplier_products_datalist" id="supplier_product" name="supplier_product" autocomplete="off"
                 style="width: 100%" />
             <datalist id="supplier_products_datalist">
             </datalist>
