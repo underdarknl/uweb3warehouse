@@ -56,11 +56,11 @@
             <tr>
                 <td>[pair:parsed_product:article_number]</td>
                 <td>[pair:parsed_product:article_name]</td>
-                {{ if [pair:supplier_product:product] }}
-                    <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a></td>
-                {{ else }}
-                    <td>No product attached</td>
-                {{ endif }}
+                <td>
+                    {{ if [pair:supplier_product:product] }}
+                    <a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a>
+                    {{ endif }}
+                </td>
                 <td>[pair:parsed_product:gross]</td>
             </tr>
             {{ endfor }}
