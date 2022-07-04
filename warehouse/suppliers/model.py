@@ -58,25 +58,42 @@ class Supplierproduct(model.Record):
 
     @classmethod
     def FromSupplierByNameAndSku(
-        cls, connection, supplierID, product_sku, product_name
+        cls, connection, supplier_id, product_sku, product_name
     ):
         with connection as cursor:
-            result = cursor.Execute(
-                """SELECT *
+            supplier_product = cursor.Execute(
+                f"""SELECT *
                 FROM supplierproduct
-                WHERE supplier=%s
-                AND supplier_sku=%s
-                AND name=%s
+                WHERE supplier={connection.EscapeValues(supplier_id)}
+                AND supplier_sku={connection.EscapeValues(product_sku)}
+                AND name={connection.EscapeValues(product_name)}
                 LIMIT 1"""
-                % (
-                    connection.EscapeValues(supplierID),
-                    connection.EscapeValues(product_sku),
-                    connection.EscapeValues(product_name),
-                )
             )
-        if result:
-            return cls(connection, result[0])
-        return None
+        if not supplier_product:
+            raise cls.NotExistError(
+                "There is no supplier product with name "
+                + "{product_name!r} and sku {product_sku!r} "
+                + "for supplier {supplier_id}"
+            )
+        return cls(connection, supplier_product[0])
+
+    @classmethod
+    def FromSupplierAndName(cls, connection, supplier_id, product_name):
+        with connection as cursor:
+            supplier_product = cursor.Execute(
+                f"""SELECT *
+                FROM supplierproduct
+                WHERE supplier={connection.EscapeValues(supplier_id)}
+                AND name={connection.EscapeValues(product_name)} 
+                LIMIT 1"""
+            )
+        if not supplier_product:
+            raise cls.NotExistError(
+                "There is no supplier product with name "
+                + "{product_name!r} "
+                + "for supplier {supplier_id}"
+            )
+        return cls(connection, supplier_product[0])
 
     def Delete(self):
         """Overwrites the default Delete and sets the dateDeleted datetime instead"""
