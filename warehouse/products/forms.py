@@ -10,7 +10,6 @@ from wtforms import (
     TextAreaField,
     ValidationError,
     validators,
-    HiddenField,
 )
 
 
