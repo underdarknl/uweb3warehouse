@@ -15,7 +15,7 @@ class PageMaker(basepages.PageMaker):
         self.api_user = None
         self.apikey = None
         self.dto_service = helpers.DtoManager()
-        
+
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser

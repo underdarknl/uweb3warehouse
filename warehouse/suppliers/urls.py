@@ -1,5 +1,4 @@
-from warehouse.suppliers import supplier
-from warehouse.suppliers import api
+from warehouse.suppliers import api, supplier
 
 api_urls = [
     (

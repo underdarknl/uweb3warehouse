@@ -7,7 +7,7 @@
         constructor() {
             this.timer = null;
             this.supplierProducts = [];
-            
+
             this.selectedSupplier = document.getElementById("selected_supplier");
             this.inputField = document.getElementById("supplier_product");
             this.datalist = document.getElementById("supplier_products_datalist");

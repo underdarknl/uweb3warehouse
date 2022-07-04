@@ -84,7 +84,7 @@ class Supplierproduct(model.Record):
                 f"""SELECT *
                 FROM supplierproduct
                 WHERE supplier={connection.EscapeValues(supplier_id)}
-                AND name={connection.EscapeValues(product_name)} 
+                AND name={connection.EscapeValues(product_name)}
                 LIMIT 1"""
             )
         if not supplier_product:

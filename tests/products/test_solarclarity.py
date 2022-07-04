@@ -8,6 +8,7 @@ from tests.products.fixtures import supplier_products
 from warehouse.products.helpers import CustomImporters, SolarClarity
 from warehouse.products.helpers.importers.custom_importers import (
     ABCDatabaseImporter,
+    ABCDatabaseUpdater,
     to_decimal,
 )
 
@@ -24,15 +25,12 @@ class MockMissingImporter(ABCDatabaseImporter):
         pass
 
 
-class MockRecordUpdater(ABCDatabaseImporter):
+class MockRecordUpdater(ABCDatabaseUpdater):
     def __init__(self, connection):
         self.connection = connection
 
-    def add(self, record: dict):
-        return record
-
-    def import_all(self):
-        pass
+    def update(self, record: dict, supplier_product):
+        return supplier_product
 
 
 @pytest.fixture(scope="function")
@@ -82,10 +80,8 @@ class TestSolarClarityCustomImporter:
         Currently there is no support for SupplierProduct prices
         based on quantity purchased."""
         processed, _ = importer.Import(supplier_products)
-
         for pair in processed:
             assert "1" == pair.parsed_product["items_per_packing_unit"]
-            assert True is isinstance(pair.supplier_product["cost"], decimal.Decimal)
 
     def test_SolarClarity(self, importer: SolarClarity, supplier_products):
         """Ensure the correct results are found"""

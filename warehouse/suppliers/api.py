@@ -1,9 +1,9 @@
 #!/usr/bin/python
 """Request handlers for the uWeb3 warehouse inventory software"""
 import uweb3
+
 from warehouse import basepages
-from warehouse.common.decorators import json_error_wrapper
-from warehouse.common.decorators import apiuser
+from warehouse.common.decorators import apiuser, json_error_wrapper
 from warehouse.suppliers import model
 
 
@@ -17,8 +17,8 @@ class PageMaker(basepages.PageMaker):
     @json_error_wrapper
     @apiuser
     def find_supplier_product(self):
-        name = self.get.getfirst('name')
-        supplier = self.get.getfirst('supplier')
+        name = self.get.getfirst("name")
+        supplier = self.get.getfirst("supplier")
         result = list(model.Supplierproduct.NameLike(self.connection, supplier, name))
         if result:
             return result
