@@ -1,15 +1,21 @@
 import decimal
-from io import StringIO
 import os
-from abc import ABC, abstractmethod
+from io import StringIO
 from numbers import Number
 
 from uweb3.libs.sqltalk import mysql
 from uweb3.templateparser import Parser
 
 from warehouse.common.helpers import BaseFactory
-from warehouse.products.helpers.importers.importer import ABCImporter, ProductPair
-from warehouse.products.helpers.importers.parser import ABCParser, CSVParser
+from warehouse.products.helpers.importers.base import (
+    ABCCustomImporter,
+    ABCDatabaseImporter,
+    ABCDatabaseUpdater,
+    ABCParser,
+    ABCServiceBuilder,
+)
+from warehouse.products.helpers.importers.importer import ProductPair
+from warehouse.products.helpers.importers.parser import CSVParser
 from warehouse.suppliers import model as supplier_model
 
 
@@ -40,55 +46,36 @@ def find_match(record: dict, products: list):
         return None
 
 
-class ABCCustomImporter(ABCImporter):
-    """Abstract base class that a custom importer should implement."""
+def to_decimal(csv_value: str | int) -> decimal.Decimal:
+    """Attempt to parse found value to decimal value.
 
-    @abstractmethod
-    def Import(
-        self,
-        products: list[supplier_model.Supplierproduct],
-    ) -> tuple[list[ProductPair], list[dict]]:
-        pass
+    Handles values like:
+        10.25
+        10,25
+        €10
+        €10.25
+        €10,25
+        1.059.50
+        €1.059.50
+        €1,059,50
+    """
+    match csv_value:
+        case Number():
+            return decimal.Decimal(csv_value).quantize(
+                decimal.Decimal(".01"), rounding=decimal.ROUND_UP
+            )
+        case str():
+            if "€" in csv_value:
+                csv_value = csv_value.split("€")[1]
 
-    @abstractmethod
-    def render_results(self):
-        """Render data to the user to see what has been processed and/or what
-        has failed."""
-        pass
-
-
-class ABCServiceBuilder(ABC):
-    """Abstract base class for a service builder."""
-
-    @abstractmethod
-    def __call__(self, *args, **kwargs):
-        pass
-
-
-class ABCDatabaseImporter(ABC):
-    """Abstract base class for a database importer.
-    These importers can be used for bulk actions such as importing
-    thousands of new products, or updating them."""
-
-    @abstractmethod
-    def add(self, record: dict) -> dict:
-        """Adds a record to the list of data that should be handled in bulk."""
-        pass
-
-    @abstractmethod
-    def import_all(self):
-        """Process all records and execute one bulk action to the database."""
-        pass
-
-
-class ABCDatabaseUpdater(ABC):
-    @abstractmethod
-    def update(
-        self,
-        record: dict,
-        supplier_product: supplier_model.Supplierproduct,
-    ) -> supplier_model.Supplierproduct:
-        pass
+            csv_value = csv_value.replace(",", ".")
+            csv_value = csv_value.replace(".", "", (csv_value.count(".") - 1))
+            csv_value = csv_value.strip()
+            return decimal.Decimal(csv_value).quantize(
+                decimal.Decimal(".01"), rounding=decimal.ROUND_UP
+            )
+        case _:
+            raise ValueError(f"Unsupported currency value {csv_value}")
 
 
 class CustomRenderedMixin:
@@ -174,6 +161,7 @@ class SolarClarityRecordUpdate(ABCDatabaseUpdater):
         record: dict,
         supplier_product: supplier_model.Supplierproduct,
     ):
+        """Update a Supplierproduct database record."""
         try:
             supplier_product["cost"] = to_decimal(record["gross"])
         except Exception:
@@ -255,7 +243,14 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
         if self._new_imports and self.missing_importer:
             self.missing_importer.import_all()
 
-    def _process_record(self, record):
+    def _process_record(self, record: dict):
+        """Attempt to find a database match for the current Solarclarity
+        csv record.
+
+        When a match is found update database values. If no match is found
+        the match will either be imported into the database depending on the selected
+        importer or added to the unprocessed list.
+        """
         supplier_product = find_match(record, self.products)
 
         match supplier_product:
@@ -267,38 +262,6 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
                 self._new_imports.append(self.missing_importer.add(record))
             case _:
                 self._unprocessed_products.append(record)
-
-
-def to_decimal(csv_value: str | int) -> decimal.Decimal:
-    """Attempt to parse found value to decimal value.
-
-    Handles values like:
-        10.25
-        10,25
-        €10
-        €10.25
-        €10,25
-        1.059.50
-        €1.059.50
-        €1,059,50
-    """
-    match csv_value:
-        case Number():
-            return decimal.Decimal(csv_value).quantize(
-                decimal.Decimal(".01"), rounding=decimal.ROUND_UP
-            )
-        case str():
-            if "€" in csv_value:
-                csv_value = csv_value.split("€")[1]
-
-            csv_value = csv_value.replace(",", ".")
-            csv_value = csv_value.replace(".", "", (csv_value.count(".") - 1))
-            csv_value = csv_value.strip()
-            return decimal.Decimal(csv_value).quantize(
-                decimal.Decimal(".01"), rounding=decimal.ROUND_UP
-            )
-        case _:
-            raise ValueError(f"Unsupported currency value {csv_value}")
 
 
 class SolarClarityServiceBuilder(ABCServiceBuilder):

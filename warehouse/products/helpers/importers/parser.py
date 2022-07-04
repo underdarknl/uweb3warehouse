@@ -1,15 +1,8 @@
-from abc import ABC, abstractmethod
-
 import pandas
 from pandas import errors as pandas_errors
 
+from warehouse.products.helpers.importers.base import ABCParser
 from warehouse.products.helpers.importers.exceptions import ImporterException
-
-
-class ABCParser(ABC):
-    @abstractmethod
-    def Parse(self):
-        pass
 
 
 class StockParser(ABCParser):
