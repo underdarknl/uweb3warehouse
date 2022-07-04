@@ -13,30 +13,24 @@
     <h2>Attach supplier product to product</h2>
     <form action="/product/[product:sku]/couple_products" method="post">
         <input type="hidden" name="xsrf" value="[xsrf]">
+
+        {{ for field in [couple_form] }}
+        <p>[field:description]</p>
+        {{ if [field:errors] }}
+        {{ for error in [field:errors] }}
+        <p class="error">[error]</p>
+        {{ endfor }}
+        {{ endif }}
         <div>
-            [couple_form:sup_sku:label]
-            [couple_form:sup_sku]
+            [field:label]
+            [field]
         </div>
+        {{ endfor }}
+
+        <datalist id="supplier_products_datalist">
+        </datalist>
         <div>
-            [couple_form:sup_product:label]
-            [couple_form:sup_product]
-        </div>
-        <div>
-            {{ if [couple_form:selected_supplier:errors] }}
-                [couple_form:selected_supplier:errors]
-            {{ endif }}
-            [couple_form:selected_supplier:label]
-            [couple_form:selected_supplier]
-        </div>
-        <div style="width: 100%">
-            <label for="supplier_product_input">Supplier product</label>
-            <input list="supplier_products_datalist" id="supplier_product" name="supplier_product" autocomplete="off"
-                style="width: 100%" />
-            <datalist id="supplier_products_datalist">
-            </datalist>
-        </div>
-        <div>
-            <input type="submit" value="Koppel">
+            <input type="submit" id="couple_products_submit" value="Attach product to supplier product" disabled>
         </div>
     </form>
 </section>
