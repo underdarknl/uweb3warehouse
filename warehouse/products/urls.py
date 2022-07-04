@@ -51,6 +51,12 @@ urls = [
     (
         "/product/([^/]*)/suppliers",
         (products.PageMaker, "RequestProductSuppliers"),
+        'GET'
+    ),
+    (
+        "/product/([^/]*)/suppliers",
+        (products.PageMaker, "RequestAddProductSupplier"),
+        'POST'
     ),
     (
         "/product/([^/]*)/suppliers/([0-9]+)/delete",
