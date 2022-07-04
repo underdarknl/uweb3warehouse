@@ -16,16 +16,20 @@
         {{ for supplier_product in [supplier_products] }}
         <tr>
             <td>[supplier_product:name]</td>
-            {{ if [supplier_product:product] }}
-            <td><a href="/product/[supplier_product:product:sku]">[supplier_product:product:name]</a></td>
-            {{ else }}
-            <td>No product attached</td>
-            {{ endif }}
-            <td>[supplier_product:supplier_sku]</td>
-            <td>[supplier_product:supplier_stock]</td>
-            <td>[supplier_product:cost]</td>
-            <td>[supplier_product:vat]</td>
-            <td>[supplier_product:lead]</td>
+            <td>
+                {{ if [supplier_product:product] }}
+                <a href="/product/[supplier_product:product:sku]">[supplier_product:product:name]</a>
+                {{ endif }}
+            </td>
+            <td>[supplier_product:supplier_sku|NullString]</td>
+            <td>[supplier_product:supplier_stock|NullString]</td>
+            <td>
+                {{ if [supplier_product:cost] }}
+                    &euro;[supplier_product:cost]
+                {{ endif }}
+            </td>
+            <td>[supplier_product:vat]%</td>
+            <td>[supplier_product:lead|NullString]</td>
             <td>
                 <form action="/supplier/[supplier:ID]/products/[supplier_product:ID]/delete" method="post">
                     <input type="hidden" name="xsrf" value="[xsrf]">

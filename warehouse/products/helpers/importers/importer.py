@@ -1,26 +1,6 @@
-from abc import ABC, abstractmethod
-from typing import NamedTuple
-
-from warehouse.suppliers import model as supplier_model
+from warehouse.products.helpers.importers.base import ABCImporter, ProductPair
 from warehouse.products.helpers.importers.exceptions import IncompleteImporterMapping
-
-
-class ABCImporter(ABC):
-    """Abstract base class to indicate which methods should be implemented
-    to be considered an importer class."""
-
-    @abstractmethod
-    def Import(self):
-        pass
-
-
-class ProductPair(NamedTuple):
-    """Maps a Supplierproduct to a parsed product for displaying purposes.
-    This allows the user to see which imported product mapped to which
-    database entry."""
-
-    parsed_product: dict
-    supplier_product: supplier_model.Supplierproduct
+from warehouse.suppliers import model as supplier_model
 
 
 class StockImporter(ABCImporter):

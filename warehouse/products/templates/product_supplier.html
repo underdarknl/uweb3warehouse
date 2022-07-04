@@ -8,4 +8,32 @@
     <h2>Manage suppliers for product [product:name]</h2>
     {{ inline forms/supplier_product.html }}
 </section>
+
+<section>
+    <h2>Attach supplier product to product</h2>
+    <form action="/product/[product:sku]/couple_products" method="post">
+        <input type="hidden" name="xsrf" value="[xsrf]">
+
+        {{ for field in [couple_form] }}
+        <p>[field:description]</p>
+        {{ if [field:errors] }}
+        {{ for error in [field:errors] }}
+        <p class="error">[error]</p>
+        {{ endfor }}
+        {{ endif }}
+        <div>
+            [field:label]
+            [field]
+        </div>
+        {{ endfor }}
+
+        <datalist id="supplier_products_datalist">
+        </datalist>
+        <div>
+            <input type="submit" id="couple_products_submit" value="Attach product to supplier product" disabled>
+        </div>
+    </form>
+</section>
+<br>
+<script src="/js/supplier_product_selecter.js"></script>
 [footer]

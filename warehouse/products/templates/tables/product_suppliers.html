@@ -19,13 +19,15 @@
             [supplier_product:name]
         </td>
         <td>
-            &euro;[supplier_product:cost]
+            {{ if [supplier_product:cost] }}
+                &euro;[supplier_product:cost|NullString]
+            {{ endif }}
         </td>
         <td>
-            &euro;[supplier_product:vat]
+            [supplier_product:vat]%
         </td>
         <td>
-            [supplier_product:supplier_stock]
+            [supplier_product:supplier_stock|NullString]
         </td>
         <td>
             <form action="/product/[product:sku]/suppliers/[supplier_product:ID]/delete" method="post">

@@ -434,10 +434,10 @@ class Product(model.Record):
         latest_price = list(
             Stock.List(
                 self.connection,
-                conditions=(
+                conditions=[
                     f'product={part["ID"]}',
                     "piece_price is NOT NULL",
-                ),
+                ],
                 limit=1,
                 order=[("ID", True)],
             )

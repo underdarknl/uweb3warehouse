@@ -1,14 +1,8 @@
-from abc import ABC, abstractmethod
-
 import pandas
 from pandas import errors as pandas_errors
+
+from warehouse.products.helpers.importers.base import ABCParser
 from warehouse.products.helpers.importers.exceptions import ImporterException
-
-
-class ABCParser(ABC):
-    @abstractmethod
-    def Parse(self):
-        pass
 
 
 class StockParser(ABCParser):
@@ -101,7 +95,10 @@ class CSVParser(ABCParser):
     def Parse(self):
         try:
             data = pandas.read_csv(
-                self.file_path, skip_blank_lines=True, usecols=self.columns
+                self.file_path,
+                dtype=str,
+                skip_blank_lines=True,
+                usecols=self.columns,
             )
             data.dropna(how="all", inplace=True)
         except (pandas_errors.ParserError, Exception) as exc:

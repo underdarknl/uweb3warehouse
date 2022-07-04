@@ -51,6 +51,12 @@ urls = [
     (
         "/product/([^/]*)/suppliers",
         (products.PageMaker, "RequestProductSuppliers"),
+        "GET",
+    ),
+    (
+        "/product/([^/]*)/suppliers",
+        (products.PageMaker, "RequestAddProductSupplier"),
+        "POST",
     ),
     (
         "/product/([^/]*)/suppliers/([0-9]+)/delete",
@@ -68,6 +74,11 @@ urls = [
     (
         "/product/([^/]*)/prices/vat",
         (products.PageMaker, "RequestSetProductVat"),
+        "POST",
+    ),
+    (
+        "/product/([^/]*)/couple_products",
+        (products.PageMaker, "AttachProductToSupplierProduct"),
         "POST",
     ),
     (

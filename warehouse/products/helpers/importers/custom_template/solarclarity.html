@@ -1,6 +1,49 @@
+{{ if [__unprocessed] }}
+<section>
+    <h2>Unprocessed products: [__unprocessed|len]</h2>
+    <table class="products">
+        <thead>
+            <tr>
+                <th>Found product</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ for product in [__unprocessed] }}
+            <tr>
+                <td>[product:article_name]</td>
+            </tr>
+            {{ endfor }}
+        </tbody>
+    </table>
+</section>
+{{ endif }}
+{{ if [__new_imports] }}
+<section>
+    <h2>New imports: [__new_imports|len]</h2>
+    <table class="products">
+        <thead>
+            <tr>
+                <th>Supplier sku</th>
+                <th>Name</th>
+                <td>Price</td>
+            </tr>
+        </thead>
+        <tbody>
+            {{ for product in [__new_imports] }}
+            <tr>
+                <td>[product:supplier_sku]</td>
+                <td>[product:name]</td>
+                <td>&euro;[product:price]</td>
+            </tr>
+            {{ endfor }}
+        </tbody>
+    </table>
+</section>
+{{ endif }}
+
 {{ if [__processed] }}
 <section>
-    <h2>Processed products</h2>
+    <h2>Processed products: [__processed|len]</h2>
     <table class="products">
         <thead>
             <tr>
@@ -15,53 +58,12 @@
             <tr>
                 <td>[pair:parsed_product:article_number]</td>
                 <td>[pair:parsed_product:article_name]</td>
-                {{ if [pair:supplier_product:product] }} 
-                    <td><a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a></td>
-                {{ else }}
-                    <td>No product attached</td>
-                {{ endif }}
+                <td>
+                    {{ if [pair:supplier_product:product] }}
+                    <a href="/product/[pair:supplier_product:product:sku]">[pair:supplier_product:product:name]</a>
+                    {{ endif }}
+                </td>
                 <td>[pair:parsed_product:gross]</td>
-            </tr>
-            {{ endfor }}
-        </tbody>
-    </table>
-</section>
-{{ endif }}
-{{ if [__new_imports] }}
-<section>
-    <h2>New imports</h2>
-    <table class="products">
-        <thead>
-            <tr>
-                <th>Supplier sku</th>
-                <th>Name</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ for product in [__new_imports] }}
-            <tr>
-                <td>[product:supplier_sku]</td>
-                <td><a href="/product/[product:supplier_sku]">[product:name]</a></td>
-            </tr>
-            {{ endfor }}
-        </tbody>
-    </table>
-</section>
-{{ endif }}
-
-{{ if [__unprocessed] }}
-<section>
-    <h2>Unprocessed products</h2>
-    <table class="products">
-        <thead>
-            <tr>
-                <th>Found product</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ for product in [__unprocessed] }}
-            <tr>
-                <td>[product:article_name]</td>
             </tr>
             {{ endfor }}
         </tbody>

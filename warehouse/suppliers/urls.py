@@ -1,4 +1,11 @@
-from warehouse.suppliers import supplier
+from warehouse.suppliers import api, supplier
+
+api_urls = [
+    (
+        "/api/v1/supplier/findproduct",
+        (api.PageMaker, "find_supplier_product"),
+    ),
+]
 
 urls = [
     (
@@ -44,4 +51,4 @@ urls = [
         (supplier.PageMaker, "RequestSupplierRemove"),
         "POST",
     ),
-]
+] + api_urls

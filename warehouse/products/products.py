@@ -116,6 +116,7 @@ class PageMaker(basepages.PageMaker):
         if not product_form:
             product_form = forms.ProductForm(prefix="product")
             product_form.process(data=product)
+
         if not assemble_form:
             assemble_form = forms.ProductAssembleFromPartForm(prefix="product-part")
             assemble_form.part.choices = helpers.possibleparts_select_list(
@@ -408,17 +409,52 @@ class PageMaker(basepages.PageMaker):
     @loggedin
     @NotExistsErrorCatcher
     @uweb3.decorators.TemplateParser("product_supplier.html")
-    def RequestProductSuppliers(self, sku):
+    def RequestProductSuppliers(
+        self, sku, supplier_product_form=None, couple_form=None
+    ):
+        product = model.Product.FromSku(self.connection, sku)
+
+        supplier_select_list = helpers.suppliers_select_list(
+            supplier_model.Supplier.List(self.connection)
+        )
+        if not supplier_product_form:
+            supplier_product_form = forms.SupplierProduct(
+                self.post, prefix="supplier-product"
+            )
+            supplier_product_form.supplier.choices = supplier_select_list
+
+        if not couple_form:
+            couple_form = forms.CoupleSupplierProductForm()
+            couple_form.selected_supplier.choices = supplier_select_list
+
+        return dict(
+            product=product,
+            supplier_product_form=supplier_product_form,
+            couple_form=couple_form,
+            suppliers=list(
+                supplier_model.Supplierproduct.List(
+                    self.connection,
+                    conditions=[
+                        f'product = {product["ID"]}',
+                    ],
+                )
+            ),
+        )
+
+    @loggedin
+    @NotExistsErrorCatcher
+    def RequestAddProductSupplier(self, sku):
         product = model.Product.FromSku(self.connection, sku)
 
         supplier_product_form = forms.SupplierProduct(
             self.post, prefix="supplier-product"
         )
-        supplier_product_form.supplier.choices = helpers.suppliers_select_list(
+        supplier_select_list = helpers.suppliers_select_list(
             supplier_model.Supplier.List(self.connection)
         )
+        supplier_product_form.supplier.choices = supplier_select_list
 
-        if self.post and supplier_product_form.validate():
+        if supplier_product_form.validate():
             supplier_product = {
                 "product": product["ID"],
                 **supplier_product_form.data,
@@ -427,19 +463,8 @@ class PageMaker(basepages.PageMaker):
             return self.req.Redirect(
                 f"/product/{product['sku']}/suppliers", httpcode=301
             )
-
-        return dict(
-            product=product,
-            supplier_product_form=supplier_product_form,
-            suppliers=list(
-                supplier_model.Supplierproduct.List(
-                    self.connection,
-                    conditions=(
-                        f'product = {product["ID"]}',
-                        common_model.NOTDELETED,
-                    ),
-                )
-            ),
+        return self.RequestProductSuppliers(
+            sku, supplier_product_form=supplier_product_form
         )
 
     @loggedin
@@ -509,3 +534,43 @@ class PageMaker(basepages.PageMaker):
         )
         product_price.Delete()
         return self.req.Redirect(f"/product/{product['sku']}/prices", httpcode=301)
+
+    @loggedin
+    @NotExistsErrorCatcher
+    @uweb3.decorators.checkxsrf
+    def AttachProductToSupplierProduct(self, sku):
+        product = model.Product.FromSku(self.connection, sku)
+
+        couple_form = forms.CoupleSupplierProductForm(self.post)
+        couple_form.selected_supplier.choices = helpers.suppliers_select_list(
+            supplier_model.Supplier.List(self.connection)
+        )
+        if couple_form.validate():
+            supplier = supplier_model.Supplier.FromPrimary(
+                self.connection, couple_form.selected_supplier.data
+            )
+            # If the Supplierproduct SKU and name are both filled in
+            if couple_form.sup_product.data and couple_form.sup_sku.data:
+                supplier_product = (
+                    supplier_model.Supplierproduct.FromSupplierByNameAndSku(
+                        self.connection,
+                        int(supplier),
+                        couple_form.sup_sku.data,
+                        couple_form.sup_product.data,
+                    )
+                )
+            else:
+                # Get a Supplierproduct by name only, this will be an issue if the
+                # supplier has multiple products with the same name and no SKU is known.
+                supplier_product = supplier_model.Supplierproduct.FromSupplierAndName(
+                    self.connection, int(supplier), couple_form.sup_product.data
+                )
+
+            supplier_product["product"] = int(product)
+            supplier_product.Save()
+            return self.req.Redirect(f"/product/{sku}/suppliers", httpcode=303)
+
+        return self.RequestProductSuppliers(
+            sku,
+            couple_form=couple_form,
+        )

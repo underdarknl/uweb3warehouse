@@ -249,3 +249,20 @@ class ProductPriceForm(Form):
         description="The amount of products that need to be purchased before "
         + "the price starts to apply.",
     )
+
+
+class CoupleSupplierProductForm(Form):
+    """Form used to add a supplier to a product on the product page."""
+
+    sup_product = StringField(
+        "product", validators=[validators.InputRequired()], render_kw={"readonly": True}
+    )
+    sup_sku = StringField(
+        "sku", validators=[validators.Optional()], render_kw={"readonly": True}
+    )
+    selected_supplier = SelectField("supplier")
+    supplier_product = StringField(
+        "Name",
+        validators=[validators.InputRequired()],
+        render_kw={"list": "supplier_products_datalist", "autocomplete": "off"},
+    )
