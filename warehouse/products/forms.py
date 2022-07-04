@@ -10,7 +10,7 @@ from wtforms import (
     TextAreaField,
     ValidationError,
     validators,
-    HiddenField
+    HiddenField,
 )
 
 
@@ -254,7 +254,16 @@ class ProductPriceForm(Form):
 
 class CoupleSupplierProductForm(Form):
     """Form used to add a supplier to a product on the product page."""
-    sup_product = StringField("product", validators=[validators.InputRequired()], render_kw={'readonly': True})
-    sup_sku = StringField("sku", validators=[validators.Optional()], render_kw={'readonly': True})
-    selected_supplier = SelectField("supplier", choices=['test'])
-    supplier_product = StringField("Name", validators=[validators.InputRequired()])
+
+    sup_product = StringField(
+        "product", validators=[validators.InputRequired()], render_kw={"readonly": True}
+    )
+    sup_sku = StringField(
+        "sku", validators=[validators.Optional()], render_kw={"readonly": True}
+    )
+    selected_supplier = SelectField("supplier")
+    supplier_product = StringField(
+        "Name",
+        validators=[validators.InputRequired()],
+        render_kw={"list": "supplier_products_datalist", "autocomplete": "off"},
+    )
