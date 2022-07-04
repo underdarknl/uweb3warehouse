@@ -71,13 +71,23 @@ class ABCDatabaseImporter(ABC):
     thousands of new products, or updating them."""
 
     @abstractmethod
-    def add(self, record: dict):
+    def add(self, record: dict) -> dict:
         """Adds a record to the list of data that should be handled in bulk."""
         pass
 
     @abstractmethod
     def import_all(self):
         """Process all records and execute one bulk action to the database."""
+        pass
+
+
+class ABCDatabaseUpdater(ABC):
+    @abstractmethod
+    def update(
+        self,
+        record: dict,
+        supplier_product: supplier_model.Supplierproduct,
+    ) -> supplier_model.Supplierproduct:
         pass
 
 
@@ -121,21 +131,23 @@ class SolarClarityMissingImporter(ABCDatabaseImporter):
         self.supplierID = supplierID
         self.insert_list = []
 
-    def add(self, record: dict):
+    def add(self, record: dict, default_vat=21) -> dict:
         """Add a record to the list of values that should be inserted."""
+        price = to_decimal(record["gross"])
         self.insert_list.append(
             (
                 self.supplierID,
                 record["article_name"],
-                to_decimal(record["gross"]),
-                21,
+                price,
+                default_vat,
                 record["article_number"],
             )
         )
         return {
             "supplier": self.supplierID,
             "name": record["article_name"],
-            "vat": "21",
+            "price": price,
+            "vat": default_vat,
             "supplier_sku": record["article_number"],
         }
 
@@ -150,42 +162,34 @@ class SolarClarityMissingImporter(ABCDatabaseImporter):
             )
 
 
-class SolarClarityRecordUpdate(ABCDatabaseImporter):
+class SolarClarityRecordUpdate(ABCDatabaseUpdater):
     """Handle bulk record update for SolarClarity importer."""
 
     def __init__(self, connection: mysql.connection.Connection):
         self.connection = connection
         self.update_list = []
 
-    def add(self, record: dict):
-        self.update_list.append(
-            (
-                record["name"],
-                record["vat"],
-                record["cost"],
-                record["supplier_sku"],
-                record["ID"],
-            )
-        )
-        return record
+    def update(
+        self,
+        record: dict,
+        supplier_product: supplier_model.Supplierproduct,
+    ):
+        try:
+            supplier_product["cost"] = to_decimal(record["gross"])
+        except Exception:
+            if price := record.get("cost"):
+                supplier_product["cost"] = price
 
-    def import_all(self):
-        # XXX: Updating is very slow, is there another way for this?
-        with self.connection as cursor:
-            cursor.executemany(
-                """UPDATE supplierproduct
-                SET name=%s, vat=%s, cost=%s, supplier_sku=%s
-                WHERE ID=%s
-                """,
-                self.update_list,
-            )
+        supplier_product["supplier_sku"] = record["article_number"]
+        supplier_product.Save()
+        return supplier_product
 
 
 class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
     def __init__(
         self,
         parser: ABCParser,
-        supplier_product_updater: ABCDatabaseImporter,
+        supplier_product_updater: ABCDatabaseUpdater,
         missing_supplier_product_handler: ABCDatabaseImporter | None = None,
     ):
         """Importer/parser combination class for custom imports for SolarClarity.
@@ -244,38 +248,25 @@ class SolarClarity(CustomRenderedMixin, ABCCustomImporter):
         single_products = [
             record for record in data if int(record["items_per_packing_unit"]) == 1
         ]
+
         for record in single_products:
-            product = find_match(record, self.products)
-            match product:
-                case supplier_model.Supplierproduct():
-                    result = self._update_record(product, record)
-                    self._processed_products.append(
-                        ProductPair(parsed_product=record, supplier_product=result)
-                    )
-                case None if self.missing_importer:
-                    self._new_imports.append(self.missing_importer.add(record))
-                case _:
-                    self._unprocessed_products.append(record)
+            self._process_record(record)
 
         if self._new_imports and self.missing_importer:
             self.missing_importer.import_all()
-        self.updater.import_all()
 
-    def _update_record(
-        self,
-        supplier_product: supplier_model.Supplierproduct,
-        record: dict,
-    ):
-        """Prepare a record to update the existing supplier product.
-        Find the values that we are interested in and pass them to
-        the database bulk update handler."""
-        try:
-            supplier_product["cost"] = to_decimal(record["gross"])
-        except Exception:
-            if price := record.get("cost"):
-                supplier_product["cost"] = price
-        supplier_product["supplier_sku"] = record["article_number"]
-        return self.updater.add(supplier_product)
+    def _process_record(self, record):
+        supplier_product = find_match(record, self.products)
+
+        match supplier_product:
+            case supplier_model.Supplierproduct():
+                result = self.updater.update(record, supplier_product)
+                pair = ProductPair(parsed_product=record, supplier_product=result)
+                self._processed_products.append(pair)
+            case None if self.missing_importer:
+                self._new_imports.append(self.missing_importer.add(record))
+            case _:
+                self._unprocessed_products.append(record)
 
 
 def to_decimal(csv_value: str | int) -> decimal.Decimal:
