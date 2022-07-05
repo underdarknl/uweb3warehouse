@@ -5,15 +5,7 @@
     <form action="/products" method="get" class="lineform">
         <div>
             <label for="query">Search</label>
-            <input id="query" type="text" name="query" value="{{ if [query] }}[query]{{ endif}}" placeholder="Filter your products"></div>
-        <div>
-            <label for="query">Supplier</label><select name="supplier" id="filter_supplier">
-                <option value="">All</option>
-                {{ for filtersupplier in [suppliers] }}
-                <option value="[filtersupplier:ID]" {{ if [supplier] and [filtersupplier:ID]==[supplier:ID]}}selected{{
-                    endif }}>[filtersupplier:name]</option>
-                {{ endfor }}
-            </select>
+            <input id="query" type="text" name="query" value="{{ if [query] }}[query]{{ endif}}" placeholder="Filter your products">
         </div>
         <div>
             <a class="button" href="/">Clear</a> <input id="query" type="submit" value="Filter">

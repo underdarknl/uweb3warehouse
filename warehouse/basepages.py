@@ -23,8 +23,8 @@ def CentRound(monies):
 
 
 class PageMaker(
-    # uweb3.DebuggingPageMaker,
-    uweb3.PageMaker,
+    uweb3.DebuggingPageMaker,
+    # uweb3.PageMaker,
     login_helpers.AuthMixin,
 ):
     """Holds all the request handlers for the application"""

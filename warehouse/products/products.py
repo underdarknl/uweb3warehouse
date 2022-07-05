@@ -26,15 +26,6 @@ class PageMaker(basepages.PageMaker):
         supplier = None
         conditions = []
         linkarguments = {}
-        if "supplier" in self.get:
-            try:
-                supplier = supplier_model.Supplier.FromPrimary(
-                    self.connection, self.get.getfirst("supplier", None)
-                )
-                conditions.append("supplier = %d" % supplier)
-                linkarguments["supplier"] = int(supplier)
-            except login_model.User.NotExistError:
-                pass
 
         products_args = {"conditions": conditions, "order": [("ID", True)]}
         query = ""
@@ -44,7 +35,7 @@ class PageMaker(basepages.PageMaker):
             query = self.get.getfirst("query", "")
             linkarguments["query"] = query
             products_args["conditions"] += [
-                "ean=%s" % int(query),
+                "ean=%s" % self.connection.EscapeValues(query),
                 common_model.NOTDELETED,
             ]
 
