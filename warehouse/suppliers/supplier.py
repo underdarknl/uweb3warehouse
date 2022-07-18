@@ -188,8 +188,8 @@ class PageMaker(basepages.PageMaker):
         supplier_stock_form = forms.ImportSupplierStock(self.post, prefix=prefix)
         supplier_stock_form.fileupload.data = self.files.get(upload_field)
 
-        if not self.files or not supplier_stock_form.validate():
-            if not self.files:
+        if not supplier_stock_form.fileupload.data or not supplier_stock_form.validate():
+            if not supplier_stock_form.fileupload.data:
                 supplier_stock_form.fileupload.errors = ["No file selected."]
             return self.RequestSupplier(
                 name=supplierName,
@@ -231,20 +231,21 @@ class PageMaker(basepages.PageMaker):
 
         custom_import_form = forms.CustomImporters(self.post)
         custom_import_form.importer.choices = list(factory.list_all())
-        custom_import_form.custom_fileupload.data = self.files.get("custom_fileupload")
+        
+        if self.files.getfirst("custom_fileupload"):
+            custom_import_form.custom_fileupload.data = self.files.getfirst("custom_fileupload").file
 
-        if not self.files or not custom_import_form.validate():
+        if not custom_import_form.validate() or not custom_import_form.custom_fileupload.data:
             custom_import_form.custom_fileupload.errors = ["No file selected."]
             return self.RequestSupplier(
                 name=supplierName,
                 custom_import_form=custom_import_form,
                 anchor="custom-importers",
             )
-
         try:
             importer = factory.get_registered_item(
                 custom_import_form.importer.data,
-                file=StringIO(custom_import_form.custom_fileupload.data[0]["content"]),
+                file=custom_import_form.custom_fileupload.data,
                 connection=self.connection,
                 supplierID=supplier["ID"],
             )

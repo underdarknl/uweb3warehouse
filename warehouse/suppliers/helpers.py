@@ -33,9 +33,9 @@ def import_stock_from_file(supplier_stock_form, supplier, connection):
 
 
 def _parse_file(supplier_stock_form):
-    file = supplier_stock_form.fileupload.data[0]
+    file = supplier_stock_form.fileupload.data.file
     parser = product_helpers.StockParser(
-        file_path=StringIO(file["content"]),
+        file_path=file,
         columns=(
             supplier_stock_form.column_name_mapping.data,
             supplier_stock_form.column_stock_mapping.data,

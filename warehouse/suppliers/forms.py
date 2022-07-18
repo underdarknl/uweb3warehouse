@@ -23,7 +23,7 @@ class ImportSupplierStock(Form):
 
 class CustomImporters(Form):
     importer = SelectField("Importer")
-    custom_fileupload = FileField("Select file")
+    custom_fileupload = FileField("Select file", validators=[validators.InputRequired()])
 
 
 class SupplierAddProductForm(SupplierProduct):
