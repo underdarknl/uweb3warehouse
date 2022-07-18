@@ -43,7 +43,7 @@ class PageMaker(basepages.PageMaker):
         except uweb3.model.NotExistError as error:
             self.parser.RegisterTag("loginerror", "%s" % error)
             print("login failed.", self.post.getfirst("email"))
-        return self.RequestLogin(url)
+        return self.req.Redirect('/', httpcode=303)
 
     @uweb3.decorators.checkxsrf
     def RequestResetPassword(self, email=None, resethash=None):
