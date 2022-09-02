@@ -48,10 +48,11 @@ def apiuser(f):
 
 
 def json_error_wrapper(func):
-    def wrapper_schema_validation(*args, **kwargs):
+    def wrapper_schema_validation(pagemaker: uweb3.PageMaker, *args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            return func(pagemaker, *args, **kwargs)
         except ValueError as exc:
+            pagemaker.logger.debug(exc)
             return uweb3.Response(
                 {
                     "error": True,
@@ -61,6 +62,7 @@ def json_error_wrapper(func):
                 httpcode=HTTPStatus.NOT_FOUND,
             )
         except uweb3.model.NotExistError as exc:
+            pagemaker.logger.debug(exc)
             return uweb3.Response(
                 {
                     "error": True,
@@ -70,6 +72,7 @@ def json_error_wrapper(func):
                 httpcode=HTTPStatus.NOT_FOUND,
             )
         except AssemblyError as exc:
+            pagemaker.logger.debug(exc)
             return uweb3.Response(
                 {
                     "error": True,
@@ -79,6 +82,7 @@ def json_error_wrapper(func):
                 httpcode=HTTPStatus.CONFLICT,
             )
         except marshmallow.ValidationError as exc:
+            pagemaker.logger.debug(exc)
             return uweb3.Response(
                 {
                     "error": True,
@@ -88,7 +92,7 @@ def json_error_wrapper(func):
                 httpcode=HTTPStatus.BAD_REQUEST,
             )
         except Exception as exc:
-            print(exc)
+            pagemaker.logger.exception(exc)
             return uweb3.Response(
                 {
                     "error": True,
