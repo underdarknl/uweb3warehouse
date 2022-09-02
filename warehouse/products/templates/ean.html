@@ -1,4 +1,4 @@
-[header]
+{{ externalinline templates/parts/header.html }}
 
 <section>
     <h2>Your Products with an EAN barcode {{ if [supplier] }} sourced from [supplier:name]{{ endif }}:</h2>
@@ -72,4 +72,4 @@
     {{ endif }}
 </section>
 
-[footer]
+{{ externalinline templates/parts/footer.html }}

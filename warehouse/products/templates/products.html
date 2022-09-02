@@ -1,4 +1,4 @@
-[header]
+{{ externalinline templates/parts/header.html }}
 <section>
     <h2>Your Products {{ if [supplier] }} sourced from [supplier:name]{{ endif }}:</h2>
     {{ if len([products:items]) > 0 or [query] or [supplier] }}
@@ -81,4 +81,4 @@
     <h3>Create a product or part:</h3>
     {{ inline forms/product.html }}
 </section>
-[footer]
+{{ externalinline templates/parts/footer.html }}

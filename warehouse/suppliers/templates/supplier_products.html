@@ -1,4 +1,4 @@
-[header]
+{{ externalinline templates/parts/header.html }}
 <section>
     <h2>Products by supplier: [supplier:name]</h2>
     {{ inline tables/supplier_products.html }}
@@ -9,4 +9,4 @@
     {{ inline forms/supplier_product.html }}
 </section>
 
-[footer]
+{{ externalinline templates/parts/footer.html }}

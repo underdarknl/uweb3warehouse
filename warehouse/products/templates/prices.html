@@ -1,4 +1,4 @@
-[header]
+{{ externalinline templates/parts/header.html }}
 <section>
     <h2>Prices for product: [product:name]</h2>
     {{ inline tables/product_prices.html }}
@@ -11,4 +11,4 @@
     <h2>Manage prices</h2>
     {{ inline forms/product_price.html }}
 </section>
-[footer]
+{{ externalinline templates/parts/footer.html }}

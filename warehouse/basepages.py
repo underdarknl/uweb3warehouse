@@ -58,6 +58,7 @@ class PageMaker(
             "header",
             self.parser.JITTag(lambda: self.parser.Parse("parts/header.html")),
         )
+
         self.parser.RegisterTag(
             "footer",
             self.parser.JITTag(
@@ -401,8 +402,10 @@ class PageMaker(
 
     def Error(self, error="", httpcode=500, link=None, log_error=True):
         """Returns a generic error page based on the given parameters."""
+        self.TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
+        
         if log_error:
             self.logger.error("Error page triggered: %r", error)
-            
+
         page_data = self.parser.Parse("parts/error.html", error=error, link=link)
         return uweb3.Response(content=page_data, httpcode=httpcode)
