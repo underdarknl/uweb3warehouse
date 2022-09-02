@@ -64,7 +64,7 @@ class PageMaker(basepages.PageMaker):
     @json_error_wrapper
     @apiuser
     def JsonProductStockRemove(self):
-        data = schemas.BulkStockSchema().load(self.post)
+        data = schemas.BulkStockSchema().load(self.post.__dict__)
 
         products = data["products"]
         reference = data["reference"]
@@ -80,7 +80,7 @@ class PageMaker(basepages.PageMaker):
     @json_error_wrapper
     @apiuser
     def JsonProductStockBulkAdd(self):
-        data = schemas.BulkRefundSchema().load(self.post)
+        data = schemas.BulkRefundSchema().load(self.post.__dict__)
 
         products = data["products"]
         reference = data["reference"]
