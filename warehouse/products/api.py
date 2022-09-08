@@ -60,37 +60,40 @@ class PageMaker(basepages.PageMaker):
             "prices": prices,
         }
 
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProductStockRemove(self):
-        data = schemas.BulkStockSchema().load(self.post.__dict__)
+    # @uweb3.decorators.ContentType("application/json")
+    # @json_error_wrapper
+    # @apiuser
+    # def JsonProductStockRemove(self):
+    #     # XXX: This route should only be used for stock manipulation.
+    #     data = schemas.BulkStockSchema().load(self.post.__dict__)
 
-        products = data["products"]
-        reference = data["reference"]
+    #     products = data["products"]
+    #     reference = data["reference"]
 
-        with transaction(self.connection, model.Product):
-            for product in products:
-                helpers.remove_stock(
-                    self.connection, product["sku"], product["quantity"], reference
-                )
-        return data
+    #     with transaction(self.connection, model.Product):
+    #         for product in products:
+    #             helpers.remove_stock(
+    #                 self.connection, product["sku"], product["quantity"], reference
+    #             )
+    #     return data
 
-    @uweb3.decorators.ContentType("application/json")
-    @json_error_wrapper
-    @apiuser
-    def JsonProductStockBulkAdd(self):
-        data = schemas.BulkRefundSchema().load(self.post.__dict__)
+    # @uweb3.decorators.ContentType("application/json")
+    # @json_error_wrapper
+    # @apiuser
+    # def JsonProductStockBulkAdd(self):
+    #     # XXX: This route should only be used for stock manipulation.
 
-        products = data["products"]
-        reference = data["reference"]
+    #     data = schemas.BulkRefundSchema().load(self.post.__dict__)
 
-        with transaction(self.connection, model.Product):
-            for product in products:
-                helpers.add_stock(
-                    self.connection,
-                    product["sku"],
-                    product["quantity"],
-                    reference,
-                )
-        return data
+    #     products = data["products"]
+    #     reference = data["reference"]
+
+    #     with transaction(self.connection, model.Product):
+    #         for product in products:
+    #             helpers.add_stock(
+    #                 self.connection,
+    #                 product["sku"],
+    #                 product["quantity"],
+    #                 reference,
+    #             )
+    #     return data

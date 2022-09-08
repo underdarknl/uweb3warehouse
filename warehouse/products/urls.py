@@ -95,14 +95,14 @@ urls = [
         "/api/v1/search_product/([^/]*)",
         (api.PageMaker, "JsonProductSearch"),
     ),
-    (
-        "/api/v1/products/bulk_remove_stock",
-        (api.PageMaker, "JsonProductStockRemove"),
-        "POST",
-    ),
-    (
-        "/api/v1/products/bulk_add",
-        (api.PageMaker, "JsonProductStockBulkAdd"),
-        "POST",
-    ),
+    # (
+    #     "/api/v1/products/bulk_remove_stock",
+    #     (api.PageMaker, "JsonProductStockRemove"),
+    #     "POST",
+    # ),
+    # (
+    #     "/api/v1/products/bulk_add",
+    #     (api.PageMaker, "JsonProductStockBulkAdd"),
+    #     "POST",
+    # ),
 ]
