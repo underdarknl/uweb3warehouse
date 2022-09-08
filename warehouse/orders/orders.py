@@ -46,11 +46,23 @@ class PageMaker(basepages.PageMaker):
     @NotExistsErrorCatcher
     def RequestOrderEdit(self, id):
         order: model.Order = model.Order.FromPrimary(self.connection, id)
-        form: forms.CreateOrderForm = self.forms.get_form("create_order", self.post)
+        form: forms.CreateOrderForm = self.forms.get_form(
+            "create_order",
+            self.post,
+        )  # type: ignore
 
         if not form.validate():
             return self.RequestOrder(id)
-        
-        order.update({'description': form.description.data, 'status': form.status.data})
+
+        order.update({"description": form.description.data, "status": form.status.data})
         order.Save()
+
+        form_order_product: forms.OrderProduct  # type hint
+        for form_order_product in form.products:
+            order_product = model.OrderProduct.FromPrimary(
+                self.connection, form_order_product.ID.data
+            )
+            # TODO: prevent ID from being updated.
+            order_product.update(form_order_product.data)
+            order_product.Save()
         return uweb3.Redirect(f"/order/{id}", httpcode=303)
