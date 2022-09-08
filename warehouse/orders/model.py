@@ -1,4 +1,3 @@
-from ast import Or
 from uweb3 import model
 from uweb3.helpers import transaction
 from warehouse.products import model as product_model
@@ -15,7 +14,7 @@ class Order(model.Record):
             order = super().Create(
                 connection,
                 {
-                    "description": record['description'],
+                    "description": record["description"],
                     "status": record["status"],
                 },
             )
@@ -33,6 +32,14 @@ class Order(model.Record):
                         "product_sku": actual_product["sku"],
                     },
                 )
+
+    def OrderProducts(self):
+        """Load the OrderProduct children from the given Order record.
+
+        This method deletes the 'order' attribute to prevent nested loading."""
+        for child in self._Children(OrderProduct, relation_field="order"):
+            del child["order"]
+            yield child
 
 
 class OrderProduct(model.Record):

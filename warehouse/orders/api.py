@@ -8,6 +8,7 @@ from warehouse.common.helpers import FormFactory
 from warehouse.common.decorators import apiuser, json_error_wrapper
 from warehouse.orders import forms, model
 
+
 class PageMaker(basepages.PageMaker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -34,4 +35,8 @@ class PageMaker(basepages.PageMaker):
     @apiuser
     @json_error_wrapper
     def ListOrders(self):
-        return {}
+        orders = []
+        for order in model.Order.List(self.connection):
+            order["order_products"] = list(order.OrderProducts())
+            orders.append(order)
+        return orders
