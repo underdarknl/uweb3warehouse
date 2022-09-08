@@ -7,6 +7,7 @@ import uweb3
 from warehouse.login.urls import urls as login_urls
 from warehouse.products.urls import urls as product_urls
 from warehouse.suppliers.urls import urls as supplier_urls
+from warehouse.orders.urls import urls as order_urls
 
 # Application
 from . import basepages
@@ -27,6 +28,7 @@ def main():
         supplier_urls
         + product_urls
         + login_urls
+        + order_urls
         + [
             ("/", "RequestIndex"),
             ("/login", "RequestLogin", "GET"),
