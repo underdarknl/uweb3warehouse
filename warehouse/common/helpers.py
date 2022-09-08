@@ -7,7 +7,6 @@ import decimal
 import math
 import wtforms
 
-import wtforms_json
 def round_price(d):
     if not isinstance(d, decimal.Decimal):
         d = decimal.Decimal(d)
