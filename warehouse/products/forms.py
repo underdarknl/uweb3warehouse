@@ -13,6 +13,30 @@ from wtforms import (
 )
 
 
+class RequiredIfPositive(validators.DataRequired):
+    """Removes the required field from the HTML form and validates based on
+    the other_field_name value. If the other field value is positive the
+    current field gets validated. If the other field is not positive the
+    validation is skipped."""
+
+    def __init__(self, other_field_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.field_flags = {}
+        self.other_field_name = other_field_name
+
+    def __call__(self, form, field):
+        other_field = form._fields.get(self.other_field_name)
+
+        if other_field is None:
+            raise Exception('no field named "%s" in form' % self.other_field_name)
+
+        if bool(other_field.data) and other_field.data > 0:
+            super().__call__(form, field)
+
+        field.errors[:] = []
+        raise validators.StopValidation()
+
+
 class ProductForm(Form):
     sku = StringField(
         "sku",
@@ -138,6 +162,7 @@ class ProductStockForm(ProductAssemblyForm):
         "piece price",
         rounding=decimal.ROUND_UP,
         places=2,
+        validators=[RequiredIfPositive("amount")],
         description="How much did you pay for each individual piece from the supplier?",
     )
 
