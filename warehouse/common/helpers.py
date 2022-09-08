@@ -5,7 +5,11 @@ __version__ = 0.1
 
 import decimal
 import math
+import os
 import wtforms
+from uweb3.templateparser import Parser
+from wtforms import Form
+
 
 def round_price(d):
     if not isinstance(d, decimal.Decimal):
@@ -159,3 +163,23 @@ class FormFactory:
 
     def get_form(self, key, *args, **kwargs) -> wtforms.Form:
         return self.base_factory.get_registered_item(key, *args, **kwargs)
+
+
+class BaseFormServiceBuilder:
+    def __init__(self, form):
+        self._instance = None
+        self.form = form
+
+    def __call__(self, *args, **kwargs):
+        if not self._instance:
+            self._instance = self.form(*args, **kwargs)
+        return self._instance
+
+
+class BaseForm(Form):
+    @property
+    def render(self):
+        return Parser(
+            path=os.path.join(os.path.dirname(__file__), "templates"),
+            templates=("default_form.html",),
+        ).Parse("default_form.html", __form=self)
