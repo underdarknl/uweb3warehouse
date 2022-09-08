@@ -1,4 +1,5 @@
 {{ for field in [__form] }}
+    [field:type]
     {{ if [field:description] }}
         <p>[field:description]</p>
     {{ endif }}
@@ -16,11 +17,15 @@
                     <tbody>
                         {{ for f in [nested_field] }}
                         <tr>
-                            {{ for error in [f:errors] }}
-                                <p class="error">[error]</p>
-                            {{ endfor }}
-                            <th>[f:label]</th>
-                            <td>[f]</td>
+                            {{ if [f:type] == 'HiddenField' }}
+                                [f]
+                            {{ else }}
+                                {{ for error in [f:errors] }}
+                                    <p class="error">[error]</p>
+                                {{ endfor }}
+                                <th>[f:label]</th>
+                                <td>[f]</td>
+                            {{ endif }}
                         </tr>
                         {{ endfor }}
                     </tbody>
