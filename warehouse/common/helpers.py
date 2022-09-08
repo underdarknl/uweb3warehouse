@@ -5,8 +5,9 @@ __version__ = 0.1
 
 import decimal
 import math
+import wtforms
 
-
+import wtforms_json
 def round_price(d):
     if not isinstance(d, decimal.Decimal):
         d = decimal.Decimal(d)
@@ -147,4 +148,15 @@ class BaseFactory:
         builder = self._registered_items.get(key)
         if not builder:
             raise ValueError(f"No item with key {key} is registered.")
-        return builder(**kwargs)
+        return builder(*args, **kwargs)
+
+
+class FormFactory:
+    def __init__(self):
+        self.base_factory = BaseFactory()
+
+    def register_form(self, key, builder):
+        return self.base_factory.register(key, builder)
+
+    def get_form(self, key, *args, **kwargs) -> wtforms.Form:
+        return self.base_factory.get_registered_item(key, *args, **kwargs)
