@@ -17,7 +17,9 @@
     {{ inline tables/product_stock.html }}
     {{ if [stockrows] and len([stock]) < [stockrows] }} <p><a href="?unlimitedstock=true">See all [stockrows] stock
             mutations.</a></p>{{ endif }}
-        <p class="info">Current stock: [product:currentstock] units</p>
+        <p class="info">Total free stock: [product:currentstock] units.</p>
+        <p class="info">Reserved stock: [product:reserved_stock] units. When a reservation is canceled the amount reserved will be added to the free stock.</p>
+
         {{ if [product:possiblestock:available] }}
         <p class="info">Possible addition to stock by using up available parts: [product:possiblestock:available] units,
             limited by <a

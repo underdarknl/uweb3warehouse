@@ -263,6 +263,22 @@ class Product(model.Record):
             return result[0]["current_stock"]
     
     @property
+    def reserved_stock(self):
+        """Returns the amount of stock that is currently reserved."""
+        with self.connection as cursor:
+            result = cursor.Execute(
+                f"""
+                SELECT coalesce(sum(op.quantity),0) as reserved_stock
+                FROM orderProduct as op 
+                LEFT JOIN `order` as ord 
+                    ON ord.ID = op.order
+                WHERE product_sku={self['sku']}
+                    AND ord.status IN ("reservation")
+                """
+            )
+            return result[0]["reserved_stock"]
+    
+    @property
     def product_stock_prices(self):
         """Returns the piece_price and the amount of leftovers of the stock
         for that price."""
