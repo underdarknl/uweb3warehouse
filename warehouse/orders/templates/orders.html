@@ -1,0 +1,31 @@
+{{ externalinline templates/parts/header.html }}
+<section>
+    <h2>Orders</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Date created</th>
+            </tr>
+        </thead>
+        {{ for order in [orders] }}
+            <tr class="{{ if [order:status] == 'reservation'}}warning{{ elif [order:status] == 'canceled' }}error{{ endif }}">
+                <td>
+                    <a href="/order/[order:ID]">[order:ID]</a>
+                </td>
+                <td>
+                    [order:description]
+                </td>
+                <td>
+                    [order:status]
+                </td>
+                <td>
+                    [order:date_created]
+                </td>
+            </tr>
+        {{ endfor }}
+    </table>
+</section>
+{{ externalinline templates/parts/footer.html }}

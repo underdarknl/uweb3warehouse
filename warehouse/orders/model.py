@@ -9,7 +9,6 @@ class Order(model.Record):
     @classmethod
     def Create(cls, connection, record):
         products = record["products"]
-
         with transaction(connection, Order):
             order = super().Create(
                 connection,
@@ -18,12 +17,13 @@ class Order(model.Record):
                     "status": record["status"],
                 },
             )
+            order["order_products"] = []
             for product in products:
                 # Check if the referenced product with SKU actually exists.
                 actual_product = product_model.Product.FromSku(
                     connection, product["product_sku"]
                 )
-                OrderProduct.Create(
+                order_product = OrderProduct.Create(
                     connection,
                     {
                         "order": int(order),
@@ -32,12 +32,19 @@ class Order(model.Record):
                         "product_sku": actual_product["sku"],
                     },
                 )
+                # XXX: Find a way to prevent loading parent because we dont want to
+                # display it in this case.
+                del order_product["order"]
+                order["order_products"].append(order_product)  # type: ignore
+        return order
 
     def OrderProducts(self):
         """Load the OrderProduct children from the given Order record.
 
         This method deletes the 'order' attribute to prevent nested loading."""
         for child in self._Children(OrderProduct, relation_field="order"):
+            # XXX: Find a way to prevent loading parent because we dont want to
+            # display it in this case.
             del child["order"]
             yield child
 

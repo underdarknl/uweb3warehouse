@@ -1,0 +1,9 @@
+{{ externalinline templates/parts/header.html }}
+<section>
+    <h2>Order [order:description]</h2>
+    <form action="/order/[order:ID]" method="post">
+        [create_order_form:render]
+        <input type="submit" value="Save changes" class="primary">
+    </form>
+</section>
+{{ externalinline templates/parts/footer.html }}

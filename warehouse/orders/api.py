@@ -28,8 +28,7 @@ class PageMaker(basepages.PageMaker):
         if not order_form.validate():
             return order_form.errors
 
-        model.Order.Create(self.connection, order_form.data)
-        return json_data
+        return model.Order.Create(self.connection, order_form.data)
 
     @uweb3.decorators.ContentType("application/json")
     @apiuser

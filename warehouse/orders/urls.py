@@ -1,7 +1,10 @@
-from warehouse.orders.api import PageMaker as OrderPageMaker
+from warehouse.orders.api import PageMaker as OrderAPIPageMaker
+from warehouse.orders.orders import PageMaker as OrderPageMaker
 
 urls = [
-    ('/api/v1/order/create', (OrderPageMaker, 'CreateOrder'), 'POST'),
-    ('/api/v1/orders', (OrderPageMaker, 'ListOrders'), 'GET'),
-    
+    ("/orders", (OrderPageMaker, 'RequestOrders')),
+    ("/order/([0-9]+)", (OrderPageMaker, 'RequestOrder'), 'GET'),
+    ("/order/([0-9]+)", (OrderPageMaker, 'RequestOrderEdit'), 'POST'),
+    ('/api/v1/order/create', (OrderAPIPageMaker, 'CreateOrder'), 'POST'),
+    ('/api/v1/orders', (OrderAPIPageMaker, 'ListOrders'), 'GET'),
 ]
