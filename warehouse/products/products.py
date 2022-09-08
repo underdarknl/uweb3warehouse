@@ -10,7 +10,6 @@ from warehouse import basepages
 from warehouse.common import model as common_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
-from warehouse.login import model as login_model
 from warehouse.products import forms, helpers, model
 from warehouse.suppliers import model as supplier_model
 
