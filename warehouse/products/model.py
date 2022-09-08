@@ -241,21 +241,32 @@ class Product(model.Record):
     @property
     def currentstock(self):
         """Returns the current stock"""
+        # Current stock is the SUM of all mutations on the stock table
+        # minus the quantity of all relevant orderProducts.
         with self.connection as cursor:
-            stock = cursor.Select(
-                table=Stock.TableName(),
-                fields="sum(amount) as currentstock",
-                conditions=["product=%d" % self.key],
-                escape=False,
+            result = cursor.Execute(
+                f"""
+                SELECT sum(amount) - coalesce((
+                    SELECT sum(op.quantity) 
+                    FROM orderProduct as op 
+                    LEFT JOIN `order` as ord 
+                        ON ord.ID = op.order
+                    WHERE product_sku=p.SKU
+                        AND ord.status NOT IN ("canceled")
+                ), 0) as current_stock
+                FROM stock as s
+                LEFT JOIN product as p
+                    ON p.ID = s.product
+                WHERE product = {self.key};
+                """
             )
-        if stock[0]["currentstock"]:
-            return int(stock[0]["currentstock"])
-        return 0
-
+            return result[0]["current_stock"]
+    
     @property
     def product_stock_prices(self):
         """Returns the piece_price and the amount of leftovers of the stock
         for that price."""
+        # TODO: Fix pricing on stock
         with self.connection as cursor:
             results = cursor.Execute(
                 f"""
