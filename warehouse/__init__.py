@@ -12,6 +12,11 @@ from warehouse.orders.urls import urls as order_urls
 # Application
 from . import basepages
 
+import wtforms_json
+
+# Used to monkeypatch WTForms to allow JSON data
+wtforms_json.init()
+
 
 def main():
     """Creates a uWeb3 application.
