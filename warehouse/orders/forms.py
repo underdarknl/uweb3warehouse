@@ -6,14 +6,18 @@ from wtforms import (
     validators,
     FieldList,
     FormField,
+    HiddenField,
 )
 
 from warehouse.common.helpers import BaseForm
 
 
 class OrderProduct(BaseForm):
+    ID = HiddenField("ID")
     product_sku = StringField("product_sku", validators=[validators.InputRequired()])
-    quantity = IntegerField("quantity", validators=[validators.NumberRange(min=1, max=65535)])
+    quantity = IntegerField(
+        "quantity", validators=[validators.NumberRange(min=1, max=65535)]
+    )
     description = StringField(
         "description", validators=[validators.Optional(), validators.Length(max=255)]
     )
@@ -27,7 +31,7 @@ class CreateOrderForm(BaseForm):
             ("new", "new"),
             ("reservation", "reservation"),
             ("completed", "completed"),
-            ("canceled", "canceled")
+            ("canceled", "canceled"),
         ],
     )
     products = FieldList(FormField(OrderProduct), min_entries=1)
