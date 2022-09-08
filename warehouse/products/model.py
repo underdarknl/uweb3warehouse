@@ -585,3 +585,12 @@ class Productprice(model.Record):
     @classmethod
     def ProductPrices(cls, connection, product):
         return cls.List(connection, conditions=[f"product={product['ID']}"])
+
+
+class Order(model.Record):
+    """Provides a model abstraction for an Order."""
+
+
+class OrderProduct(model.Record):
+    """Model record that is used to keep track which Product is ordered
+    and the quanity of said order."""
