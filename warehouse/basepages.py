@@ -5,6 +5,7 @@ import locale
 
 # standard modules
 import time
+import os
 
 # uweb modules
 import uweb3
@@ -384,6 +385,8 @@ class PageMaker(
 
     def RequestInvalidcommand(self, command=None, error=None, httpcode=404):
         """Returns an error message"""
+        self.TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
+        
         if "api" in self.req.path:
             return self.RequestInvalidJsoncommand(command, httpcode)
         uweb3.logging.warning(
