@@ -8,6 +8,7 @@
                 <th>Description</th>
                 <th>Status</th>
                 <th>Date created</th>
+                <th>Date canceled</th>
             </tr>
         </thead>
         {{ for order in [orders] }}
@@ -23,6 +24,9 @@
                 </td>
                 <td>
                     [order:date_created]
+                </td>
+                <td>
+                    [order:date_canceled|NullString]
                 </td>
             </tr>
         {{ endfor }}
