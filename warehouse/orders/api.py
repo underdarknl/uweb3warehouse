@@ -16,14 +16,14 @@ class PageMaker(basepages.PageMaker):
         self.apikey = None
         self.forms = FormFactory()
         self.forms.register_form("create_order", forms.CreateOrderForm)
+        self.forms.register_form("cancel_order", forms.CancelOrderForm)
 
     @uweb3.decorators.ContentType("application/json")
     @apiuser
     @json_error_wrapper
     def CreateOrder(self):
-        json_data = self.post.__dict__
         form = self.forms.get_form("create_order")
-        order_form = form.from_json(json_data)  # type: ignore
+        order_form = form.from_json(self.post.__dict__)  # type: ignore
 
         if not order_form.validate():
             return order_form.errors
@@ -33,8 +33,32 @@ class PageMaker(basepages.PageMaker):
     @uweb3.decorators.ContentType("application/json")
     @apiuser
     @json_error_wrapper
+    def CancelOrder(self):
+        form = self.forms.get_form("cancel_order")
+        cancel_form = form.from_json(self.post.__dict__)  # type: ignore
+
+        if not cancel_form.validate():
+            return cancel_form.errors
+
+        return self.post.__dict__
+
+    @uweb3.decorators.ContentType("application/json")
+    @apiuser
+    @json_error_wrapper
+    def ConvertReservationToRealOrder(self):
+        form = self.forms.get_form("cancel_order")
+        cancel_form = form.from_json(self.post.__dict__)  # type: ignore
+
+        if not cancel_form.validate():
+            return cancel_form.errors
+
+        return self.post.__dict__
+
+    @uweb3.decorators.ContentType("application/json")
+    @apiuser
+    @json_error_wrapper
     def ListOrders(self):
-        orders = []
+        orders: list[model.Order] = []
         for order in model.Order.List(self.connection):
             order["order_products"] = list(order.OrderProducts())
             orders.append(order)
