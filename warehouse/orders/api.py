@@ -27,8 +27,14 @@ class PageMaker(basepages.PageMaker):
         order_form = form.from_json(self.post.__dict__)  # type: ignore
 
         if not order_form.validate():
-            return order_form.errors
-
+            return uweb3.Response(
+                {
+                    "error": True,
+                    "errors": order_form.errors,
+                    "http_status": HTTPStatus.CONFLICT,
+                },
+                httpcode=HTTPStatus.CONFLICT,
+            )
         return model.Order.Create(self.connection, order_form.data)
 
     @uweb3.decorators.ContentType("application/json")
@@ -41,7 +47,14 @@ class PageMaker(basepages.PageMaker):
         )
 
         if not cancel_form.validate():
-            return cancel_form.errors
+            return uweb3.Response(
+                {
+                    "error": True,
+                    "errors": cancel_form.errors,
+                    "http_status": HTTPStatus.CONFLICT,
+                },
+                httpcode=HTTPStatus.CONFLICT,
+            )
 
         if cancel_form.ID.data:
             order: model.Order = model.Order.FromPrimary(
