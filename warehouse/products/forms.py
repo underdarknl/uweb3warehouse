@@ -31,7 +31,7 @@ class RequiredIfPositive(validators.DataRequired):
             raise Exception('no field named "%s" in form' % self.other_field_name)
 
         if bool(other_field.data) and other_field.data > 0:
-            super().__call__(form, field)
+            return super().__call__(form, field)
 
         field.errors[:] = []
         raise validators.StopValidation()
