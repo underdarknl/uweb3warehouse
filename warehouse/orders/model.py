@@ -1,10 +1,25 @@
+from enum import Enum
+import pytz
+import datetime
+
 from uweb3 import model
 from uweb3.helpers import transaction
 from warehouse.products import model as product_model
 
 
+class OrderStatus(str, Enum):
+    NEW = "new"
+    RESERVATION = "reservation"
+    COMPLETED = "completed"
+    CANCELED = "canceled"
+
+
 class Order(model.Record):
     """Provides a model abstraction for an Order."""
+
+    @classmethod
+    def FromReference(cls, connection, record):
+        pass
 
     @classmethod
     def Create(cls, connection, record):
@@ -47,6 +62,12 @@ class Order(model.Record):
             # display it in this case.
             del child["order"]
             yield child
+
+    def Delete(self):
+        """Overwrites the default Delete and sets the dateDeleted datetime instead"""
+        self["date_canceled"] = str(pytz.utc.localize(datetime.datetime.utcnow()))[0:19]
+        self["status"] = OrderStatus.CANCELED.value
+        self.Save()
 
 
 class OrderProduct(model.Record):
