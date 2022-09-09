@@ -7,6 +7,10 @@ from uweb3.helpers import transaction
 from warehouse.products import model as product_model
 
 
+def CreateCancelDate():
+    return str(pytz.utc.localize(datetime.datetime.utcnow()))[0:19]
+
+
 class OrderStatus(str, Enum):
     NEW = "new"
     RESERVATION = "reservation"
@@ -17,9 +21,29 @@ class OrderStatus(str, Enum):
 class Order(model.Record):
     """Provides a model abstraction for an Order."""
 
+    def _PreSave(self, _cursor):
+        super()._PreSave(_cursor)
+        # Make sure to set a cancel date when the order is canceled.
+        if self["status"] == OrderStatus.CANCELED and not self["date_canceled"]:
+            self["date_canceled"] = CreateCancelDate()
+
+        # This can occur when a canceled orders status changes from canceled
+        # to any other state.
+        if self["date_canceled"] and self["status"] != OrderStatus.CANCELED:
+            self["date_canceled"] = None
+
     @classmethod
-    def FromReference(cls, connection, record):
-        pass
+    def FromReference(cls, connection, reference):
+        safe_ref = connection.EscapeValues(reference)
+        with connection as cursor:
+            order = cursor.Select(
+                table=cls.TableName(), conditions=[f"reference={safe_ref}"]
+            )
+
+        if not order:
+            raise cls.NotExistError(f"There is no order with reference: '{reference}")
+
+        return cls(connection, order[0])
 
     @classmethod
     def Create(cls, connection, record):
@@ -28,6 +52,7 @@ class Order(model.Record):
             order = super().Create(
                 connection,
                 {
+                    "reference": record["reference"],
                     "description": record["description"],
                     "status": record["status"],
                 },
@@ -64,10 +89,18 @@ class Order(model.Record):
             yield child
 
     def Delete(self):
-        """Overwrites the default Delete and sets the dateDeleted datetime instead"""
-        self["date_canceled"] = str(pytz.utc.localize(datetime.datetime.utcnow()))[0:19]
-        self["status"] = OrderStatus.CANCELED.value
-        self.Save()
+        """Overwrites the default Delete and instead sets status to canceled."""
+        # XXX: When status changes from COMPLETED to CANCELED should we log this?
+        # is this even allowed?
+        if self["status"] != OrderStatus.CANCELED:
+            self["status"] = OrderStatus.CANCELED.value
+            self.Save()
+
+    def ReservationToNewOrder(self):
+        """Convert an order with status RESERVATION to status NEW"""
+        if self["status"] == OrderStatus.RESERVATION:
+            self["status"] = OrderStatus.NEW.value
+            self.Save()
 
 
 class OrderProduct(model.Record):

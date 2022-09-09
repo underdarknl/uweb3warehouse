@@ -88,7 +88,7 @@ class CreateOrderForm(BaseForm):
     products = FieldList(FormField(OrderProduct), min_entries=1)
 
 
-class CancelOrderForm(BaseForm):
+class OrderFromIdOrReferenceForm(BaseForm):
     ID = IntegerField(
         "orderID", validators=[EitherOtherRequired(dependant_fields=("reference",))]
     )
