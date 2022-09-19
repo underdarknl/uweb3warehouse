@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `warehouse` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `warehouse`;
--- MySQL dump 10.13  Distrib 8.0.29, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.30, for Linux (x86_64)
 --
 -- Host: localhost    Database: warehouse
 -- ------------------------------------------------------
--- Server version	8.0.29-0ubuntu0.20.04.3
+-- Server version	8.0.30-0ubuntu0.20.04.2
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -37,6 +35,46 @@ CREATE TABLE `apiuser` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `order`
+--
+
+DROP TABLE IF EXISTS `order`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `order` (
+  `ID` int unsigned NOT NULL AUTO_INCREMENT,
+  `reference` varchar(30) DEFAULT NULL,
+  `description` varchar(255) NOT NULL,
+  `status` enum('new','reservation','completed','canceled') NOT NULL DEFAULT 'new',
+  `date_created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `date_canceled` datetime DEFAULT NULL,
+  PRIMARY KEY (`ID`),
+  UNIQUE KEY `reference_UNIQUE` (`reference`)
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `orderProduct`
+--
+
+DROP TABLE IF EXISTS `orderProduct`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `orderProduct` (
+  `ID` int NOT NULL AUTO_INCREMENT,
+  `order` int unsigned NOT NULL,
+  `product_sku` varchar(45) NOT NULL,
+  `quantity` smallint unsigned NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID`),
+  KEY `fk_orderProduct_1_idx` (`order`),
+  KEY `fk_orderProduct_2_idx` (`product_sku`),
+  CONSTRAINT `fk_orderProduct_1` FOREIGN KEY (`order`) REFERENCES `order` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_orderProduct_2` FOREIGN KEY (`product_sku`) REFERENCES `product` (`sku`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `product`
 --
 
@@ -57,7 +95,7 @@ CREATE TABLE `product` (
   PRIMARY KEY (`ID`),
   UNIQUE KEY `sku_UNIQUE` (`sku`),
   UNIQUE KEY `gs1_UNIQUE` (`gs1`,`dateDeleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=95 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -79,7 +117,7 @@ CREATE TABLE `productpart` (
   KEY `part` (`part`),
   CONSTRAINT `part` FOREIGN KEY (`part`) REFERENCES `product` (`ID`) ON UPDATE CASCADE,
   CONSTRAINT `product` FOREIGN KEY (`product`) REFERENCES `product` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -98,7 +136,7 @@ CREATE TABLE `productprice` (
   UNIQUE KEY `index3` (`product`,`start_range`),
   KEY `fk_productprice_1_idx` (`product`),
   CONSTRAINT `fk_productprice_1` FOREIGN KEY (`product`) REFERENCES `product` (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -112,7 +150,7 @@ DELIMITER ;;
 /*!50003 CREATE*/ /*!50017 DEFINER=`warehouse`@`localhost`*/ /*!50003 TRIGGER `productprice_BEFORE_INSERT` BEFORE INSERT ON `productprice` FOR EACH ROW BEGIN
 	IF (new.start_range != 1 and not exists(select * from warehouse.productprice where product=new.product and start_range=1))
 		THEN SIGNAL SQLSTATE 'ERROR' set MESSAGE_TEXT = "You must first set the price of a single product before adding other ranges";
-    END IF ;
+    END IF ; 
 END */;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -136,7 +174,7 @@ CREATE TABLE `stock` (
   `piece_price` decimal(10,2) unsigned DEFAULT NULL,
   `dateCreated` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -157,7 +195,7 @@ CREATE TABLE `supplier` (
   `dateDeleted` datetime NOT NULL DEFAULT '1000-01-01 00:00:00',
   PRIMARY KEY (`ID`),
   UNIQUE KEY `name_UNIQUE` (`name`,`dateDeleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=132 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=143 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169,7 +207,7 @@ DROP TABLE IF EXISTS `supplierproduct`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `supplierproduct` (
   `ID` mediumint unsigned NOT NULL AUTO_INCREMENT,
-  `product` mediumint unsigned NOT NULL,
+  `product` mediumint unsigned DEFAULT NULL,
   `supplier` tinyint unsigned NOT NULL,
   `cost` decimal(10,2) DEFAULT NULL,
   `vat` decimal(4,2) NOT NULL DEFAULT '0.00',
@@ -183,7 +221,7 @@ CREATE TABLE `supplierproduct` (
   KEY `fk_supplierproduct_2_idx` (`supplier`),
   CONSTRAINT `fk_supplierproduct_1` FOREIGN KEY (`product`) REFERENCES `product` (`ID`) ON UPDATE CASCADE,
   CONSTRAINT `fk_supplierproduct_2` FOREIGN KEY (`supplier`) REFERENCES `supplier` (`ID`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -222,4 +260,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-06-14  8:46:49
+-- Dump completed on 2022-09-19  9:27:49
