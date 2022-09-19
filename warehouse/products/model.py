@@ -251,7 +251,7 @@ class Product(model.Record):
                     FROM orderProduct as op 
                     LEFT JOIN `order` as ord 
                         ON ord.ID = op.order
-                    WHERE product_sku=p.SKU
+                    WHERE product_sku='p.SKU'
                         AND ord.status NOT IN ("canceled")
                 ), 0) as current_stock
                 FROM stock as s
@@ -272,7 +272,7 @@ class Product(model.Record):
                 FROM orderProduct as op 
                 LEFT JOIN `order` as ord 
                     ON ord.ID = op.order
-                WHERE product_sku={self['sku']}
+                WHERE product_sku='{self['sku']}'
                     AND ord.status IN ("reservation")
                 """
             )
