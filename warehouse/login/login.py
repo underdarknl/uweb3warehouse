@@ -6,7 +6,7 @@ from uweb3.libs import mail
 from warehouse import basepages
 from warehouse.common.decorators import loggedin
 from warehouse.login import model
-
+from warehouse.common.helpers import mail_parser
 
 class PageMaker(basepages.PageMaker):
     TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
@@ -64,8 +64,8 @@ class PageMaker(basepages.PageMaker):
                     )
             if not error:
                 resethash = user.PasswordResetHash()
-                content = self.parser.Parse(
-                    "email/resetpass.txt",
+                content = mail_parser().Parse(
+                    "resetpass.txt",
                     email=user["email"],
                     host=self.options["general"]["host"],
                     resethash=resethash,
@@ -141,8 +141,8 @@ class PageMaker(basepages.PageMaker):
             except ValueError:
                 return {"error": "Passwords too short."}
             else:
-                content = self.parser.Parse(
-                    "email/updateuser.txt", email=self.user["email"]
+                content = mail_parser().Parse(
+                    "updateuser.txt", email=self.user["email"]
                 )
                 try:
                     with mail.MailSender(

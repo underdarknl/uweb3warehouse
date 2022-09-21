@@ -183,3 +183,10 @@ class BaseForm(Form):
             path=os.path.join(os.path.dirname(__file__), "templates"),
             templates=("default_form.html",),
         ).Parse("default_form.html", __form=self)
+
+
+def mail_parser():
+    return Parser(
+        path=os.path.join(os.path.dirname(__file__), "templates/email"),
+        templates=("newuser.txt", "resetpass.txt", "updateuser.txt"),
+    )

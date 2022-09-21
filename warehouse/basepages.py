@@ -15,6 +15,7 @@ from warehouse.common import model as common_model
 from warehouse.common.decorators import loggedin
 from warehouse.login import helpers as login_helpers
 from warehouse.login import model as login_model
+from warehouse.common.helpers import mail_parser
 
 
 def CentRound(monies):
@@ -223,8 +224,8 @@ class PageMaker(
                     "users": users,
                 }
             else:
-                content = self.parser.Parse(
-                    "email/newuser.txt",
+                content = mail_parser().Parse(
+                    "newuser.txt",
                     email=newuser["email"],
                     host=self.options["general"]["host"],
                     password=newpassword,
@@ -289,7 +290,7 @@ class PageMaker(
             except ValueError:
                 return {"error": "Passwords too short.", "keys": keys}
             else:
-                content = self.parser.Parse(
+                content = mail_parser().Parse(
                     "email/updateuser.txt", email=self.user["email"]
                 )
                 try:
@@ -386,7 +387,7 @@ class PageMaker(
     def RequestInvalidcommand(self, command=None, error=None, httpcode=404):
         """Returns an error message"""
         self.TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
-        
+
         if "api" in self.req.path:
             return self.RequestInvalidJsoncommand(command, httpcode)
         uweb3.logging.warning(
@@ -406,7 +407,7 @@ class PageMaker(
     def Error(self, error="", httpcode=500, link=None, log_error=True):
         """Returns a generic error page based on the given parameters."""
         self.TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
-        
+
         if log_error:
             self.logger.error("Error page triggered: %r", error)
 
