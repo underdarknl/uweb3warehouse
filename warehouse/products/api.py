@@ -59,7 +59,8 @@ class PageMaker(basepages.PageMaker):
             "possible_stock": product.possiblestock["available"],
             "prices": prices,
         }
-
+        
+    
     # @uweb3.decorators.ContentType("application/json")
     # @json_error_wrapper
     # @apiuser
