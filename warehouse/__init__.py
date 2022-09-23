@@ -36,7 +36,6 @@ def main():
         + order_urls
         + [
             ("/", "RequestIndex"),
-            ("/login", "RequestLogin", "GET"),
             ("/apisettings", "RequestApiSettings"),
             ("/setup", "RequestSetup"),
             ("/admin", "RequestAdmin"),
