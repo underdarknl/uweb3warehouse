@@ -381,7 +381,7 @@ class PageMaker(
 
         if "api" in self.req.path:
             return self.RequestInvalidJsoncommand(command, httpcode)
-        uweb3.logging.warning(
+        self.logger.warning(
             "Bad page %r requested with method %s", command, self.req.method
         )
         if command is None and error is None:
@@ -392,7 +392,7 @@ class PageMaker(
     @uweb3.decorators.ContentType("application/json")
     def RequestInvalidJsoncommand(self, command, httpcode=404):
         """Returns an error message"""
-        uweb3.logging.warning("Bad json page %r requested", command)
+        self.logger.warning("Bad json page %r requested", command)
         return uweb3.Response(content={"error": command}, httpcode=httpcode)
 
     def Error(self, error="", httpcode=500, link=None, log_error=True):

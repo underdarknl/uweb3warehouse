@@ -156,7 +156,7 @@ class PageMaker(basepages.PageMaker):
             form.sku.errors = ["A product with this SKU already exists."]
             return self.RequestProducts(product_form=form)
         except self.connection.IntegrityError as error:
-            uweb3.logging.error("Error: ", error)
+            self.logger.error("Error: ", error)
             return self.Error("Something went wrong", 200)
         return self.req.Redirect(f"/product/{product['sku']}", httpcode=301)
 
