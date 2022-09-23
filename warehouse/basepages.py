@@ -118,15 +118,6 @@ class PageMaker(
             raise ValueError("User not active, session invalid")
         return user
 
-    @uweb3.decorators.TemplateParser("login.html")
-    def RequestLogin(self, url=None):
-        """Please login"""
-        if self.user:
-            return uweb3.Redirect("/products", httpcode=303)
-        if not url and "url" in self.get:
-            url = self.get.getfirst("url")
-        return {"url": url}
-
     @loggedin
     @uweb3.decorators.checkxsrf
     @uweb3.decorators.TemplateParser("admin.html")
@@ -347,7 +338,7 @@ class PageMaker(
         longer.
         """
         if not login_model.User.IsFirstUser(self.connection):
-            return self.RequestLogin()
+            return uweb3.Redirect("/login", httpcode=303)
 
         if (
             "email" in self.post

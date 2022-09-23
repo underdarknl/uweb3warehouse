@@ -8,8 +8,18 @@ from warehouse.common.decorators import loggedin
 from warehouse.login import model
 from warehouse.common.helpers import mail_parser
 
+
 class PageMaker(basepages.PageMaker):
     TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
+
+    @uweb3.decorators.TemplateParser("login.html")
+    def RequestLogin(self, url=None):
+        """Please login"""
+        if self.user:
+            return uweb3.Redirect("/products", httpcode=303)
+        if not url and "url" in self.get:
+            url = self.get.getfirst("url")
+        return {"url": url}
 
     @uweb3.decorators.checkxsrf
     def RequestLogout(self):
