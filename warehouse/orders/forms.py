@@ -61,9 +61,15 @@ class EitherOtherRequired(validators.DataRequired):
 
 class OrderProduct(BaseForm):
     ID = HiddenField("ID")
-    product_sku = StringField("product_sku", validators=[validators.InputRequired()])
+    product_sku = StringField(
+        "product_sku",
+        validators=[validators.InputRequired()],
+        render_kw={"readonly": True},
+    )
     quantity = IntegerField(
-        "quantity", validators=[validators.NumberRange(min=1, max=65535)]
+        "quantity",
+        validators=[validators.NumberRange(min=1, max=65535)],
+        render_kw={"readonly": True},
     )
     description = StringField(
         "description", validators=[validators.Optional(), validators.Length(max=255)]
@@ -72,9 +78,15 @@ class OrderProduct(BaseForm):
 
 class CreateOrderForm(BaseForm):
     ID = HiddenField("ID")
-    description = StringField("description", validators=[validators.InputRequired()])
+    description = StringField(
+        "description",
+        validators=[validators.InputRequired()],
+        render_kw={"readonly": True},
+    )
     reference = StringField(
-        "reference", validators=[validators.Optional(), validators.Length(max=30)]
+        "reference",
+        validators=[validators.Optional(), validators.Length(max=30)],
+        render_kw={"readonly": True},
     )
     status = SelectField(
         "status",
