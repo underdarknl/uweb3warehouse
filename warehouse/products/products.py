@@ -2,16 +2,17 @@
 """Request handlers for the uWeb3 warehouse inventory software"""
 
 import os
-import urllib.parse
 
 import uweb3
 
 from warehouse import basepages
 from warehouse.common import model as common_model
+from warehouse.orders import model as order_model
+from warehouse.suppliers import model as supplier_model
 from warehouse.common.decorators import NotExistsErrorCatcher, loggedin
 from warehouse.common.helpers import PagedResult
-from warehouse.products import forms, helpers, model
-from warehouse.suppliers import model as supplier_model
+from warehouse.products import forms, model, helpers
+import urllib.parse
 
 
 class PageMaker(basepages.PageMaker):
@@ -122,6 +123,13 @@ class PageMaker(basepages.PageMaker):
         if not disassemble_into_parts_form:
             disassemble_into_parts_form = factory.get_form("disassemble_into_parts")
 
+        product_orders = order_model.OrderProduct.List(
+            self.connection,
+            conditions=[
+                "product_sku = %s" % self.connection.EscapeValues(product["sku"])
+            ],
+        )
+
         return {
             "products": product.AssemblyOptions(),
             "parts": parts,
@@ -135,6 +143,7 @@ class PageMaker(basepages.PageMaker):
             "stock_form": stock_form,
             "assemble_from_part_form": assemble_from_part_form,
             "disassemble_into_parts_form": disassemble_into_parts_form,
+            "product_orders": product_orders,
         }
 
     @loggedin
