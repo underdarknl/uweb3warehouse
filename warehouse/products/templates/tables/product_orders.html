@@ -1,0 +1,22 @@
+<table class="stock">
+  <thead>
+      <tr>
+        <th>Order</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Reference</th>
+          <th>Status</th>
+      </tr>
+  </thead>
+  <tbody>
+    {{ for product_order in [product_orders] }}
+      <tr>
+        <td><a href="/order/[product_order:order:ID]">[product_order:order:ID]</a></td>
+        <td>[product_order:order:date_created|DateOnly]</td>
+        <td>[product_order:quantity]</td>
+        <td>[product_order:order:reference]</td>
+        <td>[product_order:order:status]</td>
+      </tr>
+      {{ endfor }}
+  </tbody>
+</table>

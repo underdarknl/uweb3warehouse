@@ -1,4 +1,13 @@
 {{ externalinline templates/parts/header.html }}
+
+<section>
+  <ul class="breadcrumb">
+    <li><a href="/products">Products</a></li>
+    <li><a href="/product/[product:sku]">[product:sku]</a></li>
+    <li><a href="/product/[product:sku]/suppliers">Suppliers</a></li>
+  </ul>
+</section>
+
 <section>
     <h2>Suppliers for this product</h2>
     {{ inline tables/product_suppliers.html }}

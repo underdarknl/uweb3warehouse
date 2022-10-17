@@ -1,14 +1,28 @@
 {{ externalinline templates/parts/header.html }}
 <section>
+  <ul class="breadcrumb">
+    <li><a href="/products">Products</a></li>
+    <li><a href="/product/[product:sku]">[product:sku]</a></li>
+    <li><a href="/product/[product:sku]/prices">Prices</a></li>
+  </ul>
+</section>
+
+<section>
+  <header>
     <h2>Prices for product: [product:name]</h2>
-    {{ inline tables/product_prices.html }}
+  </header>
+  {{ inline tables/product_prices.html }}
 </section>
 <section>
+  <header>
     <h2>Set VAT</h2>
-    {{ inline forms/vat.html }}
+  </header>
+  {{ inline forms/vat.html }}
 </section>
 <section>
+  <header>
     <h2>Manage prices</h2>
-    {{ inline forms/product_price.html }}
+  </header>
+  {{ inline forms/product_price.html }}
 </section>
 {{ externalinline templates/parts/footer.html }}

@@ -1,7 +1,16 @@
 {{ externalinline templates/parts/header.html }}
 <section>
+  <ul class="breadcrumb">
+    <li><a href="/orders">Orders</a></li>
+    <li><a href="/order/[order:ID]">[order:ID]</a></li>
+  </ul>
+</section>
+<section>
+  <header>
     <h2>Order [order:description]</h2>
+  </header>
     <form action="/order/[order:ID]" method="post">
+        <input type="hidden" name="xsrf" value="[xsrf]">
         [create_order_form:render]
         <input type="submit" value="Save changes" class="primary">
     </form>

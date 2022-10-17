@@ -1,6 +1,13 @@
 {{ externalinline templates/parts/header.html }}
 <script src="/js/forms.js"></script>
 <section>
+  <ul class="breadcrumb">
+    <li><a href="/products">Products</a></li>
+    <li><a href="/product/[product:sku]">[product:sku]</a></li>
+  </ul>
+</section>
+
+<section>
     <h2>Product: [product:name]</h2>
     <ul id="manage-products">
         <li>
@@ -13,6 +20,10 @@
 </section>
 
 <section>
+  <header>
+    <h3>Stock mutations</h3>
+    <p>Stock mutations are from the assembly/disassembly process.</p>
+  </header>
     {{ if [stock] }}
     {{ inline tables/product_stock.html }}
     {{ if [stockrows] and len([stock]) < [stockrows] }} <p><a href="?unlimitedstock=true">See all [stockrows] stock
@@ -28,6 +39,14 @@
         <p class="warning">No new stock can be created, not enough parts available.</p>
         {{ endif }}
         {{ endif }}
+</section>
+
+<section>
+  <header>
+    <h3>Orders</h3>
+    <p>A list of orders that require this product.</p>
+  </header>
+  {{ inline tables/product_orders.html }}
 </section>
 
 <section>
