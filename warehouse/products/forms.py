@@ -174,19 +174,6 @@ class ProductStockForm(ProductAssemblyForm):
                 )
 
 
-class ProductVatForm(Form):
-    vat = DecimalField(
-        "vat",
-        rounding=decimal.ROUND_UP,
-        places=2,
-        validators=[
-            validators.InputRequired(),
-            validators.NumberRange(min=0, max=100),
-        ],
-        description="The vat percentage for this product",
-    )
-
-
 class StockMutationFactory:
     def __init__(self):
         self._forms = {}

@@ -9,7 +9,6 @@ from warehouse.products import model
 class ProductDTO(NamedTuple):
     name: str
     product: str
-    vat: decimal.Decimal
     sku: str
 
 
@@ -63,7 +62,6 @@ class ProductDTOService:
         return ProductDTO(
             name=product["name"],
             product=product["ID"],
-            vat=product["vat"],
             sku=product["sku"],
         )._asdict()
 

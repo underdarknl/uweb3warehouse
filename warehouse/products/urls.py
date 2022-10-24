@@ -72,11 +72,6 @@ urls = [
         (products.PageMaker, "RequestDeleteProductPrice"),
     ),
     (
-        "/product/([^/]*)/prices/vat",
-        (products.PageMaker, "RequestSetProductVat"),
-        "POST",
-    ),
-    (
         "/product/([^/]*)/couple_products",
         (products.PageMaker, "AttachProductToSupplierProduct"),
         "POST",
@@ -94,6 +89,10 @@ urls = [
     (
         "/api/v1/search_product/([^/]*)",
         (api.PageMaker, "JsonProductSearch"),
+    ),
+    (
+        "/api/v1/find_product/(.*)",
+        (api.PageMaker, "FindProduct"),
     ),
     # (
     #     "/api/v1/products/bulk_remove_stock",

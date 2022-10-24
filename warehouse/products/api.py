@@ -2,13 +2,12 @@
 """Request handlers for the uWeb3 warehouse inventory software"""
 
 import uweb3
-from uweb3.helpers import transaction
 
 from warehouse import basepages
 from warehouse.common.decorators import apiuser, json_error_wrapper
-from warehouse.products import helpers, model, schemas
+from warehouse.products import helpers, model
 
-
+# TODO: Add pydantic for DTOS.
 class PageMaker(basepages.PageMaker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -59,42 +58,22 @@ class PageMaker(basepages.PageMaker):
             "possible_stock": product.possiblestock["available"],
             "prices": prices,
         }
-        
-    
-    # @uweb3.decorators.ContentType("application/json")
-    # @json_error_wrapper
-    # @apiuser
-    # def JsonProductStockRemove(self):
-    #     # XXX: This route should only be used for stock manipulation.
-    #     data = schemas.BulkStockSchema().load(self.post.__dict__)
 
-    #     products = data["products"]
-    #     reference = data["reference"]
+    @uweb3.decorators.ContentType("application/json")
+    @json_error_wrapper
+    @apiuser
+    def FindProduct(self, query):
+        products = list(model.Product.Search(self.connection, query))
 
-    #     with transaction(self.connection, model.Product):
-    #         for product in products:
-    #             helpers.remove_stock(
-    #                 self.connection, product["sku"], product["quantity"], reference
-    #             )
-    #     return data
+        if not products:
+            return {"products": []}
 
-    # @uweb3.decorators.ContentType("application/json")
-    # @json_error_wrapper
-    # @apiuser
-    # def JsonProductStockBulkAdd(self):
-    #     # XXX: This route should only be used for stock manipulation.
+        product_price_converter = self.dto_service.get_registered_item("product_price")
 
-    #     data = schemas.BulkRefundSchema().load(self.post.__dict__)
-
-    #     products = data["products"]
-    #     reference = data["reference"]
-
-    #     with transaction(self.connection, model.Product):
-    #         for product in products:
-    #             helpers.add_stock(
-    #                 self.connection,
-    #                 product["sku"],
-    #                 product["quantity"],
-    #                 reference,
-    #             )
-    #     return data
+        for product in products:
+            product["prices"] = product_price_converter.to_dto(
+                model.Productprice.ProductPrices(self.connection, product)
+            )
+            product["currentstock"] = product.currentstock
+            product["possiblestock"] = product.possiblestock["available"]
+        return {"products": products}

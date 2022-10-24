@@ -481,14 +481,11 @@ class PageMaker(basepages.PageMaker):
     @NotExistsErrorCatcher
     @uweb3.decorators.checkxsrf
     @uweb3.decorators.TemplateParser("prices.html")
-    def RequestProductPrices(self, sku, product_vat_form=None):
+    def RequestProductPrices(self, sku):
         product = model.Product.FromSku(self.connection, sku)
         product_price_form = forms.ProductPriceForm(self.post, prefix="product-price")
 
-        if not product_vat_form:
-            product_vat_form = forms.ProductVatForm(data=product)
-
-        if self.post and "vat" not in self.post and product_price_form.validate():
+        if self.post and product_price_form.validate():
             new_product_price = {
                 "product": product["ID"],
                 **product_price_form.data,
@@ -499,7 +496,6 @@ class PageMaker(basepages.PageMaker):
         return dict(
             product=product,
             product_price_form=product_price_form,
-            product_vat_form=product_vat_form,
             product_prices=list(
                 model.Productprice.List(
                     self.connection,
@@ -508,20 +504,6 @@ class PageMaker(basepages.PageMaker):
                 )
             ),
         )
-
-    @loggedin
-    @NotExistsErrorCatcher
-    @uweb3.decorators.checkxsrf
-    def RequestSetProductVat(self, sku):
-        product = model.Product.FromSku(self.connection, sku)
-        product_vat_form = forms.ProductVatForm(self.post)
-
-        if not product_vat_form.validate():
-            return self.RequestProductPrices(sku, product_vat_form=product_vat_form)
-
-        product.update(product_vat_form.data)
-        product.Save()
-        return self.req.Redirect(f'/product/{product["sku"]}/prices', httpcode=303)
 
     @loggedin
     @NotExistsErrorCatcher
