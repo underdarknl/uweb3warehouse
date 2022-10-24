@@ -12,6 +12,8 @@ from wtforms import Form
 
 
 def round_price(d):
+    if d is None:
+        return None
     if not isinstance(d, decimal.Decimal):
         d = decimal.Decimal(d)
     cents = decimal.Decimal("0.01")
