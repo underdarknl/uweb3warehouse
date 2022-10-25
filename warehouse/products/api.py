@@ -2,10 +2,27 @@
 """Request handlers for the uWeb3 warehouse inventory software"""
 
 import uweb3
+from pydantic import BaseModel
+from typing import Optional
 
 from warehouse import basepages
 from warehouse.common.decorators import apiuser, json_error_wrapper
-from warehouse.products import helpers, model
+from warehouse.products import model
+
+
+class ProductPrices(BaseModel):
+    price: str
+    start_range: int
+
+
+class ProductDTO(BaseModel):
+    ID: int
+    sku: str
+    name: str
+    prices: Optional[list[ProductPrices]]
+    currentstock: Optional[int]
+    possiblestock: Optional[int]
+
 
 # TODO: Add pydantic for DTOS.
 class PageMaker(basepages.PageMaker):
@@ -13,16 +30,18 @@ class PageMaker(basepages.PageMaker):
         super().__init__(*args, **kwargs)
         self.api_user = None
         self.apikey = None
-        self.dto_service = helpers.DtoManager()
 
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser
     def JsonProducts(self):
         """Returns the product Json"""
-        product_converter = self.dto_service.get_registered_item("product")
-        products = product_converter.to_dto(model.Product.List(self.connection))
-        return {"products": products}
+        products = model.Product.List(self.connection)
+        return {
+            "products": [
+                ProductDTO(**product).dict(exclude_unset=True) for product in products
+            ]
+        }
 
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
@@ -30,13 +49,14 @@ class PageMaker(basepages.PageMaker):
     def JsonProduct(self, sku):
         """Returns the product Json"""
         product = model.Product.FromSku(self.connection, sku)
-        product_converter = self.dto_service.get_registered_item("product")
-        product_dto = product_converter.to_dto(product)
 
-        return product_dto | {
-            "currentstock": product.currentstock,
-            "possiblestock": product.possiblestock["available"],
-        }
+        return ProductDTO(
+            **product
+            | {
+                "stock": product.currentstock,
+                "possible_stock": product.possiblestock["available"],
+            }
+        ).dict(exclude_unset=True)
 
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
@@ -45,25 +65,25 @@ class PageMaker(basepages.PageMaker):
         """Returns the product Json"""
         product = model.Product.FromSku(self.connection, sku)
 
-        product_converter = self.dto_service.get_registered_item("product")
-        product_dto = product_converter.to_dto(product)
-
         product_price_converter = self.dto_service.get_registered_item("product_price")
         prices = product_price_converter.to_dto(
             model.Productprice.ProductPrices(self.connection, product)
         )
 
-        return product_dto | {
-            "stock": product.currentstock,
-            "possible_stock": product.possiblestock["available"],
-            "prices": prices,
-        }
+        return ProductDTO(
+            **product
+            | {
+                "stock": product.currentstock,
+                "possible_stock": product.possiblestock["available"],
+                "prices": prices,
+            }
+        ).dict(exclude_unset=True)
 
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
     @apiuser
     def FindProduct(self, query):
-        products = list(model.Product.Search(self.connection, query))
+        products = list(model.Product.Search(self.connection, query, limit=10))
 
         if not products:
             return {"products": []}
@@ -76,4 +96,9 @@ class PageMaker(basepages.PageMaker):
             )
             product["currentstock"] = product.currentstock
             product["possiblestock"] = product.possiblestock["available"]
-        return {"products": products}
+
+        return {
+            "products": [
+                ProductDTO(**product).dict(exclude_unset=True) for product in products
+            ]
+        }
