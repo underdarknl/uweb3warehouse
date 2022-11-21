@@ -64,20 +64,10 @@ class PageMaker(basepages.PageMaker):
     def JsonProductSearch(self, sku):
         """Returns the product Json"""
         product = model.Product.FromSku(self.connection, sku)
-
-        product_price_converter = self.dto_service.get_registered_item("product_price")
-        prices = product_price_converter.to_dto(
-            model.Productprice.ProductPrices(self.connection, product)
-        )
-
-        return ProductDTO(
-            **product
-            | {
-                "stock": product.currentstock,
-                "possible_stock": product.possiblestock["available"],
-                "prices": prices,
-            }
-        ).dict(exclude_unset=True)
+        product["prices"] = model.Productprice.ProductPrices(self.connection, product)
+        product["stock"] = product.currentstock
+        product["possible_stock"] = product.possiblestock["available"]
+        return ProductDTO(**product).dict(exclude_unset=True)
 
     @uweb3.decorators.ContentType("application/json")
     @json_error_wrapper
@@ -88,14 +78,12 @@ class PageMaker(basepages.PageMaker):
         if not products:
             return {"products": []}
 
-        product_price_converter = self.dto_service.get_registered_item("product_price")
-
         for product in products:
-            product["prices"] = product_price_converter.to_dto(
-                model.Productprice.ProductPrices(self.connection, product)
+            product["prices"] = model.Productprice.ProductPrices(
+                self.connection, product
             )
             product["currentstock"] = product.currentstock
-            product["possiblestock"] = product.possiblestock["available"]
+            product["possible_stock"] = product.possiblestock["available"]
 
         return {
             "products": [
