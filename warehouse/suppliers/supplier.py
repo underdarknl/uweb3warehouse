@@ -1,5 +1,5 @@
 import os
-from io import StringIO
+from io import BytesIO
 
 import uweb3
 
@@ -244,7 +244,7 @@ class PageMaker(basepages.PageMaker):
         try:
             importer = factory.get_registered_item(
                 custom_import_form.importer.data,
-                file=StringIO(custom_import_form.custom_fileupload.data[0]["content"]),
+                file=BytesIO(custom_import_form.custom_fileupload.data.value),
                 connection=self.connection,
                 supplierID=supplier["ID"],
             )
